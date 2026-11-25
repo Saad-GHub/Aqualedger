@@ -2,6 +2,27 @@
 
 import { useEffect, useRef, useState } from "react";
 
+/**
+ * Shows a stat that may carry a unit ("2,176", "12.3 m", "—"): the number part
+ * counts up with the same decimals, the unit stays put, and non-numbers render as-is.
+ */
+export function StatValue({ value }: { value: string }) {
+  const match = /^\s*(-?[\d,]*\.?\d+)(.*)$/.exec(value);
+  if (!match) return <>{value}</>;
+  const number = Number(match[1].replace(/,/g, ""));
+  if (!Number.isFinite(number)) return <>{value}</>;
+  const decimals = match[1].includes(".") ? match[1].split(".")[1].length : 0;
+  const suffix = match[2];
+  return (
+    <AnimatedNumber
+      value={number}
+      format={(n) =>
+        `${n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${suffix}`
+      }
+    />
+  );
+}
+
 /** Counts up from the previous value to `value` with an ease-out curve. */
 export function AnimatedNumber({
   value,

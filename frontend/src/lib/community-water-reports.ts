@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { normalizeAreaName } from "@/lib/depth-analytics";
 
 export type CommunityWaterReport = { id: string; reportCode?: string; aggregateCount?: number; labMeasurementCount?: number; awaitingReviewCount?: number; reporterName?: string; address: string; areaName?: string; sourceType?: string; depth?: string; sampleDate?: string; concern?: string; status: string; measurements: Record<string, string>; areaKey?: string; riskLevel?: string; verificationState?: string; latitude?: number | null; longitude?: number | null; locationAccuracyM?: number | null; locationCapturedAt?: string | null; locationConsent?: boolean; sourceId?: string; sourceCode?: string; sourceLabel?: string; createdBy?: string };
 export type TrackedWaterSource = { id: string; code: string; label: string; areaName: string; address: string; sourceType: string };
@@ -290,7 +291,64 @@ export async function readPublicAreaSourceTrends(): Promise<PublicAreaSourceTren
   publicTrendsInFlight = (async () => {
     const { data, error } = await fetchPublicTrendRowsInChunks();
     if (!error) {
-      const mapped = data.map((row) => ({ areaKey: row.area_key, cityName: row.city_name, sourceType: row.source_type, sampleMonth: row.sample_month ?? null, sampleDay: row.sample_day ?? null, reportCount: Number(row.report_count), averageDepthM: row.average_depth_m === null ? null : Number(row.average_depth_m), normalCount: Number(row.normal_count), moderateCount: Number(row.moderate_count), highCount: Number(row.high_count), incompleteCount: Number(row.incomplete_count), weightedRiskScore: row.weighted_risk_score === null ? null : Number(row.weighted_risk_score), labMeasurementCount: Number(row.lab_measurement_count ?? 0), awaitingReviewCount: Number(row.awaiting_review_count ?? 0) }));
+      const merged = new Map<string, PublicAreaSourceTrend & { depthSum: number; depthCount: number }>();
+      for (const row of data) {
+        const areaKey = normalizeAreaName(row.area_key, row.city_name);
+        const sourceType = row.source_type || "Unspecified source";
+        const sampleMonth = row.sample_month ?? null;
+        const sampleDay = row.sample_day ?? null;
+        const key = `${areaKey}|${sourceType}|${sampleMonth ?? ""}|${sampleDay ?? ""}`;
+        const existing = merged.get(key) ?? {
+          areaKey,
+          cityName: areaKey.split(",")[0]?.trim() || row.city_name,
+          sourceType,
+          sampleMonth,
+          sampleDay,
+          reportCount: 0,
+          averageDepthM: null,
+          normalCount: 0,
+          moderateCount: 0,
+          highCount: 0,
+          incompleteCount: 0,
+          weightedRiskScore: null,
+          labMeasurementCount: 0,
+          awaitingReviewCount: 0,
+          depthSum: 0,
+          depthCount: 0,
+        };
+        const count = Number(row.report_count);
+        existing.reportCount += count;
+        if (row.average_depth_m !== null) {
+          existing.depthSum += Number(row.average_depth_m) * count;
+          existing.depthCount += count;
+        }
+        existing.normalCount += Number(row.normal_count);
+        existing.moderateCount += Number(row.moderate_count);
+        existing.highCount += Number(row.high_count);
+        existing.incompleteCount += Number(row.incomplete_count);
+        existing.labMeasurementCount += Number(row.lab_measurement_count ?? 0);
+        existing.awaitingReviewCount += Number(row.awaiting_review_count ?? 0);
+        merged.set(key, existing);
+      }
+      const mapped = [...merged.values()].map((item) => {
+        const assessed = item.normalCount + item.moderateCount + item.highCount;
+        return {
+          areaKey: item.areaKey,
+          cityName: item.cityName,
+          sourceType: item.sourceType,
+          sampleMonth: item.sampleMonth,
+          sampleDay: item.sampleDay,
+          reportCount: item.reportCount,
+          averageDepthM: item.depthCount ? Number((item.depthSum / item.depthCount).toFixed(2)) : null,
+          normalCount: item.normalCount,
+          moderateCount: item.moderateCount,
+          highCount: item.highCount,
+          incompleteCount: item.incompleteCount,
+          weightedRiskScore: assessed ? Number(((item.normalCount * 0.5 + item.moderateCount + item.highCount * 2) / assessed).toFixed(2)) : null,
+          labMeasurementCount: item.labMeasurementCount,
+          awaitingReviewCount: item.awaitingReviewCount,
+        };
+      });
       publicTrendsCache = { value: mapped, expiresAt: Date.now() + CACHE_TTL_MS };
       return mapped;
     }
@@ -299,7 +357,7 @@ export async function readPublicAreaSourceTrends(): Promise<PublicAreaSourceTren
     const reports = await readCommunityWaterReports();
     const groups = new Map<string, { areaKey: string; cityName: string; sourceType: string; sampleMonth: string | null; sampleDay: string | null; reportCount: number; depthSum: number; depthCount: number; normalCount: number; moderateCount: number; highCount: number; incompleteCount: number; labMeasurementCount: number; awaitingReviewCount: number }>();
     for (const r of reports) {
-      const areaKey = (r.areaName?.trim() || r.areaKey?.trim() || r.address || "Other areas").trim();
+      const areaKey = normalizeAreaName(r.areaName || r.areaKey, r.address);
       const cityName = areaKey.split(",")[0]?.trim() || "Pakistan";
       const sourceType = r.sourceType?.trim() || "Unspecified source";
       const sampleDay = r.sampleDate && /^\d{4}-\d{2}-\d{2}$/.test(r.sampleDate) ? r.sampleDate : null;
@@ -350,8 +408,8 @@ export async function submitCommunityWaterReport(report: NewCommunityWaterReport
   if (authError) throw authError;
   if (!authData.user?.email_confirmed_at) throw new Error("Verify your email with the one-time code before submitting.");
   const id = crypto.randomUUID();
-  const areaName = report.areaName?.trim() ?? "";
   const streetAddress = report.address.trim();
+  const areaName = normalizeAreaName(report.areaName, streetAddress);
   const sourceId = report.sourceId ?? crypto.randomUUID();
   const sourceCode = report.sourceCode ?? "SRC-PENDING";
   const sourceLabel = report.sourceLabel?.trim() ?? "";

@@ -35,6 +35,7 @@ export function PublicWaterSources() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
+  const [showAllAreas, setShowAllAreas] = useState(false);
 
   useEffect(() => {
     void readPublicAreaSourceTrends()
@@ -337,34 +338,75 @@ export function PublicWaterSources() {
       {/* All Areas Directory */}
       <Panel
         title="All Areas Directory"
-        description="Search or click any area card to load its full source breakdown and recommendations above."
+        description="Showing the top 3 areas by report volume by default. Click any area chip, search, or expand all areas to inspect its source breakdown above."
       >
-        <label className="mb-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-          <Search size={17} className="text-slate-400" />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-            placeholder="Search areas or source types (e.g. Chakwal, Tube well, Borehole)…"
-          />
-        </label>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <label className="flex min-w-[240px] flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <Search size={17} className="text-slate-400" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+              placeholder="Search areas or source types (e.g. Chakwal, Tube well, Borehole)…"
+            />
+          </label>
+          {filteredAreas.length > 3 && !query.trim() ? (
+            <button
+              type="button"
+              onClick={() => setShowAllAreas((prev) => !prev)}
+              className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-teal-400 hover:text-teal-700"
+            >
+              {showAllAreas ? "Show top 3 areas" : `Show all ${filteredAreas.length} areas`}
+            </button>
+          ) : null}
+        </div>
 
         {filteredAreas.length ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {filteredAreas.map(([area]) => {
-              const intel = recommendAreaWaterSources(trends, area);
-              const isSelected = area === activeArea;
-              return (
-                <button
-                  key={area}
-                  type="button"
-                  onClick={() => setSelectedArea(area)}
-                  className={`flex flex-col items-start rounded-xl border p-4 text-left transition ${
-                    isSelected
-                      ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500"
-                      : "border-slate-200 bg-white hover:border-teal-300"
-                  }`}
-                >
+          <>
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {filteredAreas.map(([area]) => {
+                const isSelected = area === activeArea;
+                return (
+                  <button
+                    key={`chip-${area}`}
+                    type="button"
+                    onClick={() => setSelectedArea(area)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                      isSelected
+                        ? "bg-teal-600 text-white shadow-sm"
+                        : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-teal-300 hover:bg-teal-50"
+                    }`}
+                  >
+                    {area}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {(query.trim() || showAllAreas
+                ? filteredAreas
+                : [...filteredAreas]
+                    .sort(
+                      ([, rowsA], [, rowsB]) =>
+                        rowsB.reduce((sum, r) => sum + r.reportCount, 0) -
+                        rowsA.reduce((sum, r) => sum + r.reportCount, 0)
+                    )
+                    .slice(0, 3)
+              ).map(([area]) => {
+                const intel = recommendAreaWaterSources(trends, area);
+                const isSelected = area === activeArea;
+                return (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() => setSelectedArea(area)}
+                    className={`flex flex-col items-start rounded-xl border p-4 text-left transition ${
+                      isSelected
+                        ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500"
+                        : "border-slate-200 bg-white hover:border-teal-300"
+                    }`}
+                  >
                   <div className="flex w-full items-center justify-between gap-2">
                     <p className="font-bold text-slate-900">{area}</p>
                     <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
@@ -398,7 +440,8 @@ export function PublicWaterSources() {
                 </button>
               );
             })}
-          </div>
+            </div>
+          </>
         ) : (
           <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-5 text-sm text-slate-500">
             <AlertTriangle size={16} className="text-amber-500" />

@@ -99,8 +99,79 @@ export type SourceConditionEvaluation = {
   precautions: PrecautionItem[];
 };
 
+const CANONICAL_AREA_MAP: { canonical: string; aliases: string[] }[] = [
+  { canonical: "Bahawalpur, Punjab", aliases: ["bahawalpur", "yazman", "ahmadpur east", "hasilpur", "khairpur tamewali"] },
+  { canonical: "Rahim Yar Khan, Punjab", aliases: ["rahim yar khan", "rahimyar", "sadiqabad", "khanpur", "liaqatpur"] },
+  { canonical: "Lahore, Punjab", aliases: ["lahore", "lahore cantt", "lahore city"] },
+  { canonical: "Faisalabad, Punjab", aliases: ["faisalabad", "faisalabad sadar", "faisalabad city", "jaranwala", "summundri", "tandlian wala", "chak jhumra"] },
+  { canonical: "Multan, Punjab", aliases: ["multan", "multan city", "multan saddar", "shujabad", "jalalpur pirwala"] },
+  { canonical: "Rawalpindi, Punjab", aliases: ["rawalpindi", "pindi", "taxila", "wah", "murree"] },
+  { canonical: "Islamabad, ICT", aliases: ["islamabad", "ict"] },
+  { canonical: "Sargodha, Punjab", aliases: ["sargodha", "bhalwal", "shahpur", "bhera", "kot momin", "sillanwali"] },
+  { canonical: "Gujranwala, Punjab", aliases: ["gujranwala", "kamoke", "wazirabad", "nowshera virkan"] },
+  { canonical: "Sialkot, Punjab", aliases: ["sialkot", "daska", "pasrur", "sambrial"] },
+  { canonical: "Chakwal, Punjab", aliases: ["chakwal", "tala gang"] },
+  { canonical: "Okara, Punjab", aliases: ["okara", "depalpur", "renala khurd"] },
+  { canonical: "Gujrat, Punjab", aliases: ["gujrat", "kharian"] },
+  { canonical: "Jhang, Punjab", aliases: ["jhang", "shorkot", "athara hazari", "ahmadpur sial"] },
+  { canonical: "Dera Ghazi Khan, Punjab", aliases: ["dera ghazi khan", "dg khan"] },
+  { canonical: "Sahiwal, Punjab", aliases: ["sahiwal", "chichawatni"] },
+  { canonical: "Vehari, Punjab", aliases: ["vehari", "burewala", "mailsi"] },
+  { canonical: "Pakpattan, Punjab", aliases: ["pakpattan", "arif wala"] },
+  { canonical: "Khanewal, Punjab", aliases: ["khanewal", "mian channu", "kabirwala", "jahanian"] },
+  { canonical: "Lodhran, Punjab", aliases: ["lodhran", "dunyapur", "kahror pacca"] },
+  { canonical: "Chiniot, Punjab", aliases: ["chiniot", "lalian", "bhawana"] },
+  { canonical: "Toba Tek Singh, Punjab", aliases: ["toba tek singh", "gojra", "kamalia", "pir mahal"] },
+  { canonical: "Hafizabad, Punjab", aliases: ["hafizabad", "pindi bhattian"] },
+  { canonical: "Khushab, Punjab", aliases: ["khushab", "quaidabad", "noorpur"] },
+  { canonical: "Mianwali, Punjab", aliases: ["mianwali", "piplan"] },
+  { canonical: "Bhakkar, Punjab", aliases: ["bhakkar", "kalur kot"] },
+  { canonical: "Leiah, Punjab", aliases: ["leiah", "layyah", "karor lal esan", "choubara"] },
+  { canonical: "Muzaffargarh, Punjab", aliases: ["muzaffargarh", "kot addu", "alipur", "jatoi"] },
+  { canonical: "Rajanpur, Punjab", aliases: ["rajanpur", "jampur", "rojhan"] },
+  { canonical: "Bahawalnagar, Punjab", aliases: ["bahawalnagar", "chishtian"] },
+  { canonical: "Mandi Bahauddin, Punjab", aliases: ["mandi bahauddin", "malakwal", "phalia"] },
+  { canonical: "Narowal, Punjab", aliases: ["narowal", "shakargarh", "zafarwal"] },
+  { canonical: "Kasur, Punjab", aliases: ["kasur", "pattoki", "chunian", "kot radha kishen"] },
+  { canonical: "Sheikhupura, Punjab", aliases: ["sheikhupura", "muridke", "ferozewala", "sharak pur", "safdarabad"] },
+  { canonical: "Nankana Sahib, Punjab", aliases: ["nankana sahib", "shah kot", "sangla hill"] },
+  { canonical: "Jhelum, Punjab", aliases: ["jhelum"] },
+  { canonical: "Ghotki, Sindh", aliases: ["ghotki", "ubauro"] },
+  { canonical: "Karachi, Sindh", aliases: ["karachi"] },
+  { canonical: "Hyderabad, Sindh", aliases: ["hyderabad"] },
+  { canonical: "Sukkur, Sindh", aliases: ["sukkur"] },
+  { canonical: "Peshawar, KP", aliases: ["peshawar"] },
+  { canonical: "Quetta, Balochistan", aliases: ["quetta"] },
+  { canonical: "Abbottabad, KP", aliases: ["abbottabad"] },
+];
+
+export function normalizeAreaName(rawArea?: string, fallbackAddress?: string): string {
+  const raw = (rawArea || "").trim() || (fallbackAddress || "").trim();
+  if (!raw) return "Area not provided";
+  const lower = raw.toLowerCase().replace(/\s+/g, " ");
+  for (const entry of CANONICAL_AREA_MAP) {
+    if (
+      entry.aliases.some((alias) =>
+        new RegExp(`(^|[^a-z])${alias}([^a-z]|$)`, "i").test(lower)
+      )
+    ) {
+      return entry.canonical;
+    }
+  }
+  return raw
+    .split(",")
+    .map((part) =>
+      part
+        .trim()
+        .replace(/\s+/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    )
+    .filter(Boolean)
+    .join(", ");
+}
+
 export function reportAreaKey(report: DepthForecastInput) {
-  return report.areaKey?.trim() || report.areaName?.trim() || report.address.trim() || "Area not provided";
+  return normalizeAreaName(report.areaKey || report.areaName, report.address);
 }
 
 function aggregateIntoMonthlyBuckets(
