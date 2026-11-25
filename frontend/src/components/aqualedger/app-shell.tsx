@@ -30,7 +30,6 @@ const adminNav = [
   { label: "Groundwater Map", href: "/map", icon: Map },
   { label: "Water Sources", href: "/sources", icon: Droplets },
   { label: "Monitoring Data", href: "/monitoring", icon: Activity },
-  { label: "Quality Reports", href: "/quality", icon: FileText },
   { label: "Community Reports", href: "/reports", icon: Users },
 ];
 
