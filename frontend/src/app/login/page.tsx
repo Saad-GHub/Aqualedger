@@ -69,6 +69,9 @@ export default function LoginPage() {
       if (message.toLowerCase().includes("email not confirmed")) {
         setNeedsVerification(true);
         setError("Your email is not verified yet. Check your inbox or resend the verification email below.");
+      } else if (message.toLowerCase().includes("invalid login credentials")) {
+        // Accounts made by the earlier email-code flow have no password, so they also land here.
+        setError("Email or password is incorrect. If you created your account with an email code, it has no password yet: use \"Forgot / reset password\" below to set one.");
       } else {
         setError(message);
       }
