@@ -145,6 +145,37 @@ const CANONICAL_AREA_MAP: { canonical: string; aliases: string[] }[] = [
   { canonical: "Abbottabad, KP", aliases: ["abbottabad"] },
 ];
 
+export const METERS_TO_FEET = 3.28084;
+
+export function metersToFeet(meters: number): number {
+  return meters * METERS_TO_FEET;
+}
+
+export function feetToMeters(feet: number): number {
+  return feet / METERS_TO_FEET;
+}
+
+export function formatDepthMetersAndFeet(
+  depthM: number | string | null | undefined,
+  decimals = 1
+): string {
+  const num =
+    typeof depthM === "number" ? depthM : Number.parseFloat(String(depthM ?? ""));
+  if (!Number.isFinite(num)) return "—";
+  return `${num.toFixed(decimals)} m / ${metersToFeet(num).toFixed(decimals)} ft`;
+}
+
+export function formatSignedDepthDelta(deltaM: number, decimals = 1): string {
+  const sign = deltaM > 0 ? "+" : deltaM < 0 ? "-" : "";
+  const absM = Math.abs(deltaM);
+  return `${sign}${absM.toFixed(decimals)} m / ${sign}${metersToFeet(absM).toFixed(decimals)} ft`;
+}
+
+export function formatAxisDepthMetersAndFeet(value: number): string {
+  if (!Number.isFinite(value)) return "";
+  return `${value}m / ${Math.round(metersToFeet(value))}ft`;
+}
+
 export const PREDEFINED_PAKISTAN_AREAS = CANONICAL_AREA_MAP.map(
   (entry) => entry.canonical
 ).sort((a, b) => a.localeCompare(b));
@@ -155,6 +186,27 @@ export function hasAreaAndProvince(rawArea: string): boolean {
     .map((part) => part.trim())
     .filter(Boolean);
   return parts.length >= 2;
+}
+
+export function extractAreaFromAddress(address: string): string {
+  const trimmed = address.trim();
+  if (!trimmed) return "Area not provided";
+  const lower = trimmed.toLowerCase().replace(/\s+/g, " ");
+  for (const entry of CANONICAL_AREA_MAP) {
+    if (
+      entry.aliases.some((alias) =>
+        new RegExp(`(^|[^a-z])${alias}([^a-z]|$)`, "i").test(lower)
+      )
+    ) {
+      return entry.canonical;
+    }
+  }
+  const parts = trimmed
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const cityProvince = parts.length >= 2 ? parts.slice(-2).join(", ") : trimmed;
+  return normalizeAreaName(cityProvince, trimmed);
 }
 
 export function normalizeAreaName(rawArea?: string, fallbackAddress?: string): string {
@@ -617,14 +669,14 @@ export function evaluateSourceCondition(params: {
   const parts: string[] = [];
   if (diffFromAreaM !== null && referenceAvg !== null) {
     if (Math.abs(diffFromAreaM) < 0.5) {
-      parts.push(`Your current depth is right around the area average (${referenceAvg.toFixed(1)} m).`);
+      parts.push(`Your current depth is right around the area average (${formatDepthMetersAndFeet(referenceAvg)}).`);
     } else if (diffFromAreaM > 0) {
       parts.push(
-        `Your source is ${diffFromAreaM.toFixed(1)} m deeper than the area average (${referenceAvg.toFixed(1)} m).`
+        `Your source is ${formatDepthMetersAndFeet(diffFromAreaM)} deeper than the area average (${formatDepthMetersAndFeet(referenceAvg)}).`
       );
     } else {
       parts.push(
-        `Your source is ${Math.abs(diffFromAreaM).toFixed(1)} m shallower than the area average (${referenceAvg.toFixed(1)} m).`
+        `Your source is ${formatDepthMetersAndFeet(Math.abs(diffFromAreaM))} shallower than the area average (${formatDepthMetersAndFeet(referenceAvg)}).`
       );
     }
   } else {
@@ -634,10 +686,10 @@ export function evaluateSourceCondition(params: {
   if (projectedChangeM !== null && projectedDepthM !== null) {
     if (projectedChangeM > 0.1) {
       parts.push(
-        `At the current rate, depth may drop to ${projectedDepthM.toFixed(1)} m (+${projectedChangeM.toFixed(1)} m deeper).`
+        `At the current rate, depth may drop to ${formatDepthMetersAndFeet(projectedDepthM)} (${formatSignedDepthDelta(projectedChangeM)} deeper).`
       );
     } else {
-      parts.push(`The trend is currently stable around ${projectedDepthM.toFixed(1)} m.`);
+      parts.push(`The trend is currently stable around ${formatDepthMetersAndFeet(projectedDepthM)}.`);
     }
   }
 
@@ -860,8 +912,8 @@ export function recommendAreaWaterSources(
     riskLabel: topHouse.riskLabel,
     reason:
       topHouse.riskLabel === "Normal"
-        ? `Lowest quality risk in this area with ${topHouse.averageDepthM !== null ? `${topHouse.averageDepthM.toFixed(1)} m average depth` : "recorded readings"} across ${topHouse.reportCount} report${topHouse.reportCount === 1 ? "" : "s"}.`
-        : `Best available household option in this area based on ${topHouse.reportCount} report${topHouse.reportCount === 1 ? "" : "s"}${topHouse.averageDepthM !== null ? ` (${topHouse.averageDepthM.toFixed(1)} m avg depth)` : ""}.`,
+        ? `Lowest quality risk in this area with ${topHouse.averageDepthM !== null ? `${formatDepthMetersAndFeet(topHouse.averageDepthM)} average depth` : "recorded readings"} across ${topHouse.reportCount} report${topHouse.reportCount === 1 ? "" : "s"}.`
+        : `Best available household option in this area based on ${topHouse.reportCount} report${topHouse.reportCount === 1 ? "" : "s"}${topHouse.averageDepthM !== null ? ` (${formatDepthMetersAndFeet(topHouse.averageDepthM)} avg depth)` : ""}.`,
     caution:
       topHouse.riskLabel === "High concern"
         ? "Health-guideline flags exist in this area — boil or filter drinking water before use."
@@ -897,10 +949,10 @@ export function recommendAreaWaterSources(
     averageDepthM: topFarm.averageDepthM,
     reportCount: topFarm.reportCount,
     riskLabel: topFarm.riskLabel,
-    reason: `Highest irrigation suitability in ${areaKey} with ${topFarm.averageDepthM !== null ? `${topFarm.averageDepthM.toFixed(1)} m average depth` : "tracked readings"} across ${topFarm.reportCount} report${topFarm.reportCount === 1 ? "" : "s"}.`,
+    reason: `Highest irrigation suitability in ${areaKey} with ${topFarm.averageDepthM !== null ? `${formatDepthMetersAndFeet(topFarm.averageDepthM)} average depth` : "tracked readings"} across ${topFarm.reportCount} report${topFarm.reportCount === 1 ? "" : "s"}.`,
     caution:
       topFarm.averageDepthM !== null && topFarm.averageDepthM > 50
-        ? "Deep water table (>50 m) — use drip irrigation and off-peak pumping to save energy and prevent drawdown."
+        ? "Deep water table (>50 m / 164 ft) — use drip irrigation and off-peak pumping to save energy and prevent drawdown."
         : undefined,
   };
 

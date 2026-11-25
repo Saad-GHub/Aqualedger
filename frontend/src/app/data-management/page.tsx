@@ -17,6 +17,7 @@ import {
   type CommunityWaterReport,
 } from "@/lib/community-water-reports";
 import {
+  formatDepthMetersAndFeet,
   hasAreaAndProvince,
   normalizeAreaName,
   PREDEFINED_PAKISTAN_AREAS,
@@ -331,7 +332,7 @@ export default function DataManagementPage() {
                   <div className="flex items-center gap-2 min-w-0">
                     <AlertTriangle size={15} className="shrink-0 text-red-600" />
                     <span className="truncate">
-                      <strong>{item.code}</strong> · {item.area} ({item.depth} m — {item.reason})
+                      <strong>{item.code}</strong> · {item.area} ({formatDepthMetersAndFeet(item.depth)} — {item.reason})
                     </span>
                   </div>
                   <Link
@@ -347,7 +348,7 @@ export default function DataManagementPage() {
                   <div className="flex items-center gap-2 min-w-0">
                     <MapPin size={15} className="shrink-0 text-amber-600" />
                     <span className="truncate">
-                      <strong>{item.code}</strong> · {item.area} ({item.depth} m on {item.date})
+                      <strong>{item.code}</strong> · {item.area} ({formatDepthMetersAndFeet(item.depth)} on {item.date})
                     </span>
                   </div>
                   <Link

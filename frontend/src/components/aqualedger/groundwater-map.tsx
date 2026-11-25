@@ -16,6 +16,7 @@ import {
 import { screenWaterReport } from "@/lib/water-risk-screening";
 import { buildReportCodes } from "@/lib/report-display-codes";
 import { buildPakistanRegionsGeoJson } from "@/lib/pakistan-regions-geojson";
+import { formatAxisDepthMetersAndFeet, formatDepthMetersAndFeet } from "@/lib/depth-analytics";
 
 type Position = [number, number];
 type MapFeature = {
@@ -260,7 +261,7 @@ function makeFeatures(
               : report.sourceLabel || reportCodes.get(report.id) || report.id.slice(0, 8),
             city: location.city,
             count: report.aggregateCount ?? 1,
-            depth: report.depth ? `${report.depth} m` : "—",
+            depth: report.depth ? formatDepthMetersAndFeet(report.depth) : "—",
             score: riskScore(report),
             risk: report.riskLevel ?? screenWaterReport(report).riskLevel,
           },
@@ -299,7 +300,7 @@ function makeFeatures(
         .map((r) => Number.parseFloat(r.depth ?? ""))
         .filter(Number.isFinite);
       const avgDepth = depthValues.length
-        ? `${(depthValues.reduce((a, b) => a + b, 0) / depthValues.length).toFixed(1)} m`
+        ? formatDepthMetersAndFeet(depthValues.reduce((a, b) => a + b, 0) / depthValues.length)
         : "—";
       return {
         type: "Feature",
@@ -802,7 +803,7 @@ export function GroundwaterMap() {
             const props = event.features?.[0]?.properties;
             if (!props) return;
             const count = Number(props.reportCount ?? 0);
-            const depthText = props.avgDepthM != null && props.avgDepthM !== "null" ? `${props.avgDepthM} m` : "—";
+            const depthText = props.avgDepthM != null && props.avgDepthM !== "null" ? formatDepthMetersAndFeet(Number(props.avgDepthM)) : "—";
             popup
               .setLngLat(event.lngLat)
               .setHTML(
@@ -1298,8 +1299,8 @@ export function GroundwaterMap() {
               <p className="tabular mt-1.5 rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-700">{formatCoordinates(hoverWell.lat, hoverWell.lon)}</p>
               <p className="mt-1.5 text-[11px] text-slate-500">Well {hoverWell.id} · {hoverWell.n} readings · {hoverWell.firstYear}–{hoverWell.lastYear} · click for history</p>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.firstYear}</dt><dd className="tabular mt-0.5 text-base font-semibold text-sky-800">{hoverWell.firstDepth} m</dd></div>
-                <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.lastYear}</dt><dd className="tabular mt-0.5 text-base font-semibold text-sky-800">{hoverWell.lastDepth} m</dd></div>
+                <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.firstYear}</dt><dd className="tabular mt-0.5 text-sm font-semibold text-sky-800">{formatDepthMetersAndFeet(hoverWell.firstDepth, 2)}</dd></div>
+                <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.lastYear}</dt><dd className="tabular mt-0.5 text-sm font-semibold text-sky-800">{formatDepthMetersAndFeet(hoverWell.lastDepth, 2)}</dd></div>
               </dl>
               <p className={`mt-2 text-xs font-semibold ${hoverWell.trend != null && hoverWell.trend >= 0.05 ? "text-red-700" : hoverWell.trend != null && hoverWell.trend <= -0.05 ? "text-blue-700" : "text-slate-600"}`}>{wellTrendText(hoverWell.trend)}</p>
             </div>
@@ -1358,7 +1359,7 @@ export function GroundwaterMap() {
             </div>
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${selectedWell.trend != null && selectedWell.trend >= 0.05 ? "bg-red-50 text-red-700" : selectedWell.trend != null && selectedWell.trend <= -0.05 ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`}>{wellTrendText(selectedWell.trend)}</span>
-              <span className="text-xs text-slate-500">Depth to water went from {selectedWell.firstDepth} m to {selectedWell.lastDepth} m</span>
+              <span className="text-xs text-slate-500">Depth to water went from {formatDepthMetersAndFeet(selectedWell.firstDepth, 2)} to {formatDepthMetersAndFeet(selectedWell.lastDepth, 2)}</span>
               <button onClick={() => setSelectedWell(null)} aria-label="Close well history" className="ml-auto rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"><X size={15} /></button>
             </div>
             <div className="h-64 w-full">
@@ -1367,8 +1368,8 @@ export function GroundwaterMap() {
                   <defs><linearGradient id="wellFill" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.3} /><stop offset="100%" stopColor="#0ea5e9" stopOpacity={0} /></linearGradient></defs>
                   <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                   <XAxis dataKey="year" type="number" domain={["dataMin", "dataMax"]} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} allowDecimals={false} />
-                  <YAxis reversed unit=" m" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
-                  <Tooltip formatter={(value) => [`${value} m below ground`, "Depth to water"]} labelFormatter={(label) => `October ${label}`} />
+                  <YAxis reversed width={78} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
+                  <Tooltip formatter={(value) => [`${formatDepthMetersAndFeet(Number(value), 2)} below ground`, "Depth to water"]} labelFormatter={(label) => `October ${label}`} />
                   <Area type="linear" dataKey="depth" stroke="#0284c7" strokeWidth={2.5} fill="url(#wellFill)" dot={{ r: 2.5, fill: "#0284c7" }} activeDot={{ r: 5, fill: "#0284c7", stroke: "white", strokeWidth: 2 }} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -1390,7 +1391,7 @@ export function GroundwaterMap() {
               </span>
               {selectedAvgDepth && (
                 <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
-                  Avg depth: {selectedAvgDepth} m
+                  Avg depth: {formatDepthMetersAndFeet(selectedAvgDepth)}
                 </span>
               )}
               <span className="text-xs text-slate-500">
@@ -1421,11 +1422,11 @@ export function GroundwaterMap() {
                   </div>
                   <p className="mt-2 text-xs text-slate-500">
                     {report.sourceType || "Source type not provided"}
-                    {report.depth ? ` · ${report.depth} m deep` : ""}
+                    {report.depth ? ` · ${formatDepthMetersAndFeet(report.depth)} deep` : ""}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {report.aggregateCount
-                      ? `${report.aggregateCount} reports received · average depth ${report.depth || "—"} m`
+                      ? `${report.aggregateCount} reports received · average depth ${report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}`
                       : `${report.sampleDate || "No test date"} · ${report.status}`}
                   </p>
                 </div>

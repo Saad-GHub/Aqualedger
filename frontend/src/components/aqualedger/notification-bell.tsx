@@ -8,7 +8,7 @@ import {
   subscribeToCommunityWaterReports,
   type CommunityWaterReport,
 } from "@/lib/community-water-reports";
-import { normalizeAreaName } from "@/lib/depth-analytics";
+import { formatDepthMetersAndFeet, normalizeAreaName } from "@/lib/depth-analytics";
 import { screenWaterReport } from "@/lib/water-risk-screening";
 import { buildReportCodes } from "@/lib/report-display-codes";
 
@@ -186,7 +186,7 @@ export function NotificationBell() {
                         </span>
                         <span className="mt-0.5 block text-xs text-slate-500">
                           {alert ? "High concern signal · " : "Reading logged · "}
-                          {report.depth ? `${report.depth} m` : "depth n/a"}
+                          {report.depth ? formatDepthMetersAndFeet(report.depth) : "depth n/a"}
                           {report.sampleDate ? ` · ${report.sampleDate}` : ""}
                         </span>
                       </span>

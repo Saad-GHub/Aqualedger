@@ -23,6 +23,7 @@ import {
 } from "@/lib/community-water-reports";
 import {
   aggregateSourceMonthlyDepths,
+  formatDepthMetersAndFeet,
   normalizeAreaName,
   computeAreaDepthBenchmark,
   evaluateSourceCondition,
@@ -263,15 +264,15 @@ export default function MySourcesPage() {
                     <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
                       <div>
                         <p className="text-slate-400">Latest Depth</p>
-                        <p className="mt-0.5 text-base font-bold text-slate-900">
-                          {source.currentDepth !== null ? `${source.currentDepth.toFixed(1)} m` : "—"}
+                        <p className="mt-0.5 text-sm font-bold text-slate-900">
+                          {source.currentDepth !== null ? formatDepthMetersAndFeet(source.currentDepth) : "—"}
                         </p>
                       </div>
                       <div>
                         <p className="text-slate-400">6-Mo AI Forecast</p>
-                        <p className="mt-0.5 text-base font-bold text-blue-700">
+                        <p className="mt-0.5 text-sm font-bold text-blue-700">
                           {source.projection
-                            ? `${source.projection.projectedDepth.toFixed(1)} m`
+                            ? formatDepthMetersAndFeet(source.projection.projectedDepth)
                             : "Need 2+ mo"}
                         </p>
                       </div>
@@ -342,7 +343,7 @@ export default function MySourcesPage() {
                         {report.areaName || report.address}
                       </td>
                       <td className="py-3.5 font-semibold text-slate-800">
-                        {report.depth ? `${report.depth} m` : "—"}
+                        {report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}
                       </td>
                       <td className="py-3.5 text-slate-500">{report.sampleDate || "—"}</td>
                       <td className="py-3.5">

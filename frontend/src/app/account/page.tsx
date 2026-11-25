@@ -10,6 +10,7 @@ import {
   readMyCommunityWaterReports,
   type CommunityWaterReport,
 } from "@/lib/community-water-reports";
+import { formatDepthMetersAndFeet } from "@/lib/depth-analytics";
 import { buildReportCodes } from "@/lib/report-display-codes";
 
 export default function AccountPage() {
@@ -173,7 +174,7 @@ export default function AccountPage() {
                       {report.sourceCode ? `${report.sourceCode} · ` : ""}
                       {report.sourceLabel || report.sourceType || "Water source"}
                     </td>
-                    <td className="py-3">{report.depth ? `${report.depth} m` : "—"}</td>
+                    <td className="py-3">{report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}</td>
                     <td className="py-3">{report.sampleDate || "—"}</td>
                     <td className="py-3">{report.status.replaceAll("_", " ")}</td>
                   </tr>
