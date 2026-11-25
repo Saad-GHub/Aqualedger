@@ -37,12 +37,26 @@ export default function Home() {
         const reports = items.map((row, index): CommunityWaterReport => ({ id: `${row.areaKey}|${row.sourceType}|${row.sampleMonth ?? index}`, address: row.areaKey, areaKey: row.areaKey, sourceType: row.sourceType, depth: row.averageDepthM === null ? "" : String(row.averageDepthM), sampleDate: row.sampleDay ?? row.sampleMonth ?? undefined, status: "aggregated", measurements: {}, aggregateCount: row.reportCount, labMeasurementCount: row.labMeasurementCount, awaitingReviewCount: row.awaitingReviewCount, riskLevel: row.weightedRiskScore === null ? "Incomplete" : row.weightedRiskScore >= 1.5 ? "High concern" : row.weightedRiskScore >= 0.75 ? "Moderate concern" : "Normal" }));
         setCommunityReports(reports);
         const groups = new Map<string, CommunityWaterAreaRisk>();
+        const depthSums = new Map<string, { sum: number; count: number }>();
         items.forEach((row) => {
           const key = row.areaKey.toLocaleLowerCase();
-          const summary = groups.get(key) ?? { areaKey: row.areaKey, reportCount: 0, normalCount: 0, moderateCount: 0, highCount: 0, incompleteCount: 0, assessedCount: 0, weightedScore: null, riskLevel: "Incomplete" };
-          summary.reportCount += row.reportCount; summary.normalCount += row.normalCount; summary.moderateCount += row.moderateCount; summary.highCount += row.highCount; summary.incompleteCount += row.incompleteCount; summary.assessedCount += row.normalCount + row.moderateCount + row.highCount;
-          summary.weightedScore = summary.assessedCount ? (summary.normalCount * 0.5 + summary.moderateCount + summary.highCount * 2) / summary.assessedCount : null;
-          summary.riskLevel = summary.weightedScore === null ? "Incomplete" : summary.weightedScore >= 1.5 ? "High concern" : summary.weightedScore >= 0.75 ? "Moderate concern" : "Normal";
+          const summary = groups.get(key) ?? { areaKey: row.areaKey, reportCount: 0, normalCount: 0, moderateCount: 0, highCount: 0, incompleteCount: 0, assessedCount: 0, weightedScore: null, riskLevel: "Normal" };
+          summary.reportCount += row.reportCount;
+          if (row.averageDepthM !== null) {
+            const d = depthSums.get(key) ?? { sum: 0, count: 0 };
+            d.sum += row.averageDepthM * row.reportCount;
+            d.count += row.reportCount;
+            depthSums.set(key, d);
+            if (row.averageDepthM >= 18) summary.highCount += row.reportCount;
+            else if (row.averageDepthM >= 10) summary.moderateCount += row.reportCount;
+            else summary.normalCount += row.reportCount;
+          } else {
+            summary.incompleteCount += row.reportCount;
+          }
+          const avg = depthSums.get(key)?.count ? depthSums.get(key)!.sum / depthSums.get(key)!.count : null;
+          summary.assessedCount = summary.normalCount + summary.moderateCount + summary.highCount;
+          summary.weightedScore = avg !== null ? Number(avg.toFixed(2)) : null;
+          summary.riskLevel = avg === null ? "Incomplete" : avg >= 18 ? "High concern" : avg >= 10 ? "Moderate concern" : "Normal";
           groups.set(key, summary);
         });
         setAreaRiskSummaries([...groups.values()]); setReportLoadError(""); setAreaRiskSetupError("");
@@ -64,11 +78,26 @@ export default function Home() {
   }, [isAdmin, authReady]);
   const depthValues = communityReports.map((r) => numeric(r.depth)).filter((v): v is number => v !== null);
   const avgDepthStr = depthValues.length ? `${(depthValues.reduce((s, v) => s + v, 0) / depthValues.length).toFixed(1)} m` : "—";
+  const areaSummariesByKey = new Map(areaRiskSummaries.map((summary) => [summary.areaKey.toLocaleLowerCase(), summary]));
+  const groupedReports = communityReports.reduce<Record<string, CommunityWaterReport[]>>((groups, report) => { const key = (report.areaKey || areaFor(report.address)).toLocaleLowerCase(); (groups[key] ??= []).push(report); return groups; }, {});
+  const areaRisks = Object.entries(groupedReports).map(([key, reports]) => {
+    const summary = areaSummariesByKey.get(key);
+    const areaDepths = reports.map((r) => numeric(r.depth)).filter((v): v is number => v !== null);
+    const areaAvgDepth = areaDepths.length ? areaDepths.reduce((s, v) => s + v, 0) / areaDepths.length : null;
+    const category = areaAvgDepth !== null
+      ? (areaAvgDepth >= 18 ? "High concern" : areaAvgDepth >= 10 ? "Moderate concern" : "Normal")
+      : (summary?.riskLevel ?? "Normal");
+    const color = category === "High concern" ? "bg-red-50 text-red-700" : category === "Moderate concern" ? "bg-amber-50 text-amber-700" : category === "Normal" ? "bg-teal-50 text-teal-700" : "bg-slate-100 text-slate-600";
+    return { area: summary?.areaKey ?? reports[0].areaKey ?? areaFor(reports[0].address), reports, avgDepth: areaAvgDepth, category, color };
+  });
+  const highCount = areaRisks.filter((area) => area.category === "High concern").length;
+  const moderateCount = areaRisks.filter((area) => area.category === "Moderate concern").length;
+  const normalCount = areaRisks.filter((area) => area.category === "Normal").length;
   const dashboardStats = [
     { title: "Reported Sources", value: String(new Set(communityReports.map((report) => `${report.sourceType ?? ""}|${report.areaKey ?? report.address}`)).size), change: "Live", icon: Droplets, note: "Unique source and address pairs" },
-    { title: "Community Reports", value: String(communityReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)), change: "Live", icon: ShieldCheck, note: "Saved in Supabase" },
+    { title: "Depth Readings", value: String(communityReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)), change: "Live", icon: ShieldCheck, note: "Saved in Supabase" },
     { title: "Average Depth", value: avgDepthStr, change: "Live", icon: Activity, note: "Mean depth below ground" },
-    { title: "Awaiting Review", value: String(communityReports.reduce((sum, report) => sum + (report.awaitingReviewCount ?? (report.status === "received" || report.status === "under_review" ? 1 : 0)), 0)), change: "Live", icon: AlertTriangle, note: "Received or under review" },
+    { title: "Monitored Areas", value: String(areaRisks.length), change: "Live", icon: AlertTriangle, note: `${highCount} critical · ${moderateCount} moderate` },
   ];
   const recentReports = communityReports.slice(0, 4);
   const trendGroups = communityReports.reduce<Record<string, { total: number; count: number }>>((groups, report) => {
@@ -82,18 +111,6 @@ export default function Home() {
     return groups;
   }, {});
   const trendData = Object.entries(trendGroups).sort(([a], [b]) => a.localeCompare(b)).map(([period, values]) => ({ period, averageDepth: meanDepth(values.total, values.count) ?? 0, readings: values.count }));
-  const areaSummariesByKey = new Map(areaRiskSummaries.map((summary) => [summary.areaKey.toLocaleLowerCase(), summary]));
-  const groupedReports = communityReports.reduce<Record<string, CommunityWaterReport[]>>((groups, report) => { const key = (report.areaKey || areaFor(report.address)).toLocaleLowerCase(); (groups[key] ??= []).push(report); return groups; }, {});
-  const areaRisks = Object.entries(groupedReports).map(([key, reports]) => {
-    const summary = areaSummariesByKey.get(key);
-    const analyses = reports.map(screenWaterReport); const flagged = analyses.reduce((sum, item) => sum + item.flags.length, 0);
-    const category = summary?.riskLevel ?? "Incomplete";
-    const color = category === "High concern" ? "bg-red-50 text-red-700" : category === "Moderate concern" ? "bg-amber-50 text-amber-700" : category === "Normal" ? "bg-teal-50 text-teal-700" : "bg-slate-100 text-slate-600";
-    return { area: summary?.areaKey ?? reports[0].areaKey ?? areaFor(reports[0].address), reports, analyses, flagged, highReports: summary?.highCount ?? 0, moderateReports: summary?.moderateCount ?? 0, normalReports: summary?.normalCount ?? 0, incompleteReports: summary?.incompleteCount ?? reports.length, assessedCount: summary?.assessedCount ?? 0, weightedScore: summary?.weightedScore ?? null, category, color };
-  }).sort((a, b) => (a.category === "High concern" ? 0 : a.category === "Moderate concern" ? 1 : 2) - (b.category === "High concern" ? 0 : b.category === "Moderate concern" ? 1 : 2) || b.flagged - a.flagged);
-  const highCount = areaRisks.filter((area) => area.category === "High concern").length;
-  const moderateCount = areaRisks.filter((area) => area.category === "Moderate concern").length;
-  const normalCount = areaRisks.filter((area) => area.category === "Normal").length;
   const sources = recentReports.map((report) => ({ id: report.id, name: report.sourceType ?? "Water source", location: report.address, level: report.depth ? `${report.depth} m` : "—", status: report.status, color: "text-teal-700 bg-teal-50" }));
 
   return <>

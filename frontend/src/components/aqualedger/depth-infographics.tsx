@@ -22,6 +22,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
   ReferenceLine,
@@ -430,18 +431,32 @@ export function FarmerDepthWorkspace({
   return (
     <div className="space-y-6">
       {/* Controls & Selection */}
-      <Panel
-        title={
-          activeSource
-            ? "Your Tracked Water Source & AI Depth Prediction"
-            : "Area-Based Water Depth Prediction & Benchmark"
-        }
-        description={
-          activeSource
-            ? "Select your tracked well or borehole to inspect its timeline, AI forecast, area average comparison, and recommended precautions."
-            : "Explore live groundwater depth trends by area and source type. Sign in with Email OTP to track your own well every 3 months."
-        }
-      >
+      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-cyan-50/60 p-5 shadow-sm">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-800">
+              <Sparkles size={13} /> Personal Well Workspace
+            </span>
+            <h3 className="mt-2 text-lg font-bold text-slate-900">
+              {activeSource
+                ? `${activeSource.code} · ${activeSource.label}`
+                : "Area-Based Water Depth Prediction & Benchmark"}
+            </h3>
+            <p className="mt-0.5 text-xs text-slate-500">
+              {activeSource
+                ? "Personal timeline, AI forecast, neighborhood benchmark comparison, and tailored well precautions."
+                : "Explore live groundwater depth trends by area and source type. Sign in with Email OTP to track your own well every 3 months."}
+            </p>
+          </div>
+          {condition.diffFromAreaM !== null && (
+            <div className="rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-right shadow-sm">
+              <p className="text-[11px] font-medium text-slate-500">Vs. Area Average</p>
+              <p className={`text-base font-bold ${condition.diffFromAreaM > 0.5 ? "text-red-600" : condition.diffFromAreaM < -0.5 ? "text-emerald-600" : "text-indigo-700"}`}>
+                {condition.diffFromAreaM > 0 ? `+${condition.diffFromAreaM.toFixed(1)} m deeper` : `${Math.abs(condition.diffFromAreaM).toFixed(1)} m shallower`}
+              </p>
+            </div>
+          )}
+        </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {trackedSources.length > 0 ? (
             <label className="text-xs font-semibold text-slate-600 lg:col-span-2">
@@ -573,7 +588,7 @@ export function FarmerDepthWorkspace({
             </p>
           </div>
         </div>
-      </Panel>
+      </div>
 
       {/* Main Infographic + AI Forecast Grid */}
       <div className="grid gap-6 xl:grid-cols-3">
@@ -648,13 +663,15 @@ export function FarmerDepthWorkspace({
               </div>
             </>
           ) : (
-            <div className="flex h-64 flex-col items-center justify-center rounded-xl bg-slate-50 p-6 text-center">
+            <div className="flex h-64 flex-col items-center justify-center rounded-xl bg-indigo-50/50 p-6 text-center">
               <AlertTriangle size={24} className="mb-2 text-amber-600" />
               <p className="font-semibold text-slate-800">
                 At least 2 readings from different months are needed for AI prediction
               </p>
-              <p className="mt-1 max-w-md text-xs leading-5 text-slate-500">
-                Log your water depth every 3 months under the same source ID. Once 2+ distinct months are recorded, the trend line and future depth prediction will appear here automatically.
+              <p className="mt-1 max-w-md text-xs leading-5 text-slate-600">
+                {activeSource
+                  ? `Currently found ${activeSource.reports.length} reading(s) across ${activeMonthly.length} distinct month(s) for ${activeSource.code} (${activeSource.label}). If you logged multiple readings in the same month or under different source IDs, add readings across 2+ different months under the same source ID.`
+                  : "Log your water depth every 3 months under the same source ID. Once 2+ distinct months are recorded, the trend line and future depth prediction will appear here automatically."}
               </p>
             </div>
           )}
@@ -665,34 +682,63 @@ export function FarmerDepthWorkspace({
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel
           title={`Area Benchmark by Source Type · ${activeArea || "Area"}`}
-          description="Live average depth across different water source types in this area."
+          description="Average depth by water source type compared against the overall area baseline."
         >
           {areaBenchmark.bySource.length ? (
             <div className="space-y-4">
-              <div className="h-52 w-full">
+              <div className="h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={areaBenchmark.bySource} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+                  <BarChart data={areaBenchmark.bySource} margin={{ top: 14, right: 16, left: 0, bottom: 4 }}>
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                    <XAxis dataKey="sourceType" tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <YAxis unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <Tooltip formatter={(value) => [`${value} m`, "Area average depth"]} />
-                    <Bar dataKey="averageDepthM" fill="#0d9488" radius={[6, 6, 0, 0]} />
+                    <XAxis dataKey="sourceType" tick={{ fontSize: 11, fill: "#475569" }} />
+                    <YAxis unit=" m" domain={[0, "auto"]} tick={{ fontSize: 11, fill: "#64748b" }} />
+                    <Tooltip
+                      formatter={(value, _name, item) => [
+                        `${Number(value).toFixed(2)} m · ${item.payload.reportCount} reports`,
+                        "Average depth",
+                      ]}
+                    />
+                    {areaBenchmark.averageDepthM !== null && (
+                      <ReferenceLine
+                        y={areaBenchmark.averageDepthM}
+                        stroke="#6366f1"
+                        strokeDasharray="4 4"
+                        label={{
+                          value: `Area Avg ${areaBenchmark.averageDepthM.toFixed(1)} m`,
+                          position: "insideTopRight",
+                          fill: "#4338ca",
+                          fontSize: 11,
+                        }}
+                      />
+                    )}
+                    <Bar dataKey="averageDepthM" barSize={42} radius={[8, 8, 0, 0]}>
+                      {areaBenchmark.bySource.map((entry, idx) => {
+                        const palette = ["#4f46e5", "#0d9488", "#0284c7", "#d97706", "#059669"];
+                        return <Cell key={entry.sourceType} fill={palette[idx % palette.length]} />;
+                      })}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                {areaBenchmark.bySource.map((item) => (
-                  <div
-                    key={item.sourceType}
-                    className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2.5 text-xs"
-                  >
-                    <div>
-                      <p className="font-semibold text-slate-800">{item.sourceType}</p>
-                      <p className="text-slate-500">{item.reportCount} reports</p>
+                {areaBenchmark.bySource.map((item, idx) => {
+                  const palette = ["bg-indigo-600", "bg-teal-600", "bg-sky-600", "bg-amber-600", "bg-emerald-600"];
+                  return (
+                    <div
+                      key={item.sourceType}
+                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`h-2.5 w-2.5 rounded-full ${palette[idx % palette.length]}`} />
+                        <div>
+                          <p className="font-semibold text-slate-800">{item.sourceType}</p>
+                          <p className="text-slate-500">{item.reportCount} reports</p>
+                        </div>
+                      </div>
+                      <span className="font-bold text-indigo-700">{item.averageDepthM.toFixed(1)} m</span>
                     </div>
-                    <span className="font-bold text-teal-700">{item.averageDepthM.toFixed(1)} m</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (
