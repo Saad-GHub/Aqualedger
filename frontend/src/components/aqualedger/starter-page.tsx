@@ -59,6 +59,9 @@ export function StarterPage({ page }: { page: PageKey }) {
   const [reportConcern, setReportConcern] = useState("Seasonal checking");
   const [notifications, setNotifications] = useState(true);
   const [riskAlerts, setRiskAlerts] = useState(true);
+  const [autoSync, setAutoSync] = useState(true);
+  const [defaultHorizon, setDefaultHorizon] = useState("6");
+  const [settingsStatus, setSettingsStatus] = useState("");
   const reportCodes = useMemo(() => buildReportCodes(communityReports), [communityReports]);
   const selectedTrackedSource = trackedSources.find((source) => source.id === sourceSelection);
   function captureGps() {
@@ -95,6 +98,8 @@ export function StarterPage({ page }: { page: PageKey }) {
       if (page === "settings") {
         setNotifications(localStorage.getItem("aqualedger-notifications") !== "off");
         setRiskAlerts(localStorage.getItem("aqualedger-risk-alerts") !== "off");
+        setAutoSync(localStorage.getItem("aqualedger-auto-sync") !== "off");
+        setDefaultHorizon(localStorage.getItem("aqualedger-default-horizon") || "6");
       }
     });
     return unsubscribe;
@@ -153,7 +158,149 @@ export function StarterPage({ page }: { page: PageKey }) {
       })}</div> : <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">{communityReports.length ? "No sources match your search or filter." : "No reported water sources yet."}</p>}
     </Panel>}
     {page === "map" && <Panel title="Reported locations" description="Addresses entered in submitted water reports. Map coordinates are not collected yet.">{allRecords.length ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{allRecords.map((row, index) => <button key={communityReports[index]?.id ?? `${row[0]}-${index}`} onClick={() => openRecord(row)} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left hover:border-teal-300 hover:bg-teal-50/40"><MapPin size={18} className="mt-0.5 text-teal-600"/><span><span className="block text-sm font-semibold text-slate-700">{row[0]}</span><span className="mt-1 block text-xs text-slate-500">{row[1]} · {row[2]}</span></span></button>)}</div> : <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">No submitted reports include a location yet.</p>}</Panel>}
-    {page === "settings" && <Panel title="Notification settings" description="These preferences are stored in this browser."><label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-100 p-4"><span><span className="block text-sm font-semibold">Email notifications</span><span className="mt-1 block text-xs text-slate-500">Receive important monitoring and report updates.</span></span><input aria-label="Email notifications" type="checkbox" checked={notifications} onChange={(event) => { setNotifications(event.target.checked); localStorage.setItem("aqualedger-notifications", event.target.checked ? "on" : "off"); }} className="h-4 w-4 accent-teal-600"/></label><label className="mt-3 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-100 p-4"><span><span className="block text-sm font-semibold">High risk alerts</span><span className="mt-1 block text-xs text-slate-500">Show a notification when a reported result is flagged.</span></span><input aria-label="High risk alerts" type="checkbox" checked={riskAlerts} onChange={(event) => { setRiskAlerts(event.target.checked); localStorage.setItem("aqualedger-risk-alerts", event.target.checked ? "on" : "off"); }} className="h-4 w-4 accent-teal-600"/></label></Panel>}
+    {page === "settings" && (
+      <div className="space-y-6">
+        <Panel
+          title="Notification controls"
+          description="Live preferences for the admin notification bell and high-concern groundwater alerts. Changes apply immediately in this browser."
+        >
+          {settingsStatus && (
+            <p role="status" className="mb-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-xs font-semibold text-teal-800">
+              {settingsStatus}
+            </p>
+          )}
+          <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-100 p-4">
+            <span>
+              <span className="block text-sm font-semibold">Header bell &amp; reading notifications</span>
+              <span className="mt-1 block text-xs text-slate-500">
+                Enable or pause live alerts in the top notification bell.
+              </span>
+            </span>
+            <input
+              aria-label="Header bell notifications"
+              type="checkbox"
+              checked={notifications}
+              onChange={(event) => {
+                const next = event.target.checked;
+                setNotifications(next);
+                localStorage.setItem("aqualedger-notifications", next ? "on" : "off");
+                window.dispatchEvent(new Event("aqualedger-settings-updated"));
+                setSettingsStatus(next ? "Header notifications enabled." : "Header notifications paused.");
+              }}
+              className="h-4 w-4 accent-teal-600"
+            />
+          </label>
+          <label className="mt-3 flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-100 p-4">
+            <span>
+              <span className="block text-sm font-semibold">High-concern risk alerts</span>
+              <span className="mt-1 block text-xs text-slate-500">
+                Highlight critical groundwater drops and high-concern readings in red inside the notification bell.
+              </span>
+            </span>
+            <input
+              aria-label="High risk alerts"
+              type="checkbox"
+              checked={riskAlerts}
+              onChange={(event) => {
+                const next = event.target.checked;
+                setRiskAlerts(next);
+                localStorage.setItem("aqualedger-risk-alerts", next ? "on" : "off");
+                window.dispatchEvent(new Event("aqualedger-settings-updated"));
+                setSettingsStatus(next ? "High-concern risk alerts enabled." : "High-concern risk alerts muted.");
+              }}
+              className="h-4 w-4 accent-teal-600"
+            />
+          </label>
+        </Panel>
+
+        <Panel
+          title="Admin workspace preferences"
+          description="Configure live dataset sync, default AI forecast horizon, and quick access to data management."
+        >
+          <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-100 p-4">
+            <span>
+              <span className="block text-sm font-semibold">Auto-sync incoming reports</span>
+              <span className="mt-1 block text-xs text-slate-500">
+                Automatically refresh dashboards when new community readings are logged.
+              </span>
+            </span>
+            <input
+              aria-label="Auto-sync incoming reports"
+              type="checkbox"
+              checked={autoSync}
+              onChange={(event) => {
+                const next = event.target.checked;
+                setAutoSync(next);
+                localStorage.setItem("aqualedger-auto-sync", next ? "on" : "off");
+                setSettingsStatus(next ? "Auto-sync enabled." : "Auto-sync disabled.");
+              }}
+              className="h-4 w-4 accent-teal-600"
+            />
+          </label>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-100 p-4">
+            <div>
+              <p className="text-sm font-semibold">Default AI forecast horizon</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Preferred projection window for admin review sessions.
+              </p>
+            </div>
+            <select
+              aria-label="Default AI forecast horizon"
+              value={defaultHorizon}
+              onChange={(event) => {
+                const next = event.target.value;
+                setDefaultHorizon(next);
+                localStorage.setItem("aqualedger-default-horizon", next);
+                setSettingsStatus(`Default forecast horizon set to ${next} months.`);
+              }}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700"
+            >
+              <option value="3">3 months</option>
+              <option value="6">6 months</option>
+              <option value="12">12 months (1 year)</option>
+              <option value="36">36 months (3 years)</option>
+              <option value="60">60 months (5 years)</option>
+            </select>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/data-management"
+                className="rounded-xl bg-teal-700 px-4 py-2 text-xs font-semibold text-white hover:bg-teal-800"
+              >
+                Open Data Management →
+              </Link>
+              <Link
+                href="/reports"
+                className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                View Community Reports
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setNotifications(true);
+                setRiskAlerts(true);
+                setAutoSync(true);
+                setDefaultHorizon("6");
+                localStorage.setItem("aqualedger-notifications", "on");
+                localStorage.setItem("aqualedger-risk-alerts", "on");
+                localStorage.setItem("aqualedger-auto-sync", "on");
+                localStorage.setItem("aqualedger-default-horizon", "6");
+                window.dispatchEvent(new Event("aqualedger-settings-updated"));
+                setSettingsStatus("All admin preferences reset to defaults.");
+              }}
+              className="rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              Reset defaults
+            </button>
+          </div>
+        </Panel>
+      </div>
+    )}
     {page === "reports" && <Panel title={isAdmin ? "Log a water depth reading" : "Log a 3-Month Water Depth Reading"} description={"Sign in with Email OTP once. Log your water depth every 3 months to update your AI depth predictions and area trends."}>{submitSuccess && <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-teal-200 bg-teal-50 p-4 text-sm text-teal-800"><span>{submitSuccess}</span><Link href="/my-sources" className="font-semibold underline">View My Sources & AI Prediction →</Link></div>}{!isSignedIn ? <div className="flex flex-wrap items-center gap-3"><Link href="/login?role=user" className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white">Sign in with Email OTP</Link><Link href="/signup" className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold">Create account</Link></div> : <><div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-teal-50 p-3 text-xs text-teal-800"><span>Signed in as <strong>{currentEmail}</strong> · verified account</span><Link href="/my-sources" className="font-semibold underline">My Sources & Forecast</Link></div><button onClick={() => setReportFormOpen((open) => !open)} className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"><Plus size={16}/>{reportFormOpen ? "Close form" : "New water depth reading"}</button></>}{reportFormOpen && isSignedIn && <form className="mt-4 space-y-5 rounded-xl border border-slate-100 bg-slate-50 p-4 sm:p-5" onSubmit={async (event) => { event.preventDefault(); if (!emailVerified || !reportName.trim() || (!selectedTrackedSource && !sourceLabel.trim()) || !reportArea.trim() || !reportAddress.trim() || !sourceDepth || !sampleDate) { setSubmitError("Your account email must be verified, and all required source, depth, and date fields must be complete."); return; } if (!hasAreaAndProvince(reportArea)) { setSubmitError("Please include both city and province in Area / locality (e.g. Bahawalpur, Punjab)."); return; } const canonicalArea = normalizeAreaName(reportArea.trim(), reportAddress.trim()); setIsSubmitting(true); setSubmitError(""); setSubmitSuccess(""); try { const submission = await submitCommunityWaterReport({ reporterName: reportName.trim(), address: reportAddress.trim(), areaName: canonicalArea, sourceType, sourceId: selectedTrackedSource?.id, sourceCode: selectedTrackedSource?.code, sourceLabel: selectedTrackedSource?.label ?? sourceLabel.trim(), depth: sourceDepth, sampleDate, concern: reportConcern, measurements: {}, locationConsent: gpsConsent, latitude: gpsConsent ? gpsPosition?.latitude ?? null : null, longitude: gpsConsent ? gpsPosition?.longitude ?? null : null, locationAccuracyM: gpsConsent ? gpsPosition?.accuracy ?? null : null, locationCapturedAt: gpsConsent ? gpsPosition?.capturedAt ?? null : null }); const { id, sourceId, sourceCode, sourceLabel: savedSourceLabel } = submission; const submitted = { id, sourceId, sourceCode, sourceLabel: savedSourceLabel, reporterName: reportName.trim(), address: reportAddress.trim(), areaName: canonicalArea, areaKey: canonicalArea, sourceType, depth: sourceDepth, sampleDate, concern: reportConcern, status: "under_review", measurements: {} }; const reportCode = buildReportCodes([submitted, ...communityReports]).get(id) ?? "new report"; setCommunityReports((current) => [submitted, ...current]); setTrackedSources((current) => current.some((source) => source.id === sourceId) ? current : [{ id: sourceId, code: sourceCode, label: savedSourceLabel, areaName: canonicalArea, address: reportAddress.trim(), sourceType }, ...current]); setSubmitSuccess(`Reading ${reportCode} saved for ${sourceCode} (${savedSourceLabel}). Your AI depth prediction and area comparison are updated.`); notifyCommunityWaterReportsUpdated(); setReportName(""); setReportArea(""); setReportAddress(""); setSourceLabel(""); setSourceSelection("new"); setGpsConsent(false); setGpsPosition(null); setGpsMessage(""); setSourceDepth(""); setSampleDate(""); setReportConcern("Seasonal checking"); setReportFormOpen(false); } catch (error) { const detail = error && typeof error === "object" && "message" in error ? String(error.message) : String(error); const code = error && typeof error === "object" && "code" in error ? ` [${String(error.code)}]` : ""; setSubmitError(`Report could not be saved${code}: ${detail}`); } finally { setIsSubmitting(false); } }}>
       <div className="rounded-xl border border-teal-100 bg-white p-4"><h4 className="text-sm font-bold text-slate-800">Account verified</h4><p className="mt-1 text-xs text-slate-500">This reading will be saved under {currentEmail} and linked to your personal My Sources dashboard.</p><label className="mt-3 block max-w-sm text-xs font-semibold text-slate-600">Your name<input required value={reportName} onChange={(event) => setReportName(event.target.value)} placeholder="Your name" className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-normal"/></label></div>
       <div><h4 className="text-sm font-bold text-slate-800">Water source &amp; depth reading</h4><div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="text-xs font-semibold text-slate-600">Track a source<select value={sourceSelection} onChange={(event) => { const value = event.target.value; const existing = trackedSources.find((source) => source.id === value); setSourceSelection(value); if (existing) { setSourceLabel(existing.label); setReportArea(existing.areaName); setReportAddress(existing.address); setSourceType(existing.sourceType); } else { setSourceLabel(""); setReportArea(""); setReportAddress(""); setSourceType("Tube well"); } }} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal"><option value="new">Create a new source ID</option>{trackedSources.map((source) => <option key={source.id} value={source.id}>{source.code} · {source.label} · {source.areaName}</option>)}</select></label><label className="text-xs font-semibold text-slate-600">Source name / label<input required={!selectedTrackedSource} readOnly={Boolean(selectedTrackedSource)} value={sourceLabel} onChange={(event) => setSourceLabel(event.target.value)} placeholder="e.g. Home tube well" className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-teal-500 read-only:bg-slate-100"/></label><label className="text-xs font-semibold text-slate-600">Area / locality (City, Province required)<input required list="aqualedger-predefined-areas" value={reportArea} onChange={(event) => setReportArea(event.target.value)} readOnly={Boolean(selectedTrackedSource)} placeholder="Select or type City, Province (e.g. Bahawalpur, Punjab)" className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-teal-500 read-only:bg-slate-100"/><datalist id="aqualedger-predefined-areas">{PREDEFINED_PAKISTAN_AREAS.map((area) => <option key={area} value={area} />)}</datalist></label><label className="text-xs font-semibold text-slate-600">Full address<input required value={reportAddress} onChange={(event) => setReportAddress(event.target.value)} readOnly={Boolean(selectedTrackedSource)} placeholder="Village / street, sector, city" className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-teal-500"/></label><label className="text-xs font-semibold text-slate-600">Water source type<select value={sourceType} disabled={Boolean(selectedTrackedSource)} onChange={(event) => setSourceType(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal"><option>Tube well</option><option>Hand pump</option><option>Community well</option><option>Borehole</option><option>Spring</option><option>Other</option></select></label><label className="text-xs font-semibold text-slate-600">Water depth below ground (m)<input required type="number" min="0" step="0.1" value={sourceDepth} onChange={(event) => setSourceDepth(event.target.value)} placeholder="e.g. 42.5" className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-teal-500"/></label><label className="text-xs font-semibold text-slate-600">Reading / sample date<input required type="date" value={sampleDate} onChange={(event) => setSampleDate(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-teal-500"/></label><label className="text-xs font-semibold text-slate-600">Main purpose / concern<select value={reportConcern} onChange={(event) => setReportConcern(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-normal"><option>Seasonal checking</option><option>Low water level</option><option>Dry well</option><option>Supply interruption</option></select></label></div></div>

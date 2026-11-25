@@ -53,6 +53,7 @@ const titles: Record<string, string> = {
   "/quality": "Quality Reports",
   "/reports": "Community Reports",
   "/settings": "Settings",
+  "/data-management": "Data Management",
   "/login": "Sign in",
   "/signup": "Create Account",
   "/account": "My Account",
@@ -233,8 +234,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Settings size={18} className={pathname === "/settings" ? "text-teal-300" : "text-slate-400"} />
             Settings
           </Link>
-          <Link href="/reports" onClick={() => setMenuOpen(false)} className={navLinkClass(false)}>
-            <Database size={18} className="text-slate-400" />
+          <Link
+            href="/data-management"
+            onClick={() => setMenuOpen(false)}
+            aria-current={pathname === "/data-management" ? "page" : undefined}
+            className={navLinkClass(pathname === "/data-management")}
+          >
+            <Database size={18} className={pathname === "/data-management" ? "text-teal-300" : "text-slate-400"} />
             Data management
           </Link>
         </div>
