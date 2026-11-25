@@ -84,7 +84,7 @@ function WellCrossSectionInfographic({
   const areaPct = pct(areaAverageM);
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-gradient-to-b from-emerald-50/40 via-amber-50/30 to-cyan-50/50 p-4">
+    <div className="rounded-2xl border border-slate-200 bg-linear-to-b from-emerald-50/40 via-amber-50/30 to-cyan-50/50 p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-teal-800">
@@ -117,7 +117,7 @@ function WellCrossSectionInfographic({
         <div className="absolute top-7 bottom-4 left-1/2 w-10 -translate-x-1/2 border-x-2 border-slate-300 bg-slate-100/70 dark:border-white/15 dark:bg-white/5">
           {currentPct !== null && (
             <div
-              className="absolute inset-x-0 bottom-0 bg-gradient-to-b from-cyan-400/70 to-teal-600/80 transition-all"
+              className="absolute inset-x-0 bottom-0 bg-linear-to-b from-cyan-400/70 to-teal-600/80 transition-all"
               style={{ top: `${currentPct}%` }}
             />
           )}
@@ -952,7 +952,7 @@ export function UniversalAreaDepthForecast({
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-160 text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-xs text-slate-400">
                   <th className="pb-3 pl-3 font-medium">Area / Location</th>

@@ -1226,7 +1226,7 @@ export function GroundwaterMap() {
         <div className="@container relative">
           <div
             ref={mapContainer}
-            className="h-[60svh] min-h-[360px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[68vh] sm:min-h-[440px]"
+            className="h-[60svh] min-h-[360px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[68vh] sm:min-h-110"
             aria-label="Interactive groundwater risk and trend map of Pakistan"
           />
 
