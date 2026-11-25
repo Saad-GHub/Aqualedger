@@ -27,6 +27,7 @@ import {
   type PublicAreaSourceTrend,
 } from "@/lib/community-water-reports";
 import { meanDepth, recommendAreaWaterSources } from "@/lib/depth-analytics";
+import { depthM } from "@/lib/units";
 
 const colors = ["#0d9488", "#2563eb", "#f59e0b", "#7c3aed", "#e11d48", "#0891b2"];
 
@@ -208,7 +209,7 @@ export function PublicWaterSources() {
                     Avg depth:{" "}
                     <strong>
                       {item.averageDepthM !== null
-                        ? `${item.averageDepthM.toFixed(1)} m`
+                        ? `${depthM(item.averageDepthM, 1)}`
                         : "—"}
                     </strong>
                   </p>
@@ -253,7 +254,7 @@ export function PublicWaterSources() {
                   </span>
                   <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-sm">
                     {activeIntel.irrigationBest.averageDepthM !== null
-                      ? `${activeIntel.irrigationBest.averageDepthM.toFixed(1)} m avg`
+                      ? `${depthM(activeIntel.irrigationBest.averageDepthM, 1)} avg`
                       : "Tracked"}
                   </span>
                 </div>
@@ -308,7 +309,7 @@ export function PublicWaterSources() {
                       <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" />
                       <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#64748b" }} />
                       <YAxis unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
-                      <Tooltip formatter={(value, name) => [`${value} m`, name]} />
+                      <Tooltip formatter={(value, name) => [`${depthM(Number(value))}`, name]} />
                       <Legend />
                       {activeIntel.sourceBreakdown.map((s, idx) => (
                         <Line

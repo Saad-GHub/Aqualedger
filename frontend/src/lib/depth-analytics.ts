@@ -714,6 +714,52 @@ export function evaluateSourceCondition(params: {
   };
 }
 
+export type AreaConditionLabel = SourceConditionEvaluation["conditionLabel"];
+
+/**
+ * Normal / Moderate / Critical for every area, computed exactly like the
+ * Depth Forecast overview table (depth trend, projection, area benchmark and
+ * any lab-screening flags), so the map and the forecast page always agree.
+ */
+export function computeAreaConditions(
+  trends: PublicAreaSourceTrend[],
+  horizonMonths = 6
+): Map<string, AreaConditionLabel> {
+  const result = new Map<string, AreaConditionLabel>();
+  const byArea = new Map<string, PublicAreaSourceTrend[]>();
+  for (const row of trends) {
+    const list = byArea.get(row.areaKey);
+    if (list) list.push(row);
+    else byArea.set(row.areaKey, [row]);
+  }
+  for (const [areaKey, rows] of byArea) {
+    const benchmark = computeAreaDepthBenchmark(trends, areaKey);
+    const inputs: DepthForecastInput[] = rows
+      .filter((row) => row.averageDepthM !== null)
+      .map((row) => ({
+        areaKey: row.areaKey,
+        address: row.areaKey,
+        sourceType: row.sourceType,
+        depth: String(row.averageDepthM),
+        sampleDate: row.sampleDay ?? row.sampleMonth ?? undefined,
+      }));
+    const monthly = aggregateMonthlyDepths(inputs, areaKey, "All sources");
+    const projection = forecastDepthForHorizon(monthly, horizonMonths);
+    const high = rows.reduce((sum, r) => sum + r.highCount, 0);
+    const moderate = rows.reduce((sum, r) => sum + r.moderateCount, 0);
+    const { conditionLabel } = evaluateSourceCondition({
+      currentDepthM: monthly.at(-1)?.depth ?? benchmark.averageDepthM,
+      projectedDepthM: projection?.projectedDepth ?? null,
+      projectedChangeM: projection?.projectedChange ?? null,
+      slopePerMonth: projection?.slopePerMonth ?? null,
+      areaBenchmark: benchmark,
+      riskLevel: high > 0 ? "High concern" : moderate > 0 ? "Moderate concern" : "Normal",
+    });
+    result.set(areaKey, conditionLabel);
+  }
+  return result;
+}
+
 export type AreaSourceBreakdownItem = {
   sourceType: string;
   reportCount: number;

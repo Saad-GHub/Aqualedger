@@ -1,5 +1,7 @@
 "use client";
 
+import { depthM, metresToFeet } from "@/lib/units";
+
 // Glass hover cards for Recharts, styled like the rest of AquaLedger (both themes).
 // Recharts injects `active`, `payload` and `label` into the element passed as `content`.
 
@@ -18,7 +20,7 @@ export function formatMonth(value: unknown) {
 
 const metres = (value: unknown) => {
   const n = Number(value);
-  return Number.isFinite(n) ? `${n.toFixed(2)} m` : "—";
+  return Number.isFinite(n) ? depthM(n, 2) : "—";
 };
 
 function Card({ title, badge, children }: { title: string; badge?: { text: string; tone: "teal" | "blue" }; children: React.ReactNode }) {
@@ -83,7 +85,7 @@ export function DepthTrendTooltip({
       {projected != null && <Row color="#3b82f6" label="AI projected" value={metres(projected)} dashed />}
       {lower != null && band != null && Number(band) > 0 && (
         <p className="mt-1 rounded-lg bg-sky-50 px-2 py-1 text-[11px] text-sky-800">
-          Likely range {Number(lower).toFixed(1)} – {(Number(lower) + Number(band)).toFixed(1)} m
+          Likely range {Number(lower).toFixed(1)} – {(Number(lower) + Number(band)).toFixed(1)} m · {Math.round(metresToFeet(Number(lower)))}–{Math.round(metresToFeet(Number(lower) + Number(band)))} ft
         </p>
       )}
     </Card>

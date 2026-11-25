@@ -30,6 +30,7 @@ import {
 } from "@/lib/depth-analytics";
 import { buildReportCodes } from "@/lib/report-display-codes";
 import { screenWaterReport } from "@/lib/water-risk-screening";
+import { depthM } from "@/lib/units";
 
 export default function MySourcesPage() {
   const { isSignedIn, currentEmail, emailVerified, authReady } = useAquaRole();
@@ -264,14 +265,14 @@ export default function MySourcesPage() {
                       <div>
                         <p className="text-slate-400">Latest Depth</p>
                         <p className="mt-0.5 text-base font-bold text-slate-900">
-                          {source.currentDepth !== null ? `${source.currentDepth.toFixed(1)} m` : "—"}
+                          {source.currentDepth !== null ? `${depthM(source.currentDepth, 1)}` : "—"}
                         </p>
                       </div>
                       <div>
                         <p className="text-slate-400">6-Mo AI Forecast</p>
                         <p className="mt-0.5 text-base font-bold text-blue-700">
                           {source.projection
-                            ? `${source.projection.projectedDepth.toFixed(1)} m`
+                            ? `${depthM(source.projection.projectedDepth, 1)}`
                             : "Need 2+ mo"}
                         </p>
                       </div>
@@ -342,7 +343,7 @@ export default function MySourcesPage() {
                         {report.areaName || report.address}
                       </td>
                       <td className="py-3.5 font-semibold text-slate-800">
-                        {report.depth ? `${report.depth} m` : "—"}
+                        {report.depth ? `${depthM(Number(report.depth))}` : "—"}
                       </td>
                       <td className="py-3.5 text-slate-500">{report.sampleDate || "—"}</td>
                       <td className="py-3.5">
