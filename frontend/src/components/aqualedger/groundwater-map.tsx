@@ -1242,7 +1242,7 @@ export function GroundwaterMap() {
                       );
                     })}
                   </div>
-                  <p className="mt-1.5 text-[10px] text-slate-400">Click to show only those districts</p>
+                  
                 </div>
               )}
               {wellsOn && (
@@ -1279,7 +1279,7 @@ export function GroundwaterMap() {
                       </div>
                     ))}
                   </div>
-                  <p className="mt-1.5 text-[10px] text-slate-400">Zoom in for individual report dots</p>
+                  
                 </div>
               )}
             </div>
@@ -1323,10 +1323,6 @@ export function GroundwaterMap() {
             {mapError}
           </p>
         )}
-        <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-500">
-          <MapPin size={14} className="mt-0.5 shrink-0" />
-          District shading uses the Pakistan Bureau of Statistics Mouza Census 2020: the median reported water table depth, and the share of mouzas reporting brackish underground water. Districts created after 2019 are merged into the district they were carved from. Observation wells show the October depth to water at each monitoring site and its long-term trend. &ldquo;Report status&rdquo; shading and dots come from community reports; consented GPS coordinates are used when available. Nothing on this map certifies water safety.
-        </p>
       </Panel>
 
       {myLocation && (

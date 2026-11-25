@@ -120,7 +120,7 @@ export function NotificationBell() {
           setShowRiskAlerts(riskAlertsEnabled());
           setOpen((value) => !value);
         }}
-        className="relative rounded-xl border border-slate-200 p-2.5 text-slate-600 hover:bg-slate-50"
+        className="glass relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600"
       >
         {bellsOn ? <Bell size={19} /> : <BellOff size={19} className="text-slate-400" />}
         {bellsOn && items.length > 0 && (
@@ -134,7 +134,8 @@ export function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-30 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white shadow-lg">
+        <div className="aqua-popover absolute right-0 z-40 mt-3 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-lg">
+
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="text-sm font-semibold">Notifications</p>
             <p className="mt-0.5 text-xs text-slate-500">

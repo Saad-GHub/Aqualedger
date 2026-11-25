@@ -360,13 +360,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
-              <span className="hidden items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-3 py-1 text-xs font-medium text-emerald-700 md:inline-flex">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:animate-none" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                </span>
-                Live data
-              </span>
 
               <div className="hidden sm:block">
                 <ThemeToggle />
@@ -407,13 +400,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <main key={pathname} className="aqua-stagger mx-auto w-full max-w-[1400px] space-y-5 px-3.5 pt-4 pb-32 sm:space-y-6 sm:p-6 sm:pb-32 md:p-8 lg:pb-8">
             {children}
-            <footer className="flex flex-col items-center justify-between gap-2 border-t border-slate-200/70 pb-2 pt-6 text-xs text-slate-400 sm:flex-row">
-              <span className="flex items-center gap-2">
-                <Waves size={14} className="text-teal-600" />
-                AquaLedger · Pakistan Underground Water Intelligence System
-              </span>
-              <span>Community-reported data · screening only</span>
-            </footer>
+            <footer className="flex items-center justify-center gap-2 pb-2 pt-4 text-xs text-slate-400"><Waves size={14} className="text-teal-600" />AquaLedger</footer>
           </main>
         </div>
 
