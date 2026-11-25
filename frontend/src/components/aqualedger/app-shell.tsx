@@ -175,7 +175,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // The header turns into a slightly denser glass once the page scrolls under it.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const nav = role.isAdmin ? adminNav : userNav;
+  const PageIcon =
+    [...adminNav, ...userNav].find((item) => item.href === pathname)?.icon ??
+    (pathname === "/settings"
+      ? Settings
+      : pathname === "/data-management"
+        ? Database
+        : pathname === "/account"
+          ? User
+          : Waves);
   const navLinkClass = (active: boolean) =>
     `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
       active
@@ -289,7 +306,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AquaRoleContext.Provider value={role}>
-      <div className="aqua-backdrop min-h-screen text-slate-900 lg:flex">
+      <div className="aqua-backdrop min-h-dvh text-slate-900 lg:flex">
         <div aria-hidden="true" className="aqua-orbs">
           <span />
           <span />
@@ -306,7 +323,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMenuOpen(false)}
               className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm"
             />
-            <aside className="aqua-sidebar relative flex h-full w-72 flex-col overflow-y-auto px-4 py-6">
+            <aside className="aqua-sidebar relative flex h-full w-[min(18rem,85vw)] flex-col overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))]">
               {sidebar}
               <button
                 onClick={() => setMenuOpen(false)}
@@ -320,27 +337,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         <div className="relative z-10 min-w-0 flex-1 lg:ml-[17.5rem]">
-          <header className="glass-strong sticky top-0 z-20 flex h-16 items-center justify-between border-x-0! border-t-0! px-4 sm:px-6 md:px-8">
-            <div className="flex min-w-0 items-center gap-3">
-              <button
-                onClick={() => setMenuOpen(true)}
-                aria-label="Open navigation"
-                className="glass rounded-xl p-2 text-slate-600 lg:hidden"
+          {/* Floating glass header; on iPhones it clears the notch / Dynamic Island. */}
+          <header className="aqua-header sticky top-0 z-20 px-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 lg:px-6 lg:pt-3">
+           <div
+            data-scrolled={scrolled || undefined}
+            className="aqua-header-bar glass-strong flex h-14 items-center justify-between gap-3 rounded-[22px] pl-2 pr-2 sm:h-16 sm:pl-3 sm:pr-3"
+           >
+            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+              <Link
+                href="/"
+                aria-label="AquaLedger home"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-teal-400 to-sky-500 text-white shadow-[0_8px_20px_-8px_rgb(14_165_233/0.8),inset_0_1px_0_rgb(255_255_255/0.35)] sm:h-11 sm:w-11"
               >
-                <Menu size={19} />
-              </button>
-              <Link href="/" aria-label="AquaLedger home" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-300 to-cyan-500 text-slate-900 shadow-[0_6px_18px_-6px_rgb(45_212_191/0.7)] sm:hidden">
-                <Waves size={19} strokeWidth={2.4} />
+                <PageIcon size={20} strokeWidth={2.2} />
               </Link>
-              <p className="truncate text-sm text-slate-500">
-                <span className="hidden sm:inline">
-                  AquaLedger <span className="mx-1.5 text-slate-300">/</span>
-                </span>
-                <span className="font-display font-semibold tracking-tight text-slate-800">{pageTitle}</span>
-              </p>
+              <div className="min-w-0 leading-tight">
+                <p className="truncate text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px]">
+                  AquaLedger<span className="hidden sm:inline"> · {role.isAdmin ? "Admin workspace" : "Farmer & Community"}</span>
+                </p>
+                <h2 className="truncate text-[16px] font-bold text-slate-900 sm:text-lg">{pageTitle}</h2>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
               <span className="hidden items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-3 py-1 text-xs font-medium text-emerald-700 md:inline-flex">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:animate-none" />
@@ -349,7 +368,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 Live data
               </span>
 
-              <ThemeToggle />
+              <div className="hidden sm:block">
+                <ThemeToggle />
+              </div>
+              <div className="sm:hidden">
+                <ThemeToggle compact />
+              </div>
 
               {role.isAdmin && <NotificationBell />}
 
@@ -358,26 +382,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   href="/account"
                   aria-label={role.isAdmin ? "Admin account" : "My account"}
                   title={role.currentEmail || "My account"}
-                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold shadow-sm transition ${
+                  className={`inline-flex h-10 items-center gap-2 rounded-full px-2.5 text-xs font-semibold shadow-sm transition sm:px-3.5 ${
                     role.isAdmin
                       ? "bg-slate-900 text-white hover:bg-slate-700"
                       : "border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100"
                   }`}
                 >
                   {role.isAdmin ? <ShieldCheck size={16} className="text-teal-300" /> : <User size={16} />}
-                  <span className="max-w-[120px] truncate">{accountLabel}</span>
+                  <span className="hidden max-w-[120px] truncate sm:inline">{accountLabel}</span>
                 </Link>
               ) : (
                 <Link
                   href="/login"
                   aria-label="Sign in"
-                  className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-slate-900 p-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgb(11_31_58/0.7)] transition hover:bg-slate-700 sm:px-4 sm:py-2"
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-slate-900 px-3 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgb(11_31_58/0.7)] transition hover:bg-slate-700 sm:px-4"
                 >
                   <LogIn size={16} />
                   <span className="hidden sm:inline">Sign in</span>
                 </Link>
               )}
             </div>
+           </div>
           </header>
 
           <main key={pathname} className="aqua-stagger mx-auto w-full max-w-[1400px] space-y-5 px-3.5 pt-4 pb-32 sm:space-y-6 sm:p-6 sm:pb-32 md:p-8 lg:pb-8">
@@ -395,7 +420,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile tab bar (iOS style): the four main pages plus "More" for the full menu. */}
         <nav
           aria-label="Quick navigation"
-          className="pb-safe fixed inset-x-0 bottom-0 z-30 px-3 pt-2 lg:hidden"
+          className="pb-safe fixed inset-x-0 bottom-0 z-30 pt-2 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] lg:hidden"
         >
           <div className="glass-strong mx-auto flex max-w-md items-stretch justify-between rounded-[26px] p-1.5">
             {nav.slice(0, 4).map(({ label, href, icon: Icon }) => {
