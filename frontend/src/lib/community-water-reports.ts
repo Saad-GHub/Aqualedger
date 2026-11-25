@@ -235,6 +235,52 @@ export async function readCommunityWaterAreaRisks(): Promise<CommunityWaterAreaR
   return areaRisksInFlight;
 }
 
+// The public trends view aggregates every report with many regexes, so one
+// query for the whole view exceeds Supabase's 3s anon statement timeout.
+// A filter on area_key lets Postgres aggregate only that slice (~0.2-1.3s each),
+// so the view is read in A-Z chunks plus one chunk for everything else.
+const PUBLIC_TREND_CHUNK_CONCURRENCY = 6;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase view row, same as other .select("*") reads
+type PublicTrendRow = Record<string, any>;
+type ChunkResult = { data: PublicTrendRow[]; error: { code?: string; message: string } | null };
+
+async function fetchPublicTrendRowsInChunks(): Promise<ChunkResult> {
+  const supabase = getSupabaseBrowserClient();
+  const chunks: Array<() => PromiseLike<PageResult<PublicTrendRow>>> = [
+    ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((letter) => () =>
+      supabase.from("water_public_area_source_trends").select("*").like("area_key", `${letter}%`)
+    ),
+    () => supabase.from("water_public_area_source_trends").select("*").or("area_key.is.null,area_key.not.match.^[A-Z]"),
+  ];
+
+  const results: PublicTrendRow[][] = new Array(chunks.length);
+  let firstError: ChunkResult["error"] = null;
+  let next = 0;
+  const worker = async () => {
+    while (next < chunks.length && !firstError) {
+      const index = next++;
+      let res = await chunks[index]();
+      if (res.error) res = await chunks[index](); // one retry for a transient timeout
+      if (res.error) {
+        firstError = res.error;
+        return;
+      }
+      results[index] = res.data ?? [];
+    }
+  };
+  await Promise.all(Array.from({ length: PUBLIC_TREND_CHUNK_CONCURRENCY }, worker));
+  if (firstError) return { data: [], error: firstError };
+
+  const text = (v: unknown) => (v == null ? "" : String(v));
+  const rows = results.flat().sort(
+    (a, b) =>
+      text(a.area_key).localeCompare(text(b.area_key)) ||
+      text(a.source_type).localeCompare(text(b.source_type)) ||
+      text(a.sample_month).localeCompare(text(b.sample_month))
+  );
+  return { data: rows, error: null };
+}
+
 export async function readPublicAreaSourceTrends(): Promise<PublicAreaSourceTrend[]> {
   if (publicTrendsCache && publicTrendsCache.expiresAt > Date.now()) {
     return publicTrendsCache.value;
@@ -242,15 +288,7 @@ export async function readPublicAreaSourceTrends(): Promise<PublicAreaSourceTren
   if (publicTrendsInFlight) return publicTrendsInFlight;
 
   publicTrendsInFlight = (async () => {
-    const { data, error } = await fetchAllPages((from, to, withCount) =>
-      getSupabaseBrowserClient()
-        .from("water_public_area_source_trends")
-        .select("*", withCount ? { count: "exact" } : undefined)
-        .order("area_key")
-        .order("source_type")
-        .order("sample_month")
-        .range(from, to)
-    );
+    const { data, error } = await fetchPublicTrendRowsInChunks();
     if (!error) {
       const mapped = data.map((row) => ({ areaKey: row.area_key, cityName: row.city_name, sourceType: row.source_type, sampleMonth: row.sample_month ?? null, sampleDay: row.sample_day ?? null, reportCount: Number(row.report_count), averageDepthM: row.average_depth_m === null ? null : Number(row.average_depth_m), normalCount: Number(row.normal_count), moderateCount: Number(row.moderate_count), highCount: Number(row.high_count), incompleteCount: Number(row.incomplete_count), weightedRiskScore: row.weighted_risk_score === null ? null : Number(row.weighted_risk_score), labMeasurementCount: Number(row.lab_measurement_count ?? 0), awaitingReviewCount: Number(row.awaiting_review_count ?? 0) }));
       publicTrendsCache = { value: mapped, expiresAt: Date.now() + CACHE_TTL_MS };

@@ -7,9 +7,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  /* Softer, layered elevation used by every card (shadow-sm) and popover (shadow-lg). */
+  --shadow-sm: 0 1px 2px rgb(15 40 55 / 0.04), 0 4px 16px -6px rgb(15 40 55 / 0.08);
+  --shadow-lg: 0 12px 40px -12px rgb(15 40 55 / 0.25), 0 2px 6px rgb(15 40 55 / 0.06);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -127,8 +130,488 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv11";
   }
   html {
     @apply font-sans;
+  }
+  /* Typography: Plus Jakarta Sans for headings, Geist for reading text. */
+  h1, h2, h3, h4 {
+    font-family: var(--font-display), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    text-wrap: balance;
+  }
+  h1 { letter-spacing: -0.035em; line-height: 1.08; font-weight: 700; }
+  h2 { letter-spacing: -0.028em; line-height: 1.15; }
+  h3, h4 { letter-spacing: -0.018em; line-height: 1.3; }
+  p { text-wrap: pretty; }
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  .tabular, .tabular-nums {
+    font-feature-settings: "tnum" 1, "ss01" 1;
+  }
+  ::selection {
+    background: oklch(0.86 0.08 190);
+  }
+  :focus-visible {
+    outline: 2px solid oklch(0.6 0.12 190);
+    outline-offset: 2px;
+  }
+  /* Card surfaces lift slightly when they are links or buttons. */
+  a.rounded-2xl, button.rounded-2xl {
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  }
+  a.rounded-2xl:hover, button.rounded-2xl:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Soft water-toned glow behind the top of every page. */
+  .aqua-backdrop {
+    background-color: var(--page-base);
+  }
+  .aqua-hero {
+    background:
+      radial-gradient(30rem 16rem at 100% 0%, oklch(0.62 0.13 190 / 0.55), transparent 70%),
+      radial-gradient(26rem 14rem at 0% 100%, oklch(0.5 0.12 230 / 0.5), transparent 70%),
+      linear-gradient(135deg, oklch(0.27 0.06 235), oklch(0.33 0.08 210));
+  }
+  .aqua-sidebar {
+    background:
+      radial-gradient(18rem 14rem at 0% 0%, oklch(0.45 0.1 195 / 0.35), transparent 70%),
+      linear-gradient(180deg, oklch(0.24 0.05 235), oklch(0.2 0.04 240));
+  }
+}
+
+/* ============================================================================
+   AquaLedger theme: White (white + navy + turquoise) and Black (black + turquoise)
+   ----------------------------------------------------------------------------
+   Components use Tailwind palette classes directly (bg-white, text-slate-500...).
+   Tailwind v4 utilities read the palette from CSS variables, so the Black theme
+   re-maps those variables instead of editing every component.
+   ========================================================================== */
+
+:root {
+  --aqua-turquoise: #14b8a6;
+  --aqua-turquoise-bright: #2dd4bf;
+  --aqua-navy: #0b1f3a;
+  /* "Aqua Glass" White theme: see-through panes with a white-to-turquoise rim,
+     floating over an aurora of mint, sky and periwinkle with faint contour lines. */
+  --glass-bg: rgb(255 255 255 / 0.42);
+  --glass-fill: linear-gradient(145deg, rgb(255 255 255 / 0.72) 0%, rgb(255 255 255 / 0.34) 48%, rgb(240 253 250 / 0.42) 100%);
+  --glass-ring: linear-gradient(145deg, rgb(255 255 255 / 1) 0%, rgb(255 255 255 / 0.35) 38%, rgb(153 246 228 / 0.55) 72%, rgb(125 211 252 / 0.6) 100%);
+  --glass-sheen: linear-gradient(145deg, rgb(255 255 255 / 0.6) 0%, rgb(255 255 255 / 0.15) 50%, rgb(255 255 255 / 0.3) 100%);
+  --glass-bg-strong: rgb(255 255 255 / 0.55);
+  --glass-fill-strong: linear-gradient(145deg, rgb(255 255 255 / 0.82), rgb(255 255 255 / 0.5) 60%, rgb(236 254 255 / 0.6));
+  --glass-border: rgb(255 255 255 / 0.9);
+  --glass-edge: rgb(15 40 70 / 0.08);
+  --glass-shadow: 0 1px 2px rgb(11 31 58 / 0.05), 0 22px 44px -22px rgb(14 74 110 / 0.35), 0 8px 18px -12px rgb(13 148 136 / 0.18);
+  --glass-shadow-hover: 0 2px 4px rgb(11 31 58 / 0.06), 0 32px 60px -26px rgb(13 148 136 / 0.5), 0 10px 24px -14px rgb(56 189 248 / 0.35);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 1), inset 0 -1px 0 rgb(255 255 255 / 0.3);
+  --glass-blur: blur(26px) saturate(190%);
+  --chart-grid: rgb(14 74 110 / 0.09);
+  --chart-tick: #6b7f99;
+  --orb-1: rgb(45 212 191 / 0.55);
+  --orb-2: rgb(56 189 248 / 0.45);
+  --orb-3: rgb(129 140 248 / 0.35);
+  --page-base: #e8f3f6;
+  --contour: rgb(14 74 110 / 0.075);
+  /* Navy-tinted ink instead of grey/black, and frosted (translucent) light neutrals. */
+  --color-slate-50: rgb(240 249 252 / 0.55);
+  --color-slate-100: rgb(224 240 246 / 0.65);
+  --color-slate-200: rgb(14 74 110 / 0.12);
+  --color-slate-400: #7a8da6;
+  --color-slate-500: #5a6e88;
+  --color-slate-600: #45597a;
+  --color-slate-700: #33476a;
+  --color-slate-800: #1d3155;
+  --color-slate-900: #0b1f3a;
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #000000;
+  --foreground: #f4f7fa;
+  --card: #0a0d10;
+  --border: rgb(255 255 255 / 0.09);
+  --glass-bg: rgb(255 255 255 / 0.035);
+  --glass-fill: linear-gradient(145deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0.025) 45%, rgb(20 184 166 / 0.05) 100%);
+  --glass-ring: linear-gradient(145deg, rgb(255 255 255 / 0.22) 0%, rgb(255 255 255 / 0.05) 40%, rgb(45 212 191 / 0.3) 100%);
+  --glass-fill-strong: linear-gradient(145deg, rgb(24 30 36 / 0.82), rgb(10 14 18 / 0.72));
+  --contour: rgb(45 212 191 / 0.05);
+  --glass-sheen: linear-gradient(140deg, rgb(255 255 255 / 0.1) 0%, rgb(255 255 255 / 0.02) 40%, rgb(255 255 255 / 0.05) 100%);
+  --glass-bg-strong: rgb(14 18 22 / 0.72);
+  --glass-border: rgb(255 255 255 / 0.1);
+  --glass-edge: rgb(255 255 255 / 0.06);
+  --glass-shadow: 0 1px 1px rgb(0 0 0 / 0.5), 0 24px 48px -24px rgb(0 0 0 / 0.95);
+  --glass-shadow-hover: 0 1px 1px rgb(0 0 0 / 0.5), 0 28px 60px -24px rgb(20 184 166 / 0.35);
+  --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.02);
+  --glass-blur: blur(28px) saturate(170%);
+  --chart-grid: rgb(255 255 255 / 0.07);
+  --chart-tick: #7b8794;
+  --orb-1: rgb(20 184 166 / 0.28);
+  --orb-2: rgb(37 99 235 / 0.22);
+  --orb-3: rgb(45 212 191 / 0.12);
+  --page-base: #000000;
+
+  /* Neutral scale inverted: light text on black, dark surfaces for slate-50/100. */
+  --color-slate-50: #0b0e11;
+  --color-slate-100: #12171c;
+  --color-slate-200: #1f262d;
+  --color-slate-300: #3a444f;
+  --color-slate-400: #7b8794;
+  --color-slate-500: #9aa6b2;
+  --color-slate-600: #b9c3cd;
+  --color-slate-700: #d5dce3;
+  --color-slate-800: #e7ecf1;
+  --color-slate-900: #f4f7fa;
+
+  /* Turquoise: tints become deep glows, text shades become bright. */
+  --color-teal-50: rgb(20 184 166 / 0.1);
+  --color-teal-100: rgb(20 184 166 / 0.16);
+  --color-teal-200: rgb(45 212 191 / 0.28);
+  --color-teal-700: #2dd4bf;
+  --color-teal-800: #5eead4;
+  --color-teal-900: #99f6e4;
+  --color-cyan-50: rgb(6 182 212 / 0.1);
+  --color-sky-50: rgb(14 165 233 / 0.1);
+  --color-sky-100: rgb(14 165 233 / 0.16);
+  --color-sky-200: rgb(56 189 248 / 0.28);
+  --color-sky-700: #7dd3fc;
+  --color-sky-800: #bae6fd;
+  --color-blue-50: rgb(59 130 246 / 0.1);
+  --color-blue-100: rgb(59 130 246 / 0.16);
+  --color-blue-200: rgb(96 165 250 / 0.28);
+  --color-blue-700: #93c5fd;
+  --color-blue-800: #bfdbfe;
+  --color-amber-50: rgb(245 158 11 / 0.1);
+  --color-amber-100: rgb(245 158 11 / 0.16);
+  --color-amber-200: rgb(251 191 36 / 0.28);
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-red-50: rgb(239 68 68 / 0.1);
+  --color-red-100: rgb(239 68 68 / 0.16);
+  --color-red-200: rgb(248 113 113 / 0.28);
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-emerald-50: rgb(16 185 129 / 0.1);
+  --color-emerald-100: rgb(16 185 129 / 0.16);
+  --color-emerald-200: rgb(52 211 153 / 0.28);
+  --color-emerald-700: #6ee7b7;
+  --color-violet-50: rgb(139 92 246 / 0.12);
+  --color-violet-100: rgb(139 92 246 / 0.18);
+  --color-violet-700: #c4b5fd;
+}
+
+/* The hero banner (both themes) and the Black-theme sidebar are dark surfaces:
+   restore Tailwind's normal light-on-dark palette inside them. */
+.aqua-hero,
+.dark .aqua-sidebar,
+.dark .aqua-hero {
+  --color-slate-200: oklch(92.9% 0.013 255.508);
+  --color-slate-300: oklch(86.9% 0.022 252.894);
+  --color-slate-400: oklch(70.4% 0.04 256.788);
+  --color-slate-900: oklch(20.8% 0.042 265.755);
+  --color-teal-100: oklch(95.3% 0.051 180.801);
+  --color-teal-200: oklch(91% 0.096 180.426);
+}
+
+/* Solid white surfaces become glass on black. */
+.dark .bg-white,
+.dark .bg-white\/95,
+.dark .bg-white\/90,
+.dark .bg-white\/80,
+.dark .bg-white\/70 {
+  background-color: var(--glass-bg);
+}
+.dark .bg-white\/95 { background-color: var(--glass-bg-strong); }
+
+/* Every white card in the app (on any page) becomes the same glass pane in both themes:
+   a translucent fill plus a gradient rim (white fading to turquoise). */
+:is(.rounded-xl, .rounded-2xl, .rounded-3xl):is(.bg-white, .bg-white\/90, .bg-white\/80, .bg-white\/70) {
+  border: 1px solid transparent;
+  background: var(--glass-fill) padding-box, var(--glass-ring) border-box;
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+/* Hover cards, popovers and floating legends (bg-white/95): a clearer, lighter glass. */
+:is(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-white\/95 {
+  border: 1px solid transparent;
+  background: var(--glass-fill-strong) padding-box, var(--glass-ring) border-box;
+  box-shadow: var(--glass-highlight), var(--glass-shadow-hover);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  backdrop-filter: blur(30px) saturate(200%);
+}
+input:is(.bg-white), select:is(.bg-white), textarea:is(.bg-white) {
+  background-color: var(--glass-bg-strong);
+}
+/* The hero's primary button stays solid white on the dark banner. */
+.aqua-hero a.bg-white,
+.dark .aqua-hero a.bg-white {
+  background-color: #ffffff;
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Solid accent buttons: bright turquoise / white pill with dark text in the Black theme. */
+.dark .bg-teal-700,
+.dark .bg-teal-800 { background-color: var(--aqua-turquoise); color: #031513; }
+.dark .hover\:bg-teal-800:hover { background-color: var(--aqua-turquoise-bright); }
+.dark .bg-slate-900 { background-color: var(--aqua-turquoise); color: #031513; }
+.dark .hover\:bg-slate-700:hover { background-color: var(--aqua-turquoise-bright); }
+
+@layer utilities {
+  /* Apple-style frosted glass. */
+  .glass {
+    border: 1px solid transparent;
+    background: var(--glass-fill) padding-box, var(--glass-ring) border-box;
+    box-shadow: var(--glass-highlight), var(--glass-shadow);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+  .glass-strong {
+    border: 1px solid transparent;
+    background: var(--glass-fill-strong) padding-box, var(--glass-ring) border-box;
+    box-shadow: var(--glass-highlight), var(--glass-shadow);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    backdrop-filter: blur(30px) saturate(200%);
+  }
+  /* Card that lifts and glows on hover. */
+  .glass-lift {
+    transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .glass-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--glass-highlight), var(--glass-shadow-hover);
+  }
+  /* Display headings. */
+  .font-display {
+    font-family: var(--font-display), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+  /* Room for the mobile tab bar and the iPhone home indicator. */
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  /* Content rises in one by one when a page opens. */
+  .aqua-stagger > * {
+    animation: aqua-rise 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .aqua-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .aqua-stagger > *:nth-child(2) { animation-delay: 70ms; }
+  .aqua-stagger > *:nth-child(3) { animation-delay: 140ms; }
+  .aqua-stagger > *:nth-child(4) { animation-delay: 210ms; }
+  .aqua-stagger > *:nth-child(5) { animation-delay: 280ms; }
+  .aqua-stagger > *:nth-child(6) { animation-delay: 350ms; }
+  .aqua-stagger > *:nth-child(n + 7) { animation-delay: 420ms; }
+
+  /* Progress bars grow from the left. */
+  .aqua-grow {
+    transform-origin: left center;
+    animation: aqua-grow 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: 300ms;
+  }
+}
+
+@keyframes aqua-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes aqua-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Slowly drifting light pools behind the glass (both themes; colours come from --orb-*). */
+.aqua-orbs {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aqua-orbs span {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  will-change: transform;
+}
+.aqua-orbs span:nth-child(1) {
+  width: 42rem; height: 42rem; top: -14rem; right: -10rem;
+  background: radial-gradient(circle, var(--orb-1), transparent 65%);
+  animation: aqua-drift-1 26s ease-in-out infinite alternate;
+}
+.aqua-orbs span:nth-child(2) {
+  width: 36rem; height: 36rem; top: 30%; left: -12rem;
+  background: radial-gradient(circle, var(--orb-2), transparent 65%);
+  animation: aqua-drift-2 32s ease-in-out infinite alternate;
+}
+.aqua-orbs span:nth-child(3) {
+  width: 46rem; height: 46rem; bottom: -20rem; right: 10%;
+  background: radial-gradient(circle, var(--orb-3), transparent 65%);
+  animation: aqua-drift-3 38s ease-in-out infinite alternate;
+}
+@keyframes aqua-drift-1 { to { transform: translate3d(-8rem, 6rem, 0) scale(1.1); } }
+@keyframes aqua-drift-2 { to { transform: translate3d(10rem, -5rem, 0) scale(1.15); } }
+@keyframes aqua-drift-3 { to { transform: translate3d(-6rem, -8rem, 0) scale(0.92); } }
+@media (max-width: 640px) {
+  .aqua-orbs span { filter: blur(50px); }
+  .aqua-orbs span:nth-child(1) { width: 26rem; height: 26rem; }
+  .aqua-orbs span:nth-child(2) { width: 22rem; height: 22rem; }
+  .aqua-orbs span:nth-child(3) { width: 28rem; height: 28rem; }
+}
+
+/* Topographic contour lines behind everything: groundwater is about the land's layers. */
+.aqua-orbs::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--contour);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000' preserveAspectRatio='xMidYMid slice' fill='none' stroke='black' stroke-width='1.3'%3E%3Cdefs%3E%3Cpath id='b' vector-effect='non-scaling-stroke' d='M0-100C55-100 112-58 106 2S48 96 0 90-112 56-101 0-56-100 0-100Z'/%3E%3C/defs%3E%3Cg transform='translate(380 300)'%3E%3Cuse href='%23b' transform='scale(.4)'/%3E%3Cuse href='%23b' transform='scale(.75) rotate(8)'/%3E%3Cuse href='%23b' transform='scale(1.1) rotate(14)'/%3E%3Cuse href='%23b' transform='scale(1.45) rotate(20)'/%3E%3Cuse href='%23b' transform='scale(1.8) rotate(26)'/%3E%3Cuse href='%23b' transform='scale(2.15) rotate(30)'/%3E%3Cuse href='%23b' transform='scale(2.5) rotate(34)'/%3E%3Cuse href='%23b' transform='scale(2.85) rotate(37)'/%3E%3Cuse href='%23b' transform='scale(3.2) rotate(40)'/%3E%3Cuse href='%23b' transform='scale(3.6) rotate(43)'/%3E%3C/g%3E%3Cg transform='translate(1260 760) rotate(140)'%3E%3Cuse href='%23b' transform='scale(.35)'/%3E%3Cuse href='%23b' transform='scale(.7) rotate(-10)'/%3E%3Cuse href='%23b' transform='scale(1.05) rotate(-18)'/%3E%3Cuse href='%23b' transform='scale(1.4) rotate(-24)'/%3E%3Cuse href='%23b' transform='scale(1.75) rotate(-29)'/%3E%3Cuse href='%23b' transform='scale(2.1) rotate(-33)'/%3E%3Cuse href='%23b' transform='scale(2.45) rotate(-36)'/%3E%3Cuse href='%23b' transform='scale(2.8) rotate(-39)'/%3E%3Cuse href='%23b' transform='scale(3.2) rotate(-42)'/%3E%3C/g%3E%3C/svg%3E") center / cover no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000' preserveAspectRatio='xMidYMid slice' fill='none' stroke='black' stroke-width='1.3'%3E%3Cdefs%3E%3Cpath id='b' vector-effect='non-scaling-stroke' d='M0-100C55-100 112-58 106 2S48 96 0 90-112 56-101 0-56-100 0-100Z'/%3E%3C/defs%3E%3Cg transform='translate(380 300)'%3E%3Cuse href='%23b' transform='scale(.4)'/%3E%3Cuse href='%23b' transform='scale(.75) rotate(8)'/%3E%3Cuse href='%23b' transform='scale(1.1) rotate(14)'/%3E%3Cuse href='%23b' transform='scale(1.45) rotate(20)'/%3E%3Cuse href='%23b' transform='scale(1.8) rotate(26)'/%3E%3Cuse href='%23b' transform='scale(2.15) rotate(30)'/%3E%3Cuse href='%23b' transform='scale(2.5) rotate(34)'/%3E%3Cuse href='%23b' transform='scale(2.85) rotate(37)'/%3E%3Cuse href='%23b' transform='scale(3.2) rotate(40)'/%3E%3Cuse href='%23b' transform='scale(3.6) rotate(43)'/%3E%3C/g%3E%3Cg transform='translate(1260 760) rotate(140)'%3E%3Cuse href='%23b' transform='scale(.35)'/%3E%3Cuse href='%23b' transform='scale(.7) rotate(-10)'/%3E%3Cuse href='%23b' transform='scale(1.05) rotate(-18)'/%3E%3Cuse href='%23b' transform='scale(1.4) rotate(-24)'/%3E%3Cuse href='%23b' transform='scale(1.75) rotate(-29)'/%3E%3Cuse href='%23b' transform='scale(2.1) rotate(-33)'/%3E%3Cuse href='%23b' transform='scale(2.45) rotate(-36)'/%3E%3Cuse href='%23b' transform='scale(2.8) rotate(-39)'/%3E%3Cuse href='%23b' transform='scale(3.2) rotate(-42)'/%3E%3C/g%3E%3C/svg%3E") center / cover no-repeat;
+}
+
+/* White theme: the sidebar is a floating frosted-glass island with navy ink. */
+:root:not(.dark) .aqua-sidebar {
+  border: 1px solid transparent;
+  background: var(--glass-fill-strong) padding-box, var(--glass-ring) border-box;
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  backdrop-filter: blur(30px) saturate(200%);
+  --color-white: #0b1f3a;
+  --color-slate-200: #33476a;
+  --color-slate-300: #45597a;
+  --color-slate-400: #7a8da6;
+  --color-teal-200: #0f766e;
+}
+:root:not(.dark) .aqua-sidebar .bg-teal-300 { background: linear-gradient(135deg, #2dd4bf, #0ea5e9); color: #ffffff; }
+:root:not(.dark) .aqua-sidebar .bg-teal-300\/15 { background-color: rgb(20 184 166 / 0.14); }
+:root:not(.dark) .aqua-sidebar .text-teal-200 { color: #0d9488; }
+/* Active page in the sidebar: turquoise-to-sky pill (both themes). */
+.aqua-sidebar a[aria-current="page"] {
+  color: #ffffff;
+  background: linear-gradient(120deg, #14b8a6, #0ea5e9);
+  box-shadow: 0 10px 24px -12px rgb(14 165 233 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+.aqua-sidebar a[aria-current="page"] svg { color: #ffffff; }
+.aqua-sidebar a[aria-current="page"] > span:first-child { display: none; }
+@media (min-width: 1024px) {
+  .aqua-sidebar.lg\:fixed { top: 0.75rem; bottom: 0.75rem; left: 0.75rem; border-radius: 28px; }
+}
+
+/* Stat tiles: each carries its own soft colour glow in the corner. */
+.aqua-stats > * { position: relative; overflow: hidden; isolation: isolate; }
+.aqua-stats > *::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 11rem;
+  height: 11rem;
+  top: -4.5rem;
+  right: -4rem;
+  border-radius: 9999px;
+  background: radial-gradient(circle, var(--stat-glow, rgb(45 212 191 / 0.35)), transparent 68%);
+  transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.aqua-stats > *:hover::before { transform: scale(1.25); }
+.aqua-stats > *:nth-child(4n + 1) { --stat-glow: rgb(56 189 248 / 0.4); }
+.aqua-stats > *:nth-child(4n + 2) { --stat-glow: rgb(45 212 191 / 0.42); }
+.aqua-stats > *:nth-child(4n + 3) { --stat-glow: rgb(167 139 250 / 0.38); }
+.aqua-stats > *:nth-child(4n + 4) { --stat-glow: rgb(251 191 36 / 0.36); }
+.dark .aqua-stats > * { --stat-glow: rgb(45 212 191 / 0.2); }
+.dark .aqua-stats > *:nth-child(4n + 1) { --stat-glow: rgb(56 189 248 / 0.22); }
+.dark .aqua-stats > *:nth-child(4n + 3) { --stat-glow: rgb(167 139 250 / 0.2); }
+.dark .aqua-stats > *:nth-child(4n + 4) { --stat-glow: rgb(251 191 36 / 0.18); }
+
+/* Hero waves sway gently. */
+.aqua-hero svg path:nth-child(1) { animation: aqua-sway 9s ease-in-out infinite alternate; }
+.aqua-hero svg path:nth-child(2) { animation: aqua-sway 12s ease-in-out infinite alternate-reverse; }
+@keyframes aqua-sway { from { transform: translateX(-3%); } to { transform: translateX(3%); } }
+:root:not(.dark) .aqua-hero {
+  background:
+    radial-gradient(34rem 18rem at 100% 0%, rgb(45 212 191 / 0.55), transparent 70%),
+    radial-gradient(30rem 16rem at 0% 100%, rgb(56 189 248 / 0.45), transparent 70%),
+    linear-gradient(130deg, #0b3a5c 0%, #0e5a6e 48%, #0b7f86 100%);
+  box-shadow: 0 30px 60px -30px rgb(14 116 144 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+
+/* Map popups follow the theme. */
+.maplibregl-popup-content {
+  border-radius: 14px !important;
+  border: 1px solid transparent;
+  background: var(--glass-fill-strong) padding-box, var(--glass-ring) border-box !important;
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  backdrop-filter: blur(20px) saturate(170%);
+  box-shadow: var(--glass-shadow) !important;
+  color: var(--foreground);
+}
+.dark .maplibregl-popup-tip { border-top-color: rgb(14 18 22 / 0.85) !important; border-bottom-color: rgb(14 18 22 / 0.85) !important; }
+.dark .maplibregl-ctrl-attrib { background: rgb(0 0 0 / 0.55) !important; color: #9aa6b2; }
+.dark .maplibregl-ctrl-attrib a { color: #cbd5e1; }
+.dark .aqua-sidebar {
+  background:
+    radial-gradient(18rem 14rem at 0% 0%, rgb(20 184 166 / 0.18), transparent 70%),
+    linear-gradient(180deg, #05080b, #000000);
+  border-right: 1px solid rgb(255 255 255 / 0.06);
+}
+.dark .aqua-hero {
+  background:
+    radial-gradient(30rem 16rem at 100% 0%, rgb(20 184 166 / 0.38), transparent 70%),
+    radial-gradient(26rem 14rem at 0% 100%, rgb(30 64 175 / 0.35), transparent 70%),
+    linear-gradient(135deg, #04121f, #021a1a);
+  border: 1px solid rgb(255 255 255 / 0.08);
+}
+.dark ::selection { background: rgb(45 212 191 / 0.35); }
+
+/* Buttons and links respond like iOS controls. */
+button,
+a[class*="rounded"] {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+button:not(:disabled):active,
+a[class*="rounded"]:active {
+  transform: scale(0.97);
+}
+
+/* Charts follow the theme. */
+.recharts-cartesian-grid line { stroke: var(--chart-grid); }
+.recharts-cartesian-axis-tick text { fill: var(--chart-tick); }
+.recharts-default-tooltip {
+  border-radius: 16px !important;
+  border: 1px solid transparent !important;
+  background: var(--glass-fill-strong) padding-box, var(--glass-ring) border-box !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  backdrop-filter: blur(24px) saturate(200%);
+  box-shadow: var(--glass-highlight), var(--glass-shadow-hover);
+  color: var(--foreground);
+  padding: 10px 14px !important;
+}
+.recharts-tooltip-label { font-weight: 600; color: var(--color-slate-900) !important; margin-bottom: 2px !important; }
+.recharts-tooltip-cursor { fill: rgb(20 184 166 / 0.08); }
+
+@media (prefers-reduced-motion: reduce) {
+  a.rounded-2xl:hover, button.rounded-2xl:hover {
+    transform: none;
+  }
+  .aqua-stagger > *,
+  .aqua-grow,
+  .aqua-orbs span {
+    animation: none;
+  }
+  button:not(:disabled):active,
+  a[class*="rounded"]:active {
+    transform: none;
   }
 }

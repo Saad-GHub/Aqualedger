@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Activity, Layers3, LocateFixed, MapPin, Minus, Plus, User, Waves } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Activity, CircleDot, Layers3, LocateFixed, MapPin, Maximize2, Minus, Plus, User, Waves, X } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageIntro, Panel, useAquaRole } from "@/components/aqualedger/app-shell";
+import { useTheme } from "@/components/aqualedger/theme-toggle";
 import {
   readCommunityWaterReports,
   readMyCommunityWaterReports,
@@ -30,6 +32,85 @@ type AreaSelection = {
   risk: number;
 };
 type RiskFilter = "all" | "high" | "moderate" | "normal";
+
+// ---- Area shading: community report status, or the Mouza Census 2020 district layers ----
+type ShadeMode = "status" | "depth" | "brackish" | "off";
+type CensusMode = Extract<ShadeMode, "depth" | "brackish">;
+type CensusDistrict = { name: string; province?: string; censusDistricts?: string; mouzas?: number; medianDepthFt?: number; p75DepthFt?: number; brackishPct?: number };
+type CensusFeature = { properties: CensusDistrict; geometry: { type: "Polygon"; coordinates: Position[][] } | { type: "MultiPolygon"; coordinates: Position[][][] } };
+type ObservationWell = { id: string; lon: number; lat: number; trend: number | null; n: number; firstYear: number; lastYear: number; firstDepth: number; lastDepth: number; series: [number, number][] };
+type MyLocation = { position: Position; accuracyM: number; place: string | null; district: CensusDistrict | null; nearestWell: { well: ObservationWell; km: number } | null };
+type PlaceName = { name: string; km: number };
+type WellPlace = { place: PlaceName | null; district: CensusDistrict | null };
+
+const CENSUS_DATA_URL = "/data/pakistan-groundwater-census-2020.geojson";
+const WELLS_DATA_URL = "/data/pakistan-observation-wells.json";
+const PAKISTAN_CENTER: Position = [69.3451, 30.3753];
+const PAKISTAN_ZOOM = 4.8;
+
+// Linear water-level trend in metres per year: positive means the water table is getting deeper.
+const wellTrendSteps: [number, string, string][] = [[-Infinity, "#1d4ed8", "Rising > 20 cm/yr"], [-0.2, "#60a5fa", "Rising 5–20 cm/yr"], [-0.05, "#cbd5e1", "Stable (±5 cm/yr)"], [0.05, "#f87171", "Falling 5–20 cm/yr"], [0.2, "#b91c1c", "Falling > 20 cm/yr"]];
+const wellCircleColor = ["case", ["==", ["get", "trend"], null], "#94a3b8", ["step", ["get", "trend"], wellTrendSteps[0][1], ...wellTrendSteps.slice(1).flatMap(([bound, color]) => [bound, color])]];
+
+// District colour ramps for the Mouza Census 2020 layer: [lower bound, colour, legend label].
+const censusScales: Record<CensusMode, { property: keyof CensusDistrict; title: string; steps: [number, string, string][] }> = {
+  depth: { property: "medianDepthFt", title: "Median water table depth", steps: [[0, "#fef9c3", "< 50 ft"], [50, "#fde047", "50–100 ft"], [100, "#fb923c", "100–200 ft"], [200, "#ef4444", "200–400 ft"], [400, "#991b1b", "400+ ft"]] },
+  brackish: { property: "brackishPct", title: "Mouzas with brackish groundwater", steps: [[0, "#ede9fe", "< 5%"], [5, "#c4b5fd", "5–15%"], [15, "#a78bfa", "15–30%"], [30, "#7c3aed", "30–50%"], [50, "#4c1d95", "50%+"]] },
+};
+const censusFillColor = (mode: CensusMode) => {
+  const { property, steps } = censusScales[mode];
+  return ["case", ["has", property], ["step", ["get", property], steps[0][1], ...steps.slice(1).flatMap(([bound, color]) => [bound, color])], "#e2e8f0"];
+};
+const shadeModes: [ShadeMode, string][] = [["depth", "Water table depth"], ["brackish", "Brackish water"], ["status", "Report status"], ["off", "Off"]];
+
+function pointInRing([x, y]: Position, ring: Position[]) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/** The census district whose boundary contains a GPS point, if any. */
+function districtAt(point: Position, features: CensusFeature[]) {
+  const inPolygon = (rings: Position[][]) => pointInRing(point, rings[0]) && !rings.slice(1).some((hole) => pointInRing(point, hole));
+  return features.find(({ geometry }) => geometry.type === "Polygon" ? inPolygon(geometry.coordinates) : geometry.coordinates.some(inPolygon))?.properties ?? null;
+}
+
+function distanceKm([lon1, lat1]: Position, [lon2, lat2]: Position) {
+  const rad = Math.PI / 180;
+  const a = Math.sin(((lat2 - lat1) * rad) / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(((lon2 - lon1) * rad) / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(a));
+}
+
+const SETTLEMENT_CLASSES = new Set(["city", "town", "village", "hamlet", "suburb", "neighbourhood", "quarter", "locality", "isolated_dwelling"]);
+
+/** Nearest named settlement in the basemap tiles already loaded, so no location is sent to another service. */
+function nearestPlace(map: import("maplibre-gl").Map, position: Position): PlaceName | null {
+  let best: PlaceName | null = null;
+  for (const feature of map.querySourceFeatures("openmaptiles", { sourceLayer: "place" })) {
+    if (feature.geometry.type !== "Point" || !SETTLEMENT_CLASSES.has(String(feature.properties.class))) continue;
+    const name = feature.properties["name:en"] || feature.properties.name_en || feature.properties["name:latin"] || feature.properties.name;
+    if (!name) continue;
+    const km = distanceKm(position, feature.geometry.coordinates as Position);
+    if (!best || km < best.km) best = { name: String(name), km };
+  }
+  return best;
+}
+
+const formatCoordinates = (lat: number, lon: number) => `${lat.toFixed(5)}°N, ${lon.toFixed(5)}°E`;
+const googleMapsUrl = (lat: number, lon: number) => `https://www.google.com/maps/search/?api=1&query=${lat.toFixed(6)},${lon.toFixed(6)}`;
+const placeTitle = ({ place, district }: WellPlace) => place && place.km < 1 ? place.name : place && place.km < 15 ? `Near ${place.name}` : district ? `${district.name} district` : "Unnamed location";
+const placeSubtitle = ({ place, district }: WellPlace) => [place && place.km >= 1 && place.km < 15 ? `${place.km.toFixed(1)} km from ${place.name}` : null, district ? `${district.name}, ${district.province}` : null].filter(Boolean).join(" · ");
+const wellTrendText = (trend: number | null) => trend == null ? "Too few readings for a trend" : Math.abs(trend) < 0.05 ? "Roughly stable" : `${trend > 0 ? "Falling" : "Rising"} ${Math.abs(trend * 100).toFixed(0)} cm per year`;
+
+/** Range filter for the legend bins a viewer has switched on; `null` shows everything. */
+function binFilter(property: string, steps: [number, string, string][], selected: number[]) {
+  if (!selected.length) return null;
+  return ["all", ["!=", ["get", property], null], ["any", ...selected.map((index) => ["all", [">=", ["to-number", ["get", property], 0], steps[index][0] === -Infinity ? -1e9 : steps[index][0]], ["<", ["to-number", ["get", property], 0], steps[index + 1]?.[0] ?? 1e9]])]];
+}
 
 const cityLocations: { name: string; aliases: string[]; position: Position; quick?: boolean }[] = [
   { name: "Islamabad", aliases: ["islamabad", "ict"], position: [73.0551, 33.6844], quick: true },
@@ -107,7 +188,7 @@ function locationFor(report: CommunityWaterReport) {
   const areaKey = `${locality}, ${cityName}`;
   const areaOffset = hashPosition(areaKey, 0.075);
   const reportOffset = hashPosition(report.id, 0.012);
-  const center = city?.position ?? ([69.3451, 30.3753] as Position);
+  const center = city?.position ?? PAKISTAN_CENTER;
   const hasGps =
     report.latitude != null &&
     report.longitude != null &&
@@ -230,6 +311,50 @@ function makeFeatures(
   };
 }
 
+// One heat point per report (not grouped), tagged with its risk band so each band
+// gets its own heatmap layer and colour. Aggregated rows count as many reports,
+// on a log scale so one busy area does not drown out everything else.
+const HEAT_BANDS = ["normal", "moderate", "high"] as const;
+type HeatBand = (typeof HEAT_BANDS)[number];
+const HEAT_COLORS: Record<HeatBand, string[]> = {
+  normal: ["rgba(13,148,136,0)", "rgba(45,212,191,0.35)", "rgba(20,184,166,0.6)", "rgba(13,148,136,0.8)"],
+  moderate: ["rgba(245,158,11,0)", "rgba(252,211,77,0.45)", "rgba(245,158,11,0.7)", "rgba(217,119,6,0.88)"],
+  high: ["rgba(220,38,38,0)", "rgba(248,113,113,0.55)", "rgba(220,38,38,0.8)", "rgba(153,27,27,0.95)"],
+};
+
+function heatBand(score: number): HeatBand {
+  return score >= 1.5 ? "high" : score >= 0.75 ? "moderate" : "normal";
+}
+
+function makeHeatFeatures(reports: CommunityWaterReport[]): MapData {
+  return {
+    type: "FeatureCollection",
+    features: reports.map((report) => {
+      const count = report.aggregateCount ?? 1;
+      return {
+        type: "Feature",
+        geometry: { type: "Point", coordinates: locationFor(report).reportPosition },
+        properties: {
+          band: heatBand(riskScore(report)),
+          weight: Math.min(1, Math.log10(count + 1) / Math.log10(51)),
+        },
+      };
+    }),
+  } as MapData;
+}
+
+// With the heatmap on, the large grouped report circles stay hidden until the
+// user zooms in close, so they no longer cover wells and district shading.
+const REPORT_DOTS_MIN_ZOOM_WITH_HEAT = 8.5;
+
+function applyHeatmapVisibility(map: import("maplibre-gl").Map, on: boolean) {
+  HEAT_BANDS.forEach((band) => {
+    if (map.getLayer(`risk-heat-${band}`)) map.setLayoutProperty(`risk-heat-${band}`, "visibility", on ? "visible" : "none");
+  });
+  if (map.getLayer("risk-points")) map.setLayerZoomRange("risk-points", on ? REPORT_DOTS_MIN_ZOOM_WITH_HEAT : 0, 24);
+  if (map.getLayer("risk-labels")) map.setLayerZoomRange("risk-labels", on ? REPORT_DOTS_MIN_ZOOM_WITH_HEAT : 3, 12);
+}
+
 export function GroundwaterMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("maplibre-gl").Map | null>(null);
@@ -237,21 +362,48 @@ export function GroundwaterMap() {
   const [myReports, setMyReports] = useState<CommunityWaterReport[]>([]);
   const [mySourcesOnly, setMySourcesOnly] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
-  const [zonesOn, setZonesOn] = useState(true);
+  const [shadeMode, setShadeMode] = useState<ShadeMode>("depth");
   const [heatmapOn, setHeatmapOn] = useState(true);
   const { isAdmin, isSignedIn, authReady } = useAquaRole();
   const [loadError, setLoadError] = useState("");
   const [mapError, setMapError] = useState("");
   const [selection, setSelection] = useState<AreaSelection | null>(null);
 
-  const zonesOnRef = useRef(zonesOn);
+  // Census 2020 districts and observation wells
+  const censusFeaturesRef = useRef<CensusFeature[]>([]);
+  const [censusDistricts, setCensusDistricts] = useState<CensusDistrict[]>([]);
+  const [hoverDistrict, setHoverDistrict] = useState<CensusDistrict | null>(null);
+  const [censusBins, setCensusBins] = useState<number[]>([]);
+  const [wellsOn, setWellsOn] = useState(true);
+  const [legendOpen, setLegendOpen] = useState(false);
+  const wellsById = useRef(new Map<string, ObservationWell>());
+  const [wellCount, setWellCount] = useState(0);
+  const [wellBins, setWellBins] = useState<number[]>([]);
+  const [hoverWell, setHoverWell] = useState<ObservationWell | null>(null);
+  const [selectedWell, setSelectedWellState] = useState<ObservationWell | null>(null);
+  const [hoverPlace, setHoverPlace] = useState<WellPlace>({ place: null, district: null });
+  const [selectedPlace, setSelectedPlace] = useState<WellPlace>({ place: null, district: null });
+  const [myLocation, setMyLocation] = useState<MyLocation | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState("");
+  // Both only read refs and state setters, so they are stable for the map's one-time event handlers.
+  const describeWell = useCallback((well: ObservationWell): WellPlace => ({ place: mapRef.current ? nearestPlace(mapRef.current, [well.lon, well.lat]) : null, district: districtAt([well.lon, well.lat], censusFeaturesRef.current) }), []);
+  const setSelectedWell = useCallback((well: ObservationWell | null) => { setSelectedWellState(well); if (well) setSelectedPlace(describeWell(well)); }, [describeWell]);
+  const toggle = <T,>(list: T[], value: T) => list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+  const binsActive = censusBins.length + wellBins.length > 0;
+
+  const shadeModeRef = useRef(shadeMode);
   const heatmapOnRef = useRef(heatmapOn);
+  const wellsOnRef = useRef(wellsOn);
   useEffect(() => {
-    zonesOnRef.current = zonesOn;
-  }, [zonesOn]);
+    shadeModeRef.current = shadeMode;
+  }, [shadeMode]);
   useEffect(() => {
     heatmapOnRef.current = heatmapOn;
   }, [heatmapOn]);
+  useEffect(() => {
+    wellsOnRef.current = wellsOn;
+  }, [wellsOn]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -348,8 +500,11 @@ export function GroundwaterMap() {
     });
   }, [visibleReports, selection]);
 
+  // The map is rebuilt with a matching basemap whenever the theme changes; all
+  // data layers are re-added from refs in the "load" handler below.
+  const theme = useTheme();
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
+    if (!theme || !mapContainer.current || mapRef.current) return;
     let disposed = false;
     let map: import("maplibre-gl").Map | null = null;
     void import("maplibre-gl")
@@ -358,9 +513,9 @@ export function GroundwaterMap() {
         maplibregl.setWorkerUrl("/maplibre-gl-worker.mjs");
         map = new maplibregl.Map({
           container: mapContainer.current,
-          style: "https://tiles.openfreemap.org/styles/liberty",
-          center: [69.3451, 30.3753],
-          zoom: 4.8,
+          style: theme === "dark" ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/liberty",
+          center: PAKISTAN_CENTER,
+          zoom: PAKISTAN_ZOOM,
           minZoom: 3,
           maxZoom: 16,
           attributionControl: false,
@@ -376,17 +531,36 @@ export function GroundwaterMap() {
 
         map.on("load", () => {
           if (!map) return;
+          const initialMode = shadeModeRef.current;
+          const geojson = (id: string) => map?.getSource(id) as import("maplibre-gl").GeoJSONSource | undefined;
 
-          // 1. Pakistan Region Choropleth Source & Layers
+          // 1. Mouza Census 2020 district shading (water table depth / brackish water)
+          map.addSource("census-districts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+          const censusVisibility = initialMode === "depth" || initialMode === "brackish" ? "visible" : "none";
+          map.addLayer({ id: "census-fill", type: "fill", source: "census-districts", layout: { visibility: censusVisibility }, paint: { "fill-color": censusFillColor(initialMode === "brackish" ? "brackish" : "depth") as never, "fill-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0.72, 9, 0.45] } });
+          map.addLayer({ id: "census-outline", type: "line", source: "census-districts", layout: { visibility: censusVisibility }, paint: { "line-color": "#ffffff", "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 9, 1.6], "line-opacity": 0.85 } });
+          void fetch(CENSUS_DATA_URL)
+            .then((response) => { if (!response.ok) throw new Error(String(response.status)); return response.json(); })
+            .then((data: { features: CensusFeature[] }) => {
+              geojson("census-districts")?.setData(data as never);
+              censusFeaturesRef.current = data.features;
+              setCensusDistricts(data.features.map((feature) => feature.properties));
+            })
+            .catch(() => setMapError("Mouza Census 2020 district data could not load."));
+          map.on("mousemove", "census-fill", (event) => setHoverDistrict((event.features?.[0]?.properties as CensusDistrict | undefined) ?? null));
+          map.on("mouseleave", "census-fill", () => setHoverDistrict(null));
+
+          // 2. Pakistan region status from community reports
           map.addSource("pakistan-regions", {
             type: "geojson",
             data: regionsGeoJsonRef.current as never,
           });
+          const regionVisibility = initialMode === "status" ? "visible" : "none";
           map.addLayer({
             id: "region-fills",
             type: "fill",
             source: "pakistan-regions",
-            layout: { visibility: zonesOnRef.current ? "visible" : "none" },
+            layout: { visibility: regionVisibility },
             paint: {
               "fill-color": [
                 "match",
@@ -412,7 +586,7 @@ export function GroundwaterMap() {
             id: "region-borders",
             type: "line",
             source: "pakistan-regions",
-            layout: { visibility: zonesOnRef.current ? "visible" : "none" },
+            layout: { visibility: regionVisibility },
             paint: {
               "line-color": "#ffffff",
               "line-width": 1.6,
@@ -420,39 +594,66 @@ export function GroundwaterMap() {
             },
           });
 
-          // 2. Heatmap + Dots Source & Layers
+          // 3. Observation wells with their long-term trend
+          map.addSource("observation-wells", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+          const wellVisibility = wellsOnRef.current ? "visible" : "none";
+          map.addLayer({ id: "observation-wells", type: "circle", source: "observation-wells", layout: { visibility: wellVisibility }, paint: { "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2.2, 7, 4, 11, 7], "circle-color": wellCircleColor as never, "circle-stroke-color": "#ffffff", "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 4, 0.3, 9, 1.2], "circle-opacity": 0.9 } });
+          map.addLayer({ id: "observation-well-labels", type: "symbol", source: "observation-wells", minzoom: 10.5, layout: { visibility: wellVisibility, "text-field": ["get", "coords"], "text-font": ["Noto Sans Regular"], "text-size": 10.5, "text-offset": [0, 1.1], "text-anchor": "top", "text-optional": true }, paint: { "text-color": "#0c4a6e", "text-halo-color": "#ffffff", "text-halo-width": 1.6 } });
+          void fetch(WELLS_DATA_URL)
+            .then((response) => { if (!response.ok) throw new Error(String(response.status)); return response.json(); })
+            .then((data: { sites: ObservationWell[] }) => {
+              wellsById.current = new Map(data.sites.map((site) => [site.id, site]));
+              setWellCount(data.sites.length);
+              geojson("observation-wells")?.setData({ type: "FeatureCollection", features: data.sites.map((site) => ({ type: "Feature", geometry: { type: "Point", coordinates: [site.lon, site.lat] }, properties: { id: site.id, trend: site.trend, coords: `${site.lat.toFixed(4)}°N, ${site.lon.toFixed(4)}°E` } })) } as never);
+            })
+            .catch(() => setMapError("Observation well data could not load."));
+          const wellAt = (event: { features?: { properties: Record<string, unknown> }[] }) => wellsById.current.get(String(event.features?.[0]?.properties.id ?? "")) ?? null;
+          let hoveredId = "";
+          map.on("mousemove", "observation-wells", (event) => {
+            const well = wellAt(event);
+            if (map) map.getCanvas().style.cursor = "pointer";
+            if (!well || well.id === hoveredId) return;
+            hoveredId = well.id;
+            setHoverWell(well);
+            setHoverPlace(describeWell(well));
+          });
+          map.on("mouseleave", "observation-wells", () => {
+            hoveredId = "";
+            setHoverWell(null);
+            if (map) map.getCanvas().style.cursor = "";
+          });
+          map.on("click", "observation-wells", (event) => {
+            setSelectedWell(wellAt(event));
+            window.setTimeout(() => document.getElementById("well-details")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 50);
+          });
+
+          // 4. Community report heatmap + dots
           map.addSource("water-reports", {
             type: "geojson",
             data: { type: "FeatureCollection", features: [] },
             promoteId: "key",
           });
-          map.addLayer({
-            id: "risk-heat",
-            type: "heatmap",
-            source: "water-reports",
-            maxzoom: 10.5,
-            layout: { visibility: heatmapOnRef.current ? "visible" : "none" },
-            paint: {
-              "heatmap-weight": ["interpolate", ["linear"], ["get", "score"], 0, 0.1, 0.5, 0.25, 1, 0.6, 2, 1],
-              "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 3, 0.8, 9, 2.2],
-              "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 3, 24, 10, 48],
-              "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 8, 0.82, 10.5, 0],
-              "heatmap-color": [
-                "interpolate",
-                ["linear"],
-                ["heatmap-density"],
-                0,
-                "rgba(20,184,166,0)",
-                0.2,
-                "#5eead4",
-                0.45,
-                "#facc15",
-                0.7,
-                "#fb923c",
-                1,
-                "#dc2626",
-              ],
-            },
+          // Heatmap per risk band, drawn under the wells so wells stay visible on top.
+          map.addSource("water-reports-heat", { type: "geojson", data: makeHeatFeatures(visibleReportsRef.current) as never });
+          HEAT_BANDS.forEach((band) => {
+            const [c0, c1, c2, c3] = HEAT_COLORS[band];
+            map?.addLayer(
+              {
+                id: `risk-heat-${band}`,
+                type: "heatmap",
+                source: "water-reports-heat",
+                filter: ["==", ["get", "band"], band],
+                layout: { visibility: heatmapOnRef.current ? "visible" : "none" },
+                paint: {
+                  "heatmap-weight": ["get", "weight"],
+                  "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 4, band === "high" ? 1.4 : 0.9, 10, band === "high" ? 3 : 2],
+                  "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 4, band === "high" ? 16 : 12, 8, 22, 12, 34],
+                  "heatmap-opacity": 0.85,
+                  "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"], 0, c0, 0.25, c1, 0.6, c2, 1, c3],
+                },
+              },
+              map.getLayer("observation-wells") ? "observation-wells" : undefined
+            );
           });
           map.addLayer({
             id: "risk-points",
@@ -464,14 +665,14 @@ export function GroundwaterMap() {
                 ["linear"],
                 ["zoom"],
                 3,
-                ["interpolate", ["linear"], ["get", "count"], 1, 7, 20, 18],
+                ["interpolate", ["linear"], ["get", "count"], 1, 4, 50, 9],
                 10,
-                ["interpolate", ["linear"], ["get", "count"], 1, 6, 20, 14],
+                ["interpolate", ["linear"], ["get", "count"], 1, 5, 50, 10],
               ],
               "circle-color": ["step", ["get", "score"], "#0d9488", 0.75, "#f59e0b", 1.5, "#dc2626"],
               "circle-stroke-color": "#ffffff",
-              "circle-stroke-width": 2.2,
-              "circle-opacity": 0.95,
+              "circle-stroke-width": 1.5,
+              "circle-opacity": 0.9,
             },
           });
           map.addLayer({
@@ -482,6 +683,8 @@ export function GroundwaterMap() {
             maxzoom: 12,
             layout: {
               "text-field": ["concat", ["get", "label"], " · ", ["to-string", ["get", "count"]]],
+              // The liberty style only serves Noto Sans; the default font would leave labels blank.
+              "text-font": ["Noto Sans Regular"],
               "text-size": 12,
               "text-offset": [0, 1.4],
               "text-allow-overlap": false,
@@ -493,14 +696,18 @@ export function GroundwaterMap() {
             },
           });
 
+          applyHeatmapVisibility(map, heatmapOnRef.current);
+
+          // 5. "My location" marker
+          map.addSource("my-location", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+          map.addLayer({ id: "my-location-halo", type: "circle", source: "my-location", paint: { "circle-radius": 20, "circle-color": "#3b82f6", "circle-opacity": 0.18, "circle-stroke-color": "#3b82f6", "circle-stroke-width": 1, "circle-stroke-opacity": 0.4 } });
+          map.addLayer({ id: "my-location-dot", type: "circle", source: "my-location", paint: { "circle-radius": 7, "circle-color": "#2563eb", "circle-stroke-color": "#ffffff", "circle-stroke-width": 3 } });
+
           const setMapData = () => {
-            const source = map?.getSource("water-reports") as
-              | import("maplibre-gl").GeoJSONSource
-              | undefined;
-            source?.setData(
+            geojson("water-reports")?.setData(
               makeFeatures(
                 visibleReportsRef.current,
-                map?.getZoom() ?? 4.8,
+                map?.getZoom() ?? PAKISTAN_ZOOM,
                 reportCodesRef.current
               ) as never
             );
@@ -600,7 +807,7 @@ export function GroundwaterMap() {
       map?.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [describeWell, setSelectedWell, theme]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -609,6 +816,9 @@ export function GroundwaterMap() {
       | import("maplibre-gl").GeoJSONSource
       | undefined;
     reportSource?.setData(makeFeatures(visibleReports, map.getZoom(), reportCodes) as never);
+    (map.getSource("water-reports-heat") as import("maplibre-gl").GeoJSONSource | undefined)?.setData(
+      makeHeatFeatures(visibleReports) as never
+    );
 
     const regionSource = map.getSource("pakistan-regions") as
       | import("maplibre-gl").GeoJSONSource
@@ -618,17 +828,74 @@ export function GroundwaterMap() {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.getLayer("risk-heat")) return;
-    map.setLayoutProperty("risk-heat", "visibility", heatmapOn ? "visible" : "none");
+    if (!map?.isStyleLoaded()) return;
+    applyHeatmapVisibility(map, heatmapOn);
   }, [heatmapOn]);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map?.getLayer("region-fills")) return;
-    const vis = zonesOn ? "visible" : "none";
-    map.setLayoutProperty("region-fills", "visibility", vis);
-    map.setLayoutProperty("region-borders", "visibility", vis);
-  }, [zonesOn]);
+    if (!map?.getLayer("region-fills") || !map.getLayer("census-fill")) return;
+    const regions = shadeMode === "status" ? "visible" : "none";
+    const census = shadeMode === "depth" || shadeMode === "brackish" ? "visible" : "none";
+    map.setLayoutProperty("region-fills", "visibility", regions);
+    map.setLayoutProperty("region-borders", "visibility", regions);
+    map.setLayoutProperty("census-fill", "visibility", census);
+    map.setLayoutProperty("census-outline", "visibility", census);
+    if (shadeMode === "depth" || shadeMode === "brackish") {
+      map.setPaintProperty("census-fill", "fill-color", censusFillColor(shadeMode) as never);
+      const { property, steps } = censusScales[shadeMode];
+      const filter = binFilter(property, steps, censusBins) as never;
+      map.setFilter("census-fill", filter);
+      map.setFilter("census-outline", filter);
+    }
+  }, [shadeMode, censusBins]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map?.getLayer("observation-wells")) return;
+    const visibility = wellsOn ? "visible" : "none";
+    map.setLayoutProperty("observation-wells", "visibility", visibility);
+    map.setLayoutProperty("observation-well-labels", "visibility", visibility);
+    const filter = binFilter("trend", wellTrendSteps, wellBins) as never;
+    map.setFilter("observation-wells", filter);
+    map.setFilter("observation-well-labels", filter);
+  }, [wellsOn, wellBins]);
+
+  function showMyLocation() {
+    if (!("geolocation" in navigator)) { setLocateError("This browser cannot share its location."); return; }
+    setLocating(true);
+    setLocateError("");
+    navigator.geolocation.getCurrentPosition((result) => {
+      const position: Position = [result.coords.longitude, result.coords.latitude];
+      const map = mapRef.current;
+      (map?.getSource("my-location") as import("maplibre-gl").GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: [{ type: "Feature", geometry: { type: "Point", coordinates: position }, properties: {} }] } as never);
+      let nearestWell: MyLocation["nearestWell"] = null;
+      for (const well of wellsById.current.values()) { const km = distanceKm(position, [well.lon, well.lat]); if (!nearestWell || km < nearestWell.km) nearestWell = { well, km }; }
+      setMyLocation({ position, accuracyM: result.coords.accuracy, place: null, district: districtAt(position, censusFeaturesRef.current), nearestWell });
+      setLocating(false);
+      if (!map) return;
+      // Name the spot from the basemap's own place labels, so the location never leaves the browser.
+      map.once("idle", () => {
+        const nearest = nearestPlace(map, position);
+        setMyLocation((current) => current && current.position === position ? { ...current, place: nearest && nearest.km < 15 ? nearest.name : null } : current);
+      });
+      map.flyTo({ center: position, zoom: 11, duration: 1200 });
+    }, (error) => {
+      setLocating(false);
+      setLocateError(error.code === error.PERMISSION_DENIED ? "Location permission was blocked. Allow location for this site in the browser, then try again." : "Your location could not be found. Try again outdoors or with Wi-Fi turned on.");
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+  }
+
+  function clearMyLocation() {
+    setMyLocation(null);
+    (mapRef.current?.getSource("my-location") as import("maplibre-gl").GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: [] } as never);
+  }
+
+  const censusRankings = useMemo(() => {
+    const top = (property: "medianDepthFt" | "brackishPct") => censusDistricts.filter((district) => district[property] != null && (district.mouzas ?? 0) >= 40).sort((a, b) => (b[property] ?? 0) - (a[property] ?? 0)).slice(0, 5);
+    return { deepest: top("medianDepthFt"), brackish: top("brackishPct"), mouzas: censusDistricts.reduce((sum, district) => sum + (district.mouzas ?? 0), 0) };
+  }, [censusDistricts]);
+  const activeScale = shadeMode === "depth" || shadeMode === "brackish" ? censusScales[shadeMode] : null;
 
   const riskColor = (score: number) =>
     score >= 1.5
@@ -650,69 +917,111 @@ export function GroundwaterMap() {
     (f) => f.properties.reportCount > 0
   ).length;
 
+  const resetView = () => {
+    mapRef.current?.flyTo({ center: PAKISTAN_CENTER, zoom: PAKISTAN_ZOOM });
+    setSelection(null);
+  };
+
+  const legendButton = (on: boolean, anyOn: boolean) =>
+    `flex w-full items-center gap-2 rounded-md px-1.5 py-0.5 text-left transition ${
+      on
+        ? "bg-slate-900/5 font-semibold text-slate-900"
+        : anyOn
+          ? "text-slate-400 hover:text-slate-700"
+          : "text-slate-600 hover:bg-slate-900/5"
+    }`;
+
   return (
     <>
       <PageIntro
         title="Groundwater Trend & Risk Map"
-        description="Shaded Pakistan regions show Critical, Moderate, Normal, or No Data status. Dots mark exact locations where reports were received, paired with a live heatmap."
+        description="District water table depth and brackish groundwater from the Mouza Census 2020, long-term trends at observation wells, and community reports on top as dots and a live heatmap."
       />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="aqua-stats grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Reports received</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">
+          <p className="tabular mt-2 text-2xl font-semibold text-slate-900">
             {visibleReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)}
           </p>
           <p className="mt-1 text-xs text-slate-400">
             {mySourcesOnly ? "Your personal sources" : "Shown as dots on map"}
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Regions with data</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">
+          <p className="tabular mt-2 text-2xl font-semibold text-slate-900">
             {regionsWithData} / {regionsGeoJson.features.length}
           </p>
-          <p className="mt-1 text-xs text-slate-400">Shaded across Pakistan</p>
+          <p className="mt-1 text-xs text-slate-400">From community reports</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Critical points</p>
-          <p className="mt-2 text-2xl font-bold text-red-600">
+          <p className="tabular mt-2 text-2xl font-semibold text-red-600">
             {visibleReports.filter((report) => riskScore(report) >= 1.5).length}
           </p>
           <p className="mt-1 text-xs text-slate-400">High-concern screening flags</p>
+        </div>
+        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
+          <p className="text-sm text-slate-500">Observation wells</p>
+          <p className="tabular mt-2 text-2xl font-semibold text-sky-700">{wellCount.toLocaleString()}</p>
+          <p className="mt-1 text-xs text-slate-400">{censusRankings.mouzas.toLocaleString()} census mouzas</p>
         </div>
       </div>
 
       <Panel
         title="Pakistan Groundwater Heatmap & Regional Status"
-        description="Highlighted regions show groundwater condition; dots mark exact areas where data has been received."
+        description="Shade districts by census water table depth, brackish water, or community report status. Dots mark exact areas where reports were received."
       >
-        {/* Quick City Jump + Layer Toggles */}
+        {/* Quick City Jump */}
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            onClick={resetView}
+            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+          >
+            All Pakistan
+          </button>
+          {cityLocations
+            .filter((c) => c.quick)
+            .map((city) => (
+              <button
+                key={city.name}
+                type="button"
+                onClick={() => {
+                  mapRef.current?.flyTo({ center: city.position, zoom: 9.2 });
+                }}
+                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal-300 hover:text-teal-800"
+              >
+                {city.name}
+              </button>
+            ))}
+        </div>
+
+        {/* Area shading + layer toggles */}
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                mapRef.current?.flyTo({ center: [69.3451, 30.3753], zoom: 4.8 });
-                setSelection(null);
-              }}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              All Pakistan
-            </button>
-            {cityLocations
-              .filter((c) => c.quick)
-              .map((city) => (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+              <Layers3 size={15} />
+              Shade by
+            </span>
+            <div className="inline-flex flex-wrap rounded-xl border border-slate-200 bg-slate-50 p-1" role="group" aria-label="Area shading">
+              {shadeModes.map(([mode, label]) => (
                 <button
-                  key={city.name}
+                  key={mode}
                   type="button"
+                  aria-pressed={shadeMode === mode}
                   onClick={() => {
-                    mapRef.current?.flyTo({ center: city.position, zoom: 9.2 });
+                    setShadeMode(mode);
+                    setCensusBins([]);
                   }}
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal-300 hover:text-teal-800"
+                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    shadeMode === mode ? "bg-white text-teal-700 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                  }`}
                 >
-                  {city.name}
+                  {label}
                 </button>
               ))}
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -736,19 +1045,6 @@ export function GroundwaterMap() {
             )}
             <button
               type="button"
-              onClick={() => setZonesOn((current) => !current)}
-              aria-pressed={zonesOn}
-              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
-                zonesOn
-                  ? "border-teal-200 bg-teal-50 text-teal-800"
-                  : "border-slate-200 text-slate-600"
-              }`}
-            >
-              <Layers3 size={15} />
-              {zonesOn ? "Region shading on" : "Region shading off"}
-            </button>
-            <button
-              type="button"
               onClick={() => setHeatmapOn((current) => !current)}
               aria-pressed={heatmapOn}
               className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
@@ -759,6 +1055,17 @@ export function GroundwaterMap() {
             >
               <Activity size={15} />
               {heatmapOn ? "Heatmap on" : "Heatmap off"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setWellsOn((current) => !current)}
+              aria-pressed={wellsOn}
+              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold ${
+                wellsOn ? "border-sky-200 bg-sky-50 text-sky-800" : "border-slate-200 text-slate-600"
+              }`}
+            >
+              <CircleDot size={15} />
+              {wellsOn ? "Wells on" : "Wells off"}
             </button>
             <button
               aria-label="Zoom in"
@@ -776,13 +1083,20 @@ export function GroundwaterMap() {
             </button>
             <button
               aria-label="Reset Pakistan view"
-              onClick={() => {
-                mapRef.current?.flyTo({ center: [69.3451, 30.3753], zoom: 4.8 });
-                setSelection(null);
-              }}
+              title="Show all of Pakistan"
+              onClick={resetView}
               className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
             >
-              <LocateFixed size={17} />
+              <Maximize2 size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={showMyLocation}
+              disabled={locating}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            >
+              <LocateFixed size={15} className={locating ? "animate-pulse" : ""} />
+              {locating ? "Finding you…" : "My location"}
             </button>
           </div>
         </div>
@@ -812,50 +1126,159 @@ export function GroundwaterMap() {
               {item.label}
             </button>
           ))}
+          {binsActive && (
+            <button
+              type="button"
+              onClick={() => {
+                setCensusBins([]);
+                setWellBins([]);
+              }}
+              className="ml-1 font-semibold text-teal-700 hover:underline"
+            >
+              Clear legend filters
+            </button>
+          )}
         </div>
 
-        {loadError ? (
-          <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
+        {loadError && (
+          <p role="alert" className="mb-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
             {loadError}
           </p>
-        ) : (
-          <div className="relative">
-            <div
-              ref={mapContainer}
-              className="h-[68vh] min-h-[440px] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100"
-              aria-label="Interactive groundwater risk and trend map of Pakistan"
-            />
-
-            {/* Floating Legend Card (Bottom-Left, like reference map) */}
-            <div className="pointer-events-auto absolute bottom-3 left-3 z-10 rounded-xl border border-slate-200 bg-white/95 p-3 shadow-md backdrop-blur">
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                Region &amp; Trend Status
-              </p>
-              <div className="space-y-1.5 text-xs text-slate-700">
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-sm bg-red-600/80" />
-                  <span>Critical</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-sm bg-amber-500/80" />
-                  <span>Moderate</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-sm bg-teal-600/80" />
-                  <span>Normal</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-3 w-3 rounded-sm bg-slate-400/50" />
-                  <span>No data received</span>
-                </div>
-                <div className="mt-1.5 flex items-center gap-2 border-t border-slate-100 pt-1.5 text-[11px] text-slate-500">
-                  <span className="h-2.5 w-2.5 rounded-full border border-white bg-teal-600 shadow-sm" />
-                  <span>Dots = received reports</span>
-                </div>
-              </div>
-            </div>
-          </div>
         )}
+        <div className="relative">
+          <div
+            ref={mapContainer}
+            className="h-[62vh] min-h-[380px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[68vh] sm:min-h-[440px]"
+            aria-label="Interactive groundwater risk and trend map of Pakistan"
+          />
+
+          {/* On phones the legend would cover the map, so it starts folded behind this button. */}
+          {(shadeMode !== "off" || wellsOn || heatmapOn) && (
+            <button
+              type="button"
+              onClick={() => setLegendOpen((open) => !open)}
+              aria-expanded={legendOpen}
+              className="glass-strong absolute bottom-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-slate-700 sm:hidden"
+            >
+              {legendOpen ? <X size={14} /> : <Layers3 size={14} />}
+              {legendOpen ? "Hide legend" : "Legend"}
+            </button>
+          )}
+
+          {/* Floating legend (bottom-left). Census and well entries are filter buttons. */}
+          {(shadeMode !== "off" || wellsOn || heatmapOn) && (
+            <div className={`${legendOpen ? "flex" : "hidden"} glass-strong pointer-events-auto absolute bottom-14 left-3 right-3 z-10 max-h-[calc(100%-4.5rem)] flex-col gap-3 overflow-y-auto rounded-2xl p-3 text-xs sm:bottom-3 sm:right-auto sm:flex sm:max-h-[calc(100%-1.5rem)] sm:flex-row`}>
+              {shadeMode === "status" && (
+                <div>
+                  <p className="mb-1.5 font-semibold text-slate-700">Region status</p>
+                  <div className="space-y-1.5 text-slate-700">
+                    {[
+                      ["bg-red-600/80", "Critical"],
+                      ["bg-amber-500/80", "Moderate"],
+                      ["bg-teal-600/80", "Normal"],
+                      ["bg-slate-400/50", "No data received"],
+                    ].map(([color, label]) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <span className={`h-3 w-3 rounded-sm ${color}`} />
+                        <span>{label}</span>
+                      </div>
+                    ))}
+                    <div className="mt-1.5 flex items-center gap-2 border-t border-slate-100 pt-1.5 text-[11px] text-slate-500">
+                      <span className="h-2.5 w-2.5 rounded-full border border-white bg-teal-600 shadow-sm" />
+                      <span>Dots = received reports</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {activeScale && (
+                <div role="group" aria-label={`Filter districts by ${activeScale.title.toLowerCase()}`}>
+                  <p className="mb-1.5 font-semibold text-slate-700">{activeScale.title}</p>
+                  <div className="space-y-0.5">
+                    {activeScale.steps.map(([, color, label], index) => {
+                      const on = censusBins.includes(index);
+                      return (
+                        <button key={label} type="button" aria-pressed={on} onClick={() => setCensusBins((current) => toggle(current, index))} className={legendButton(on, censusBins.length > 0)}>
+                          <span className={`h-3 w-5 rounded-sm ring-1 ring-black/5 ${censusBins.length && !on ? "opacity-40" : ""}`} style={{ background: color }} />
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-slate-400">Click to show only those districts</p>
+                </div>
+              )}
+              {wellsOn && (
+                <div role="group" aria-label="Filter wells by trend" className={shadeMode !== "off" ? "sm:border-l sm:border-slate-200 sm:pl-3" : ""}>
+                  <p className="mb-1.5 font-semibold text-slate-700">Observation well trend</p>
+                  <div className="space-y-0.5">
+                    {wellTrendSteps.map(([, color, label], index) => {
+                      const on = wellBins.includes(index);
+                      return (
+                        <button key={label} type="button" aria-pressed={on} onClick={() => setWellBins((current) => toggle(current, index))} className={legendButton(on, wellBins.length > 0)}>
+                          <span className={`h-3 w-3 rounded-full ring-1 ring-black/5 ${wellBins.length && !on ? "opacity-40" : ""}`} style={{ background: color }} />
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-slate-400">{wellCount.toLocaleString()} wells · click one for history</p>
+                </div>
+              )}
+              {heatmapOn && (
+                <div className="sm:border-l sm:border-slate-200 sm:pl-3">
+                  <p className="mb-1.5 font-semibold text-slate-700">Community report heat</p>
+                  <div className="space-y-1.5">
+                    {(
+                      [
+                        ["high", "Critical"],
+                        ["moderate", "Moderate"],
+                        ["normal", "Normal / no lab data"],
+                      ] as const
+                    ).map(([band, label]) => (
+                      <div key={band} className="flex items-center gap-2 px-1.5">
+                        <span className="h-3 w-5 rounded-full" style={{ background: `radial-gradient(circle, ${HEAT_COLORS[band][3]} 0%, ${HEAT_COLORS[band][1]} 60%, transparent 100%)` }} />
+                        {label}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-slate-400">Zoom in for individual report dots</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {locateError && (
+            <p role="alert" className="absolute left-1/2 top-3 z-10 w-[min(92%,26rem)] -translate-x-1/2 rounded-xl bg-amber-50 px-4 py-2.5 text-center text-xs text-amber-800 shadow-sm">
+              {locateError}
+            </p>
+          )}
+
+          {hoverWell && wellsOn && (
+            <div className="pointer-events-none absolute right-3 top-3 z-10 w-64 rounded-xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur">
+              <p className="flex items-start gap-1.5 text-sm font-semibold text-slate-900"><MapPin size={15} className="mt-0.5 shrink-0 text-sky-600" />{placeTitle(hoverPlace)}</p>
+              {placeSubtitle(hoverPlace) && <p className="mt-0.5 text-[11px] text-slate-500">{placeSubtitle(hoverPlace)}</p>}
+              <p className="tabular mt-1.5 rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-700">{formatCoordinates(hoverWell.lat, hoverWell.lon)}</p>
+              <p className="mt-1.5 text-[11px] text-slate-500">Well {hoverWell.id} · {hoverWell.n} readings · {hoverWell.firstYear}–{hoverWell.lastYear} · click for history</p>
+              <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.firstYear}</dt><dd className="tabular mt-0.5 text-base font-semibold text-sky-800">{hoverWell.firstDepth} m</dd></div>
+                <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.lastYear}</dt><dd className="tabular mt-0.5 text-base font-semibold text-sky-800">{hoverWell.lastDepth} m</dd></div>
+              </dl>
+              <p className={`mt-2 text-xs font-semibold ${hoverWell.trend != null && hoverWell.trend >= 0.05 ? "text-red-700" : hoverWell.trend != null && hoverWell.trend <= -0.05 ? "text-blue-700" : "text-slate-600"}`}>{wellTrendText(hoverWell.trend)}</p>
+            </div>
+          )}
+
+          {!hoverWell && hoverDistrict && activeScale && (
+            <div className="pointer-events-none absolute right-3 top-3 z-10 w-64 rounded-xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur">
+              <p className="text-sm font-semibold text-slate-900">{hoverDistrict.name}</p>
+              <p className="text-[11px] text-slate-500">{hoverDistrict.province}{hoverDistrict.censusDistricts && hoverDistrict.censusDistricts !== hoverDistrict.name ? ` · includes ${hoverDistrict.censusDistricts}` : ""}</p>
+              <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-lg bg-orange-50 p-2"><dt className="text-orange-700/80">Median depth</dt><dd className="tabular mt-0.5 text-base font-semibold text-orange-800">{hoverDistrict.medianDepthFt != null ? `${hoverDistrict.medianDepthFt} ft` : "—"}</dd></div>
+                <div className="rounded-lg bg-violet-50 p-2"><dt className="text-violet-700/80">Brackish</dt><dd className="tabular mt-0.5 text-base font-semibold text-violet-800">{hoverDistrict.brackishPct != null ? `${hoverDistrict.brackishPct}%` : "—"}</dd></div>
+              </dl>
+              <p className="mt-2 text-[11px] text-slate-500">{hoverDistrict.mouzas?.toLocaleString() ?? 0} mouzas surveyed{hoverDistrict.p75DepthFt != null ? ` · 1 in 4 deeper than ${hoverDistrict.p75DepthFt} ft` : ""}</p>
+            </div>
+          )}
+        </div>
 
         {mapError && (
           <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
@@ -864,9 +1287,58 @@ export function GroundwaterMap() {
         )}
         <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-500">
           <MapPin size={14} className="mt-0.5 shrink-0" />
-          Shaded regions summarize groundwater status across Pakistan; dots show exact areas where community reports were received. Consented GPS coordinates are used when available.
+          District shading uses the Pakistan Bureau of Statistics Mouza Census 2020: the median reported water table depth, and the share of mouzas reporting brackish underground water. Districts created after 2019 are merged into the district they were carved from. Observation wells show the October depth to water at each monitoring site and its long-term trend. &ldquo;Report status&rdquo; shading and dots come from community reports; consented GPS coordinates are used when available. Nothing on this map certifies water safety.
         </p>
       </Panel>
+
+      {myLocation && (
+        <Panel
+          title={myLocation.place ? `You are near ${myLocation.place}` : myLocation.district ? `You are in ${myLocation.district.name}` : "Your location"}
+          description={`${myLocation.district ? `${myLocation.district.name} district, ${myLocation.district.province}` : "Outside the mapped districts"} · ${myLocation.position[1].toFixed(5)}°N, ${myLocation.position[0].toFixed(5)}°E · accurate to about ${Math.round(myLocation.accuracyM)} m`}
+        >
+          <div className="mb-4 flex items-start gap-2">
+            <p className="text-xs leading-5 text-slate-500">Your location is used only in this browser to centre the map and look up the figures below. It is not saved or sent anywhere.</p>
+            <button onClick={clearMyLocation} aria-label="Clear my location" className="ml-auto shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"><X size={15} /></button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl bg-orange-50 p-4"><p className="text-xs text-orange-700/80">Median water table depth</p><p className="tabular mt-1 text-2xl font-semibold text-orange-800">{myLocation.district?.medianDepthFt != null ? `${myLocation.district.medianDepthFt} ft` : "—"}</p><p className="mt-1 text-[11px] text-orange-800/70">{myLocation.district ? `Across ${myLocation.district.mouzas?.toLocaleString()} mouzas in the district` : "No census data here"}</p></div>
+            <div className="rounded-xl bg-violet-50 p-4"><p className="text-xs text-violet-700/80">Brackish groundwater</p><p className="tabular mt-1 text-2xl font-semibold text-violet-800">{myLocation.district?.brackishPct != null ? `${myLocation.district.brackishPct}%` : "—"}</p><p className="mt-1 text-[11px] text-violet-800/70">of mouzas report salty underground water</p></div>
+            <button type="button" disabled={!myLocation.nearestWell} onClick={() => { if (!myLocation.nearestWell) return; setSelectedWell(myLocation.nearestWell.well); mapRef.current?.flyTo({ center: [myLocation.nearestWell.well.lon, myLocation.nearestWell.well.lat], zoom: 12 }); }} className="rounded-xl bg-sky-50 p-4 text-left transition hover:bg-sky-100 disabled:hover:bg-sky-50"><p className="text-xs text-sky-700/80">Nearest observation well</p><p className="tabular mt-1 text-2xl font-semibold text-sky-800">{myLocation.nearestWell ? `${myLocation.nearestWell.km < 10 ? myLocation.nearestWell.km.toFixed(1) : Math.round(myLocation.nearestWell.km)} km` : "—"}</p><p className="mt-1 text-[11px] text-sky-800/70">{myLocation.nearestWell ? `${myLocation.nearestWell.well.id} · ${wellTrendText(myLocation.nearestWell.well.trend).toLowerCase()} · open history` : "No monitoring wells loaded"}</p></button>
+          </div>
+          <Link href="/forecast" className="mt-4 inline-block text-xs font-semibold text-teal-700 hover:underline">Open the depth forecast for your area →</Link>
+        </Panel>
+      )}
+
+      {selectedWell && (
+        <div id="well-details" className="scroll-mt-24">
+          <Panel title={placeTitle(selectedPlace)} description={[placeSubtitle(selectedPlace), `Observation well ${selectedWell.id}`, `${selectedWell.n} October readings from ${selectedWell.firstYear} to ${selectedWell.lastYear}`].filter(Boolean).join(" · ")}>
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <MapPin size={16} className="text-sky-600" />
+              <span className="tabular font-mono text-sm text-slate-800">{formatCoordinates(selectedWell.lat, selectedWell.lon)}</span>
+              <button type="button" onClick={() => void navigator.clipboard?.writeText(`${selectedWell.lat.toFixed(6)}, ${selectedWell.lon.toFixed(6)}`)} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100">Copy</button>
+              <a href={googleMapsUrl(selectedWell.lat, selectedWell.lon)} target="_blank" rel="noopener noreferrer" className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">Open in Google Maps ↗</a>
+            </div>
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${selectedWell.trend != null && selectedWell.trend >= 0.05 ? "bg-red-50 text-red-700" : selectedWell.trend != null && selectedWell.trend <= -0.05 ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`}>{wellTrendText(selectedWell.trend)}</span>
+              <span className="text-xs text-slate-500">Depth to water went from {selectedWell.firstDepth} m to {selectedWell.lastDepth} m</span>
+              <button onClick={() => setSelectedWell(null)} aria-label="Close well history" className="ml-auto rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"><X size={15} /></button>
+            </div>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={selectedWell.series.map(([year, depth]) => ({ year, depth }))} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+                  <defs><linearGradient id="wellFill" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.3} /><stop offset="100%" stopColor="#0ea5e9" stopOpacity={0} /></linearGradient></defs>
+                  <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
+                  <XAxis dataKey="year" type="number" domain={["dataMin", "dataMax"]} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} allowDecimals={false} />
+                  <YAxis reversed unit=" m" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                  <Tooltip formatter={(value) => [`${value} m below ground`, "Depth to water"]} labelFormatter={(label) => `October ${label}`} />
+                  <Area type="linear" dataKey="depth" stroke="#0284c7" strokeWidth={2.5} fill="url(#wellFill)" dot={{ r: 2.5, fill: "#0284c7" }} activeDot={{ r: 5, fill: "#0284c7", stroke: "white", strokeWidth: 2 }} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="mt-3 text-xs leading-5 text-slate-500">Depth is measured downward from the ground, so a line moving down the chart means the water table is getting deeper.</p>
+          </Panel>
+        </div>
+      )}
 
       {selection && (
         <Panel
@@ -925,11 +1397,38 @@ export function GroundwaterMap() {
         </Panel>
       )}
 
+      {censusDistricts.length > 0 && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Panel title="Deepest water tables" description={`Median reported depth by district · ${censusRankings.mouzas.toLocaleString()} mouzas surveyed`}>
+            <ol className="space-y-2">
+              {censusRankings.deepest.map((district, index) => (
+                <li key={district.name} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
+                  <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-100 text-xs font-bold text-red-700">{index + 1}</span>
+                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{district.name}</span><span className="block text-xs text-slate-500">{district.province} · {district.mouzas} mouzas</span></span>
+                  <span className="tabular text-sm font-semibold text-red-700">{district.medianDepthFt} ft</span>
+                </li>
+              ))}
+            </ol>
+          </Panel>
+          <Panel title="Most brackish groundwater" description="Share of mouzas reporting brackish underground water">
+            <ol className="space-y-2">
+              {censusRankings.brackish.map((district, index) => (
+                <li key={district.name} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
+                  <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">{index + 1}</span>
+                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{district.name}</span><span className="block text-xs text-slate-500">{district.province} · {district.mouzas} mouzas</span></span>
+                  <span className="tabular text-sm font-semibold text-violet-700">{district.brackishPct}%</span>
+                </li>
+              ))}
+            </ol>
+          </Panel>
+        </div>
+      )}
+
       {!selection && visibleReports.length > 0 && (
         <div className="flex items-center gap-2 rounded-xl border border-teal-100 bg-teal-50/60 px-4 py-3 text-xs text-teal-800">
           <Waves size={16} />
           <span>
-            Hover over any shaded region or dot for live stats, or click a dot to expand its report details.
+            Hover over any district, well or dot for live stats, or click a dot or well to expand its details.
           </span>
           <Activity size={16} className="ml-auto shrink-0" />
         </div>

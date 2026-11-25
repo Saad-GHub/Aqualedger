@@ -9,11 +9,9 @@ import {
   BrainCircuit,
   CheckCircle2,
   Droplets,
-  Layers,
   MapPin,
   Plus,
   ShieldAlert,
-  Sparkles,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -164,8 +162,11 @@ function WellCrossSectionInfographic({
 
 export function AreaDepthInfographicStrip({
   trends,
+  aside,
 }: {
   trends: PublicAreaSourceTrend[];
+  /** Optional card shown beside the source-type chart (e.g. the risk overview). */
+  aside?: React.ReactNode;
 }) {
   const areaBars = useMemo(() => {
     const groups = new Map<
@@ -190,13 +191,16 @@ export function AreaDepthInfographicStrip({
     }
     return [...groups.entries()]
       .map(([area, g]) => ({
-        area: area.length > 22 ? `${area.slice(0, 20)}…` : area,
+        area: (() => {
+          const short = area.split(",")[0].trim();
+          return short.length > 14 ? `${short.slice(0, 13)}…` : short;
+        })(),
         fullArea: area,
         averageDepthM: meanDepth(g.total, g.count) ?? 0,
         reports: g.count,
       }))
       .sort((a, b) => b.averageDepthM - a.averageDepthM)
-      .slice(0, 6);
+      .slice(0, 10);
   }, [trends]);
 
   const sourceBars = useMemo(() => {
@@ -218,69 +222,76 @@ export function AreaDepthInfographicStrip({
       .sort((a, b) => b.averageDepthM - a.averageDepthM);
   }, [trends]);
 
-  if (!areaBars.length && !sourceBars.length) return null;
+  if (!areaBars.length && !sourceBars.length) return aside ? <>{aside}</> : null;
 
   return (
-    <Panel
-      title="Live Groundwater Depth Infographics"
-      description="Location-based average depths across Pakistan and by water source type from live Supabase reports."
-    >
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
-          <Sparkles size={14} />
-          Live community depth intelligence
-        </span>
-        <Link
-          href="/forecast"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline"
+    <>
+      {/* Each chart gets its own card so every bar and label has room. */}
+      <Panel
+        title="Average Depth by Area"
+        description={`The ${areaBars.length} deepest reporting areas, from live community reports. Hover a bar for the full area name.`}
+      >
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
+            <MapPin size={14} />
+            Live community depth intelligence
+          </span>
+          <Link
+            href="/forecast"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:underline"
+          >
+            Open AI Depth Forecast & Precautions →
+          </Link>
+        </div>
+        <div className="h-80 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={areaBars} margin={{ top: 8, right: 12, left: 0, bottom: 8 }} barCategoryGap="22%">
+              <defs>
+                <linearGradient id="areaBarFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2dd4bf" />
+                  <stop offset="100%" stopColor="#0f766e" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="4 4" vertical={false} />
+              <XAxis dataKey="area" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 11 }} />
+              <YAxis unit=" m" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+              <Tooltip
+                formatter={(value, _name, item) => [`${value} m · ${item.payload.reports} reports`, "Area average depth"]}
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.fullArea ?? "Area"}
+              />
+              <Bar dataKey="averageDepthM" fill="url(#areaBarFill)" radius={[10, 10, 4, 4]} animationDuration={1300} animationEasing="ease-out" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Panel>
+
+      <div className="grid gap-6 xl:grid-cols-5">
+        <Panel
+          title="Average Depth by Source Type"
+          description="How deep each kind of water source reaches, averaged over every report."
+          className="xl:col-span-3"
         >
-          Open AI Depth Forecast & Precautions →
-        </Link>
-      </div>
-
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h4 className="text-sm font-bold text-slate-800">Average Depth by Area (m)</h4>
-            <MapPin size={16} className="text-teal-600" />
-          </div>
-          <div className="h-56 w-full">
+          <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={areaBars} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
-                <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                <XAxis dataKey="area" tick={{ fontSize: 11, fill: "#64748b" }} />
-                <YAxis unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
-                <Tooltip
-                  formatter={(value) => [`${value} m`, "Area average depth"]}
-                  labelFormatter={(_, payload) =>
-                    payload?.[0]?.payload?.fullArea ?? "Area"
-                  }
-                />
-                <Bar dataKey="averageDepthM" fill="#0d9488" radius={[6, 6, 0, 0]} />
+              <BarChart data={sourceBars} layout="vertical" margin={{ top: 4, right: 24, left: 8, bottom: 4 }} barCategoryGap="28%">
+                <defs>
+                  <linearGradient id="sourceBarFill" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#1e3a8a" />
+                    <stop offset="100%" stopColor="#38bdf8" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" horizontal={false} />
+                <XAxis type="number" unit=" m" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="sourceType" width={120} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                <Tooltip formatter={(value, _name, item) => [`${value} m · ${item.payload.reports} reports`, "Average depth"]} />
+                <Bar dataKey="averageDepthM" fill="url(#sourceBarFill)" radius={[4, 10, 10, 4]} animationDuration={1300} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
-
-        <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h4 className="text-sm font-bold text-slate-800">Average Depth by Source Type (m)</h4>
-            <Layers size={16} className="text-blue-600" />
-          </div>
-          <div className="h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={sourceBars} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
-                <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                <XAxis dataKey="sourceType" tick={{ fontSize: 11, fill: "#64748b" }} />
-                <YAxis unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
-                <Tooltip formatter={(value) => [`${value} m`, "Average depth"]} />
-                <Bar dataKey="averageDepthM" fill="#2563eb" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        </Panel>
+        {aside && <div className="xl:col-span-2 [&>section]:h-full">{aside}</div>}
       </div>
-    </Panel>
+    </>
   );
 }
 

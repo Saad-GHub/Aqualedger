@@ -141,10 +141,12 @@ export default function LoginPage() {
       router.push(userIsAdmin ? "/" : "/my-sources");
       router.refresh();
     } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "";
       setError(
-        cause instanceof Error
-          ? cause.message
-          : "Sign in failed. Check your email and password."
+        message.toLowerCase().includes("invalid login credentials")
+          ? // Accounts made by the earlier email-code flow have no password, so they also land here.
+            "Email or password is incorrect. If you created your account with an email code, it has no password yet: use \"Set / reset password\" below to set one."
+          : message || "Sign in failed. Check your email and password."
       );
     } finally {
       setBusy(false);
