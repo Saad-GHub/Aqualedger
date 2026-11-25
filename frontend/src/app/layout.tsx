@@ -34,6 +34,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "AquaLedger | Groundwater Intelligence",
   description: "Pakistan's Underground Water Intelligence System",
+  applicationName: "AquaLedger",
+  // iPhone / iPad: full-screen when added to the Home Screen, status bar over the page.
+  appleWebApp: { capable: true, title: "AquaLedger", statusBarStyle: "black-translucent" },
+  formatDetection: { telephone: false, address: false, email: false },
 };
 
 // Applies the saved (or system) theme before first paint so the page never flashes white.

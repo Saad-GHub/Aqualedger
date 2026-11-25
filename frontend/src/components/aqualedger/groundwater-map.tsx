@@ -47,6 +47,18 @@ const CENSUS_DATA_URL = "/data/pakistan-groundwater-census-2020.geojson";
 const WELLS_DATA_URL = "/data/pakistan-observation-wells.json";
 const PAKISTAN_CENTER: Position = [69.3451, 30.3753];
 const PAKISTAN_ZOOM = 4.8;
+// Pakistan's outline (incl. Gilgit-Baltistan and AJK). The map opens fitted to this
+// box on any screen size, and cannot be panned far outside the wider limit.
+const PAKISTAN_BOUNDS: [[number, number], [number, number]] = [[60.85, 23.6], [77.85, 37.1]];
+const MAP_LIMIT_BOUNDS: [[number, number], [number, number]] = [[48, 14], [92, 46]];
+// On wide screens the legend sits on the right (over India), so Pakistan is fitted into
+// the space to its left; on phones the legend is folded away and Pakistan fills the box.
+const fitPadding = (el: HTMLElement) =>
+  el.clientWidth >= 820
+    ? { top: 32, bottom: 32, left: 32, right: Math.min(380, Math.round(el.clientWidth * 0.36)) }
+    : el.clientWidth < 640
+      ? 14
+      : 36;
 
 // Linear water-level trend in metres per year: positive means the water table is getting deeper.
 const wellTrendSteps: [number, string, string][] = [[-Infinity, "#1d4ed8", "Rising > 20 cm/yr"], [-0.2, "#60a5fa", "Rising 5–20 cm/yr"], [-0.05, "#cbd5e1", "Stable (±5 cm/yr)"], [0.05, "#f87171", "Falling 5–20 cm/yr"], [0.2, "#b91c1c", "Falling > 20 cm/yr"]];
@@ -358,6 +370,7 @@ function applyHeatmapVisibility(map: import("maplibre-gl").Map, on: boolean) {
 export function GroundwaterMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("maplibre-gl").Map | null>(null);
+  const userMovedMapRef = useRef(false);
   const [reports, setReports] = useState<CommunityWaterReport[]>([]);
   const [myReports, setMyReports] = useState<CommunityWaterReport[]>([]);
   const [mySourcesOnly, setMySourcesOnly] = useState(false);
@@ -511,17 +524,36 @@ export function GroundwaterMap() {
       .then((maplibregl) => {
         if (disposed || !mapContainer.current) return;
         maplibregl.setWorkerUrl("/maplibre-gl-worker.mjs");
+        userMovedMapRef.current = false;
         map = new maplibregl.Map({
           container: mapContainer.current,
           style: theme === "dark" ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/liberty",
-          center: PAKISTAN_CENTER,
-          zoom: PAKISTAN_ZOOM,
+          bounds: PAKISTAN_BOUNDS,
+          fitBoundsOptions: { padding: fitPadding(mapContainer.current) },
+          maxBounds: MAP_LIMIT_BOUNDS,
           minZoom: 3,
           maxZoom: 16,
           attributionControl: false,
+          // Page scrolling never moves the map: Ctrl/⌘ + scroll on desktop, two fingers on phones.
+          cooperativeGestures: true,
+          dragRotate: false,
+          pitchWithRotate: false,
+          touchPitch: false,
         });
+        map.touchZoomRotate.disableRotation();
+        map.keyboard.disableRotation();
         mapRef.current = map;
-        map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
+
+        // Keep the whole of Pakistan in view when the box resizes (rotation, sidebar,
+        // window resize) until the user moves the map themselves.
+        map.on("movestart", (event) => {
+          if ((event as { originalEvent?: Event }).originalEvent) userMovedMapRef.current = true;
+        });
+        map.on("resize", () => {
+          if (!map || userMovedMapRef.current || !mapContainer.current) return;
+          map.fitBounds(PAKISTAN_BOUNDS, { padding: fitPadding(mapContainer.current), duration: 0 });
+        });
+        map.addControl(new maplibregl.AttributionControl({ compact: true }), "top-right");
 
         const popup = new maplibregl.Popup({
           closeButton: false,
@@ -728,6 +760,7 @@ export function GroundwaterMap() {
               risk: Number(properties.score ?? 0),
             });
             if (map && map.getZoom() < 10.5) {
+              userMovedMapRef.current = true;
               map.easeTo({
                 center: event.lngLat,
                 zoom: Math.min(11, map.getZoom() + 2.2),
@@ -879,6 +912,7 @@ export function GroundwaterMap() {
         const nearest = nearestPlace(map, position);
         setMyLocation((current) => current && current.position === position ? { ...current, place: nearest && nearest.km < 15 ? nearest.name : null } : current);
       });
+      userMovedMapRef.current = true;
       map.flyTo({ center: position, zoom: 11, duration: 1200 });
     }, (error) => {
       setLocating(false);
@@ -918,7 +952,10 @@ export function GroundwaterMap() {
   ).length;
 
   const resetView = () => {
-    mapRef.current?.flyTo({ center: PAKISTAN_CENTER, zoom: PAKISTAN_ZOOM });
+    userMovedMapRef.current = false;
+    if (mapRef.current && mapContainer.current) {
+      mapRef.current.fitBounds(PAKISTAN_BOUNDS, { padding: fitPadding(mapContainer.current), duration: 900 });
+    }
     setSelection(null);
   };
 
@@ -988,6 +1025,7 @@ export function GroundwaterMap() {
                 key={city.name}
                 type="button"
                 onClick={() => {
+                  userMovedMapRef.current = true;
                   mapRef.current?.flyTo({ center: city.position, zoom: 9.2 });
                 }}
                 className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal-300 hover:text-teal-800"
@@ -1145,10 +1183,10 @@ export function GroundwaterMap() {
             {loadError}
           </p>
         )}
-        <div className="relative">
+        <div className="@container relative">
           <div
             ref={mapContainer}
-            className="h-[62vh] min-h-[380px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[68vh] sm:min-h-[440px]"
+            className="h-[60svh] min-h-[360px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[68vh] sm:min-h-[440px]"
             aria-label="Interactive groundwater risk and trend map of Pakistan"
           />
 
@@ -1167,7 +1205,7 @@ export function GroundwaterMap() {
 
           {/* Floating legend (bottom-left). Census and well entries are filter buttons. */}
           {(shadeMode !== "off" || wellsOn || heatmapOn) && (
-            <div className={`${legendOpen ? "flex" : "hidden"} glass-strong pointer-events-auto absolute bottom-14 left-3 right-3 z-10 max-h-[calc(100%-4.5rem)] flex-col gap-3 overflow-y-auto rounded-2xl p-3 text-xs sm:bottom-3 sm:right-auto sm:flex sm:max-h-[calc(100%-1.5rem)] sm:flex-row`}>
+            <div className={`${legendOpen ? "flex" : "hidden"} glass-strong pointer-events-auto absolute bottom-14 left-3 right-3 z-10 max-h-[calc(100%-4.5rem)] flex-col gap-3 overflow-y-auto rounded-2xl p-3 text-xs sm:bottom-3 sm:right-auto sm:flex sm:max-h-[calc(100%-1.5rem)] sm:flex-row @min-[820px]:left-auto! @min-[820px]:right-3! @min-[820px]:w-[min(22rem,36%)]! @min-[820px]:flex-col! @min-[820px]:[&>div]:border-l-0! @min-[820px]:[&>div]:pl-0!`}>
               {shadeMode === "status" && (
                 <div>
                   <p className="mb-1.5 font-semibold text-slate-700">Region status</p>
@@ -1254,7 +1292,7 @@ export function GroundwaterMap() {
           )}
 
           {hoverWell && wellsOn && (
-            <div className="pointer-events-none absolute right-3 top-3 z-10 w-64 rounded-xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur">
+            <div className="pointer-events-none absolute right-3 top-3 z-10 w-64 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur @min-[820px]:left-3! @min-[820px]:right-auto!">
               <p className="flex items-start gap-1.5 text-sm font-semibold text-slate-900"><MapPin size={15} className="mt-0.5 shrink-0 text-sky-600" />{placeTitle(hoverPlace)}</p>
               {placeSubtitle(hoverPlace) && <p className="mt-0.5 text-[11px] text-slate-500">{placeSubtitle(hoverPlace)}</p>}
               <p className="tabular mt-1.5 rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-700">{formatCoordinates(hoverWell.lat, hoverWell.lon)}</p>
@@ -1268,7 +1306,7 @@ export function GroundwaterMap() {
           )}
 
           {!hoverWell && hoverDistrict && activeScale && (
-            <div className="pointer-events-none absolute right-3 top-3 z-10 w-64 rounded-xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur">
+            <div className="pointer-events-none absolute right-3 top-3 z-10 w-64 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur @min-[820px]:left-3! @min-[820px]:right-auto!">
               <p className="text-sm font-semibold text-slate-900">{hoverDistrict.name}</p>
               <p className="text-[11px] text-slate-500">{hoverDistrict.province}{hoverDistrict.censusDistricts && hoverDistrict.censusDistricts !== hoverDistrict.name ? ` · includes ${hoverDistrict.censusDistricts}` : ""}</p>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">

@@ -19,8 +19,11 @@ export function useTheme() {
   return useSyncExternalStore<Theme | null>(subscribe, readTheme, serverTheme);
 }
 
-/** Glass pill that switches between the White and Black themes and remembers the choice. */
-export function ThemeToggle() {
+/**
+ * Glass control that switches between the White and Black themes and remembers the choice.
+ * `compact` is a single round button for phones: the sun and moon swap with a spin.
+ */
+export function ThemeToggle({ compact = false, className = "" }: { compact?: boolean; className?: string }) {
   const theme = useTheme();
 
   const choose = (next: Theme) => {
@@ -32,11 +35,34 @@ export function ThemeToggle() {
     }
   };
 
+  if (compact) {
+    const dark = theme === "dark";
+    return (
+      <button
+        type="button"
+        onClick={() => choose(dark ? "light" : "dark")}
+        aria-label={dark ? "Switch to White theme" : "Switch to Black theme"}
+        className={`glass relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-slate-700 ${className}`}
+      >
+        <Sun
+          size={17}
+          strokeWidth={2.2}
+          className={`absolute text-amber-500 transition-all duration-500 ${dark ? "-rotate-90 scale-50 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
+        />
+        <Moon
+          size={16}
+          strokeWidth={2.2}
+          className={`absolute text-teal-300 transition-all duration-500 ${dark ? "rotate-0 scale-100 opacity-100" : "rotate-90 scale-50 opacity-0"}`}
+        />
+      </button>
+    );
+  }
+
   return (
     <div
       role="radiogroup"
       aria-label="Colour theme"
-      className="glass relative inline-flex items-center rounded-full p-1"
+      className={`glass relative inline-flex items-center rounded-full p-1 ${className}`}
     >
       <span
         aria-hidden="true"
