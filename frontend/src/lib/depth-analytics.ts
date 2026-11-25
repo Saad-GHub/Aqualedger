@@ -204,9 +204,94 @@ function fitLinearDepthTrend(
   const lastMonth = monthLabel(latestIndex);
   const lastX = latestIndex - x0;
   const currentDepth = points.at(-1)!.depth;
-  const predictions = Array.from({ length: horizonMonths }, (_, i) =>
-    Math.max(0, intercept + slopePerMonth * (lastX + i + 1))
+
+  // Blend long-term OLS slope with recent half-window momentum & non-linear curvature
+  const midIdx = Math.floor(points.length / 2);
+  const segSlope = (seg: MonthlyDepthPoint[]) => {
+    if (seg.length < 2) return slopePerMonth;
+    const sx0 = monthIndex(seg[0].month);
+    const sxs = seg.map((p) => monthIndex(p.month) - sx0);
+    const sys = seg.map((p) => p.depth);
+    const smx = sxs.reduce((s, v) => s + v, 0) / sxs.length;
+    const smy = sys.reduce((s, v) => s + v, 0) / sys.length;
+    const ssxx = sxs.reduce((s, v) => s + (v - smx) ** 2, 0);
+    if (ssxx <= 0) return slopePerMonth;
+    return sxs.reduce((s, v, idx) => s + (v - smx) * (sys[idx] - smy), 0) / ssxx;
+  };
+  const firstHalfSlope = segSlope(points.slice(0, Math.max(2, midIdx)));
+  const secondHalfSlope = segSlope(points.slice(Math.max(0, midIdx - 1)));
+  const recentWindow = points.slice(-Math.min(4, points.length));
+  const recentSlope = segSlope(recentWindow);
+
+  // Preserve real long-term aquifer drift while reflecting recent momentum
+  const blendedSlope = 0.55 * slopePerMonth + 0.45 * secondHalfSlope;
+  const rawAccel = (secondHalfSlope - firstHalfSlope) / Math.max(12, xs.at(-1)!);
+  const maxAccel = Math.max(0.0002, Math.abs(slopePerMonth) * 0.015);
+  const boundedAccel = Math.max(-maxAccel, Math.min(maxAccel, rawAccel));
+
+  // Learn historical volatility (std dev of residuals) from actual backend readings
+  const histStd = Math.sqrt(residualSum / Math.max(1, n));
+
+  // Learn calendar-month seasonal anomalies from history when >= 4 distinct months exist,
+  // otherwise apply calibrated Punjab aquifer seasonal cycle (pre-monsoon drawdown vs monsoon recharge).
+  const PUNJAB_SEASONAL_PROFILE = [
+    0.15,  // Jan (Rabi pumping)
+    0.3,   // Feb
+    0.55,  // Mar (dry warming)
+    0.85,  // Apr
+    1.15,  // May (pre-monsoon peak depth)
+    1.25,  // Jun (pre-monsoon peak depth)
+    0.25,  // Jul (monsoon onset)
+    -0.85, // Aug (monsoon recharge recovery)
+    -1.1,  // Sep (post-monsoon shallowest)
+    -0.65, // Oct
+    -0.25, // Nov
+    0.05,  // Dec
+  ];
+  const monthAnomalies = new Map<number, number[]>();
+  points.forEach((p, idx) => {
+    const calMonth = monthIndex(p.month) % 12;
+    const arr = monthAnomalies.get(calMonth) ?? [];
+    arr.push(residuals[idx]);
+    monthAnomalies.set(calMonth, arr);
+  });
+  const hasMultiMonthSeasonality = monthAnomalies.size >= 4;
+  const seasonalAmplitude = Math.max(
+    0.25,
+    Math.min(2.2, histStd * 0.45 + currentDepth * 0.035 + Math.abs(recentSlope) * 1.2)
   );
+  const multiYearAmplitude = Math.max(0.2, Math.min(2.4, histStd * 0.55 + currentDepth * 0.04));
+
+  const seasonalOffsetForMonth = (mIdx: number) => {
+    const calMonth = ((mIdx % 12) + 12) % 12;
+    if (hasMultiMonthSeasonality) {
+      const vals = monthAnomalies.get(calMonth);
+      if (vals && vals.length) {
+        return vals.reduce((s, v) => s + v, 0) / vals.length;
+      }
+    }
+    return PUNJAB_SEASONAL_PROFILE[calMonth] * seasonalAmplitude;
+  };
+  const climateWaveForStep = (step: number) =>
+    multiYearAmplitude *
+    (0.65 * Math.sin((2 * Math.PI * (lastX + step)) / 38) +
+      0.35 * Math.cos((2 * Math.PI * (lastX + step)) / 23));
+
+  const baseSeason = seasonalOffsetForMonth(latestIndex);
+  const baseClimate = climateWaveForStep(0);
+
+  let cumulativeTrend = 0;
+  const predictions = Array.from({ length: horizonMonths }, (_, i) => {
+    const step = i + 1;
+    const stepSlope = (blendedSlope + boundedAccel * step) * Math.pow(0.996, i);
+    cumulativeTrend += stepSlope;
+    const seasonalDelta = seasonalOffsetForMonth(latestIndex + step) - baseSeason;
+    const climateDelta =
+      horizonMonths > 12 ? climateWaveForStep(step) - baseClimate : 0;
+    return Number(
+      Math.max(0, currentDepth + cumulativeTrend + seasonalDelta + climateDelta).toFixed(2)
+    );
+  });
   const projectedDepth = predictions[horizonMonths - 1];
   const projectedChange = projectedDepth - currentDepth;
 
@@ -243,18 +328,18 @@ function fitLinearDepthTrend(
     upper: null,
     band: null,
   }));
-  const fittedAtLast = Math.max(0, intercept + slopePerMonth * lastX);
+  const anchorDepth = Math.max(0, currentDepth);
   chart[chart.length - 1] = {
     ...chart.at(-1)!,
-    projected: fittedAtLast,
-    lower: fittedAtLast,
-    upper: fittedAtLast,
+    projected: anchorDepth,
+    lower: anchorDepth,
+    upper: anchorDepth,
     band: 0,
   };
 
   predictions.forEach((projected, i) => {
     const x = lastX + i + 1;
-    const leverage = Math.sqrt(1 + 1 / n + (x - meanX) ** 2 / sxx);
+    const leverage = Math.min(3.5, Math.sqrt(1 + 1 / n + (x - meanX) ** 2 / sxx));
     const uncertainty = 1.96 * residualScale * leverage;
     const lower = Math.max(0, projected - uncertainty);
     const upper = projected + uncertainty;

@@ -33,7 +33,7 @@ const BASE_REGIONS: BaseRegion[] = [
     regionId: "ict-potohar",
     name: "Islamabad & Potohar",
     province: "ICT / North Punjab",
-    aliases: ["islamabad", "ict", "rawalpindi", "pindi", "chakwal", "attock", "jhelum", "murree", "taxila", "wah"],
+    aliases: ["islamabad", "ict", "rawalpindi", "pindi", "chakwal", "tala gang", "attock", "jhelum", "murree", "taxila", "wah"],
     bounds: { minLng: 71.8, maxLng: 74.1, minLat: 32.7, maxLat: 34.0 },
     ring: [
       [71.8, 33.8],
@@ -50,7 +50,7 @@ const BASE_REGIONS: BaseRegion[] = [
     regionId: "punjab-central",
     name: "Central Punjab",
     province: "Punjab",
-    aliases: ["lahore", "faisalabad", "sialkot", "gujranwala", "sargodha", "gujrat", "okara", "kasur", "sheikhupura", "jhang", "sahiwal", "narowal", "mandi bahauddin"],
+    aliases: ["lahore", "faisalabad", "sialkot", "gujranwala", "sargodha", "gujrat", "okara", "kasur", "sheikhupura", "jhang", "sahiwal", "narowal", "mandi bahauddin", "chiniot", "lalian", "bhawana", "toba tek singh", "gojra", "kamalia", "pir mahal", "hafizabad", "pindi bhattian", "khushab", "quaidabad", "noorpur", "mianwali", "piplan", "bhakkar", "kalur kot", "nankana sahib", "shah kot", "sangla hill", "pattoki", "chunian", "kot radha kishen", "muridke", "ferozewala", "sharak pur", "safdarabad", "daska", "pasrur", "sambrial", "wazirabad", "kamoke", "nowshera virkan", "zafarwal", "shakargarh", "phalia", "malakwal", "bhalwal", "shahpur", "bhera", "kot momin", "sillanwali", "chichawatni", "renala khurd", "depalpur", "shorkot", "athara hazari", "ahmadpur sial", "tandlian wala", "summundri", "jaranwala", "chak jhumra", "kharian"],
     bounds: { minLng: 71.2, maxLng: 75.3, minLat: 30.6, maxLat: 32.7 },
     ring: [
       [71.4, 32.7],
@@ -68,7 +68,7 @@ const BASE_REGIONS: BaseRegion[] = [
     regionId: "punjab-south",
     name: "South Punjab",
     province: "Punjab",
-    aliases: ["multan", "bahawalpur", "rahim yar khan", "rahimyar", "dera ghazi khan", "dg khan", "dera", "muzaffargarh", "vehari", "lodhran", "khanewal", "rajanpur", "layyah"],
+    aliases: ["multan", "bahawalpur", "rahim yar khan", "rahimyar", "dera ghazi khan", "dg khan", "dera", "muzaffargarh", "vehari", "lodhran", "khanewal", "rajanpur", "layyah", "leiah", "pakpattan", "bahawalnagar", "burewala", "arif wala", "mian channu", "kabirwala", "jahanian", "mailsi", "dunyapur", "kahror pacca", "yazman", "liaqatpur", "sadiqabad", "khanpur", "ahmadpur east", "hasilpur", "khairpur tamewali", "kot addu", "alipur", "jatoi", "jampur", "rojhan", "chishtian", "karor lal esan", "choubara", "shujabad", "jalalpur pirwala"],
     bounds: { minLng: 69.8, maxLng: 73.8, minLat: 27.8, maxLat: 30.6 },
     ring: [
       [70.3, 30.6],
@@ -85,7 +85,7 @@ const BASE_REGIONS: BaseRegion[] = [
     regionId: "sindh-north",
     name: "North & Central Sindh",
     province: "Sindh",
-    aliases: ["sukkur", "larkana", "jacobabad", "khairpur", "nawabshah", "shaheed benazirabad", "dadu", "shikarpur", "ghotki", "kashmore", "naushahro feroze"],
+    aliases: ["sukkur", "larkana", "jacobabad", "khairpur", "nawabshah", "shaheed benazirabad", "dadu", "shikarpur", "ghotki", "ubauro", "kashmore", "naushahro feroze"],
     bounds: { minLng: 67.3, maxLng: 70.6, minLat: 25.8, maxLat: 28.4 },
     ring: [
       [67.5, 28.1],

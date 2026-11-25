@@ -28,6 +28,28 @@ PUNJAB_CITIES: list[tuple[str, float, float]] = [
     ("Jhang, Punjab", 31.2681, 72.3181),
     ("Dera Ghazi Khan, Punjab", 30.0561, 70.6348),
     ("Rahim Yar Khan, Punjab", 28.4202, 70.2952),
+    ("Sahiwal, Punjab", 30.6682, 73.1066),
+    ("Vehari, Punjab", 30.0445, 72.3528),
+    ("Pakpattan, Punjab", 30.3431, 73.3866),
+    ("Khanewal, Punjab", 30.3017, 71.9320),
+    ("Lodhran, Punjab", 29.5333, 71.6333),
+    ("Chiniot, Punjab", 31.7200, 72.9789),
+    ("Toba Tek Singh, Punjab", 30.9713, 72.4827),
+    ("Hafizabad, Punjab", 32.0711, 73.6889),
+    ("Khushab, Punjab", 32.2967, 72.3525),
+    ("Mianwali, Punjab", 32.5775, 71.5436),
+    ("Bhakkar, Punjab", 31.6253, 71.0657),
+    ("Leiah, Punjab", 30.9613, 70.9390),
+    ("Muzaffargarh, Punjab", 30.0703, 71.1938),
+    ("Rajanpur, Punjab", 29.1035, 70.3297),
+    ("Bahawalnagar, Punjab", 29.9987, 73.2536),
+    ("Mandi Bahauddin, Punjab", 32.5861, 73.4809),
+    ("Narowal, Punjab", 32.1014, 74.8747),
+    ("Kasur, Punjab", 31.1156, 74.4467),
+    ("Sheikhupura, Punjab", 31.7131, 73.9850),
+    ("Nankana Sahib, Punjab", 31.4492, 73.7065),
+    ("Jhelum, Punjab", 32.9425, 73.7264),
+    ("Ghotki, Sindh", 28.0060, 69.3156),
 ]
 
 SOURCE_TYPES = ["Tube well", "Borehole", "Community well"]
@@ -122,13 +144,24 @@ def main() -> None:
                 continue
 
             sites_used += 1
-            area_name = nearest_city(lat, lon)
+            raw_location = (raw.get("Location") or "").strip()
+            if raw_location:
+                loc_parts = [p.strip() for p in raw_location.split(",") if p.strip()]
+                if len(loc_parts) >= 3 and loc_parts[-1].lower() == "pakistan":
+                    area_name = f"{loc_parts[-3]}, {loc_parts[-2]}"
+                elif len(loc_parts) >= 2:
+                    area_name = f"{loc_parts[0]}, {loc_parts[1]}"
+                else:
+                    area_name = nearest_city(lat, lon)
+                address = f"Monitoring Site {site_id} · {raw_location}"
+            else:
+                area_name = nearest_city(lat, lon)
+                address = f"Monitoring Site {site_id}, {area_name}"
             city_counts[area_name] = city_counts.get(area_name, 0) + 1
             source_type = SOURCE_TYPES[idx % len(SOURCE_TYPES)]
             source_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"aqualedger:{site_id}"))
             source_code = f"SRC-{sites_used}"
             source_label = f"{source_type} · {site_id}"
-            address = f"Monitoring Site {site_id}, {area_name}"
             concern = (
                 "Low water level"
                 if trend > 0.25

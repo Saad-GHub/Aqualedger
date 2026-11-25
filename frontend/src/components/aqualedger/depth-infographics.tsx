@@ -46,6 +46,14 @@ import {
 } from "@/lib/depth-analytics";
 import { screenWaterReport } from "@/lib/water-risk-screening";
 
+function formatHorizonLabel(months: number) {
+  if (months >= 12 && months % 12 === 0) {
+    const years = months / 12;
+    return years === 1 ? "12 mo" : `${years} yr`;
+  }
+  return `${months} mo`;
+}
+
 function WellCrossSectionInfographic({
   currentDepthM,
   projectedDepthM,
@@ -141,7 +149,7 @@ function WellCrossSectionInfographic({
             style={{ top: `${projectedPct}%` }}
           >
             <span className="absolute right-0 translate-y-1 rounded bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
-              +{horizonMonths}m Forecast: {projectedDepthM.toFixed(1)} m
+              +{formatHorizonLabel(horizonMonths)} Forecast: {projectedDepthM.toFixed(1)} m
             </span>
           </div>
         )}
@@ -494,6 +502,9 @@ export function FarmerDepthWorkspace({
               <option value={3}>Next 3 months</option>
               <option value={6}>Next 6 months</option>
               <option value={12}>Next 12 months</option>
+              <option value={36}>Next 3 years (36 mo)</option>
+              <option value={60}>Next 5 years (60 mo)</option>
+              <option value={84}>Next 7 years (84 mo)</option>
             </select>
           </label>
 
@@ -521,7 +532,7 @@ export function FarmerDepthWorkspace({
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-            <p className="text-xs text-slate-500">AI Projected ({horizon} mo)</p>
+            <p className="text-xs text-slate-500">AI Projected ({formatHorizonLabel(horizon)})</p>
             <p className="mt-1.5 text-2xl font-bold text-blue-700">
               {projection ? `${projection.projectedDepth.toFixed(1)} m` : "Need 2+ months"}
             </p>
@@ -599,8 +610,8 @@ export function FarmerDepthWorkspace({
                     margin={{ top: 10, right: 16, left: 0, bottom: 4 }}
                   >
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <YAxis reversed unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
+                    <XAxis dataKey="month" minTickGap={28} tick={{ fontSize: 11, fill: "#64748b" }} />
+                    <YAxis reversed domain={["auto", "auto"]} unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
                     <Tooltip
                       formatter={(value, name) =>
                         value == null
@@ -612,22 +623,24 @@ export function FarmerDepthWorkspace({
                     <Area dataKey="lower" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} />
                     <Area dataKey="band" stackId="band" stroke="none" fill="#bfdbfe" fillOpacity={0.55} isAnimationActive={false} />
                     <Line
-                      type="linear"
+                      type="monotone"
                       dataKey="actual"
                       name="Recorded"
                       stroke="#0d9488"
                       strokeWidth={2.5}
-                      dot={{ r: 3.5, fill: "#0d9488" }}
+                      dot={projection.monthlyPoints.length <= 24 ? { r: 3.5, fill: "#0d9488" } : false}
+                      activeDot={{ r: 5, fill: "#0d9488" }}
                       connectNulls
                     />
                     <Line
-                      type="linear"
+                      type="monotone"
                       dataKey="projected"
                       name="AI Projected"
                       stroke="#2563eb"
                       strokeWidth={2.5}
                       strokeDasharray="6 4"
-                      dot={{ r: 3.5, fill: "#2563eb" }}
+                      dot={horizon <= 12 ? { r: 3.5, fill: "#2563eb" } : false}
+                      activeDot={{ r: 5, fill: "#2563eb" }}
                       connectNulls
                     />
                   </LineChart>
@@ -886,7 +899,7 @@ export function UniversalAreaDepthForecast({
                   <th className="pb-3 font-medium">Area / Location</th>
                   <th className="pb-3 font-medium">Total Reports</th>
                   <th className="pb-3 font-medium">Area Avg Depth</th>
-                  <th className="pb-3 font-medium">+{horizon}m Forecast</th>
+                  <th className="pb-3 font-medium">+{formatHorizonLabel(horizon)} Forecast</th>
                   <th className="pb-3 font-medium">Trend Rate</th>
                   <th className="pb-3 font-medium">Area Condition</th>
                 </tr>
@@ -988,6 +1001,9 @@ export function UniversalAreaDepthForecast({
               <option value={3}>Next 3 months</option>
               <option value={6}>Next 6 months</option>
               <option value={12}>Next 12 months</option>
+              <option value={36}>Next 3 years (36 mo)</option>
+              <option value={60}>Next 5 years (60 mo)</option>
+              <option value={84}>Next 7 years (84 mo)</option>
             </select>
           </label>
 
@@ -1013,7 +1029,7 @@ export function UniversalAreaDepthForecast({
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-            <p className="text-xs text-slate-500">AI Projected ({horizon} mo)</p>
+            <p className="text-xs text-slate-500">AI Projected ({formatHorizonLabel(horizon)})</p>
             <p className="mt-1.5 text-2xl font-bold text-blue-700">
               {projection ? `${projection.projectedDepth.toFixed(1)} m` : "Need 2+ months"}
             </p>
@@ -1074,8 +1090,8 @@ export function UniversalAreaDepthForecast({
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={projection.chart} margin={{ top: 10, right: 16, left: 0, bottom: 4 }}>
                   <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#64748b" }} />
-                  <YAxis reversed unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
+                  <XAxis dataKey="month" minTickGap={28} tick={{ fontSize: 11, fill: "#64748b" }} />
+                  <YAxis reversed domain={["auto", "auto"]} unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
                   <Tooltip
                     formatter={(value, name) =>
                       value == null
@@ -1086,8 +1102,8 @@ export function UniversalAreaDepthForecast({
                   <ReferenceLine x={projection.lastMonth} stroke="#94a3b8" strokeDasharray="3 3" />
                   <Area dataKey="lower" stackId="u-band" stroke="none" fill="transparent" isAnimationActive={false} />
                   <Area dataKey="band" stackId="u-band" stroke="none" fill="#bfdbfe" fillOpacity={0.55} isAnimationActive={false} />
-                  <Line type="linear" dataKey="actual" name="Area Average" stroke="#0d9488" strokeWidth={2.5} dot={{ r: 3.5, fill: "#0d9488" }} connectNulls />
-                  <Line type="linear" dataKey="projected" name="AI Projected" stroke="#2563eb" strokeWidth={2.5} strokeDasharray="6 4" dot={{ r: 3.5, fill: "#2563eb" }} connectNulls />
+                  <Line type="monotone" dataKey="actual" name="Area Average" stroke="#0d9488" strokeWidth={2.5} dot={projection.monthlyPoints.length <= 24 ? { r: 3.5, fill: "#0d9488" } : false} activeDot={{ r: 5, fill: "#0d9488" }} connectNulls />
+                  <Line type="monotone" dataKey="projected" name="AI Projected" stroke="#2563eb" strokeWidth={2.5} strokeDasharray="6 4" dot={horizon <= 12 ? { r: 3.5, fill: "#2563eb" } : false} activeDot={{ r: 5, fill: "#2563eb" }} connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             </div>
