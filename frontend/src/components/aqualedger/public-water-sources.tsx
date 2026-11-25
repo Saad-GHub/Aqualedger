@@ -26,7 +26,12 @@ import {
   readPublicAreaSourceTrends,
   type PublicAreaSourceTrend,
 } from "@/lib/community-water-reports";
+<<<<<<< HEAD
 import { formatAxisDepthMetersAndFeet, formatDepthMetersAndFeet, meanDepth, recommendAreaWaterSources } from "@/lib/depth-analytics";
+=======
+import { meanDepth, recommendAreaWaterSources } from "@/lib/depth-analytics";
+import { depthM } from "@/lib/units";
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
 
 const colors = ["#0d9488", "#2563eb", "#f59e0b", "#7c3aed", "#e11d48", "#0891b2"];
 
@@ -208,7 +213,11 @@ export function PublicWaterSources() {
                     Avg depth:{" "}
                     <strong>
                       {item.averageDepthM !== null
+<<<<<<< HEAD
                         ? formatDepthMetersAndFeet(item.averageDepthM)
+=======
+                        ? `${depthM(item.averageDepthM, 1)}`
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                         : "—"}
                     </strong>
                   </p>
@@ -253,7 +262,11 @@ export function PublicWaterSources() {
                   </span>
                   <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-sm">
                     {activeIntel.irrigationBest.averageDepthM !== null
+<<<<<<< HEAD
                       ? `${formatDepthMetersAndFeet(activeIntel.irrigationBest.averageDepthM)} avg`
+=======
+                      ? `${depthM(activeIntel.irrigationBest.averageDepthM, 1)} avg`
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                       : "Tracked"}
                   </span>
                 </div>
@@ -307,8 +320,13 @@ export function PublicWaterSources() {
                     >
                       <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" />
                       <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#64748b" }} />
+<<<<<<< HEAD
                       <YAxis width={78} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tick={{ fontSize: 11, fill: "#64748b" }} />
                       <Tooltip formatter={(value, name) => [formatDepthMetersAndFeet(Number(value)), name]} />
+=======
+                      <YAxis unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
+                      <Tooltip formatter={(value, name) => [`${depthM(Number(value))}`, name]} />
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                       <Legend />
                       {activeIntel.sourceBreakdown.map((s, idx) => (
                         <Line

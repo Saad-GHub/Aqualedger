@@ -12,7 +12,24 @@ import {
   readPublicAreaSourceTrends,
   subscribeToCommunityWaterReports,
   type CommunityWaterReport,
+  type PublicAreaSourceTrend,
 } from "@/lib/community-water-reports";
+import { computeAreaConditions, normalizeAreaName, type AreaConditionLabel } from "@/lib/depth-analytics";
+import { asFeet, asMetres, depthFt, depthM } from "@/lib/units";
+
+// "Critical / Moderate / Normal" level used by the filter pills, applied to every layer:
+// community reports use the area's depth-trend condition (same as the Depth Forecast page),
+// wells use their long-term trend, and census districts use their water-table depth.
+const LEVEL_BINS: Record<Exclude<RiskFilter, "all">, { wells: number[]; census: number[] }> = {
+  high: { wells: [4], census: [3, 4] },
+  moderate: { wells: [3], census: [2] },
+  normal: { wells: [0, 1, 2], census: [0, 1] },
+};
+const conditionRisk: Record<AreaConditionLabel, string> = {
+  Critical: "High concern",
+  Moderate: "Moderate concern",
+  Normal: "Normal",
+};
 import { screenWaterReport } from "@/lib/water-risk-screening";
 import { buildReportCodes } from "@/lib/report-display-codes";
 import { buildPakistanRegionsGeoJson } from "@/lib/pakistan-regions-geojson";
@@ -62,12 +79,12 @@ const fitPadding = (el: HTMLElement) =>
       : 36;
 
 // Linear water-level trend in metres per year: positive means the water table is getting deeper.
-const wellTrendSteps: [number, string, string][] = [[-Infinity, "#1d4ed8", "Rising > 20 cm/yr"], [-0.2, "#60a5fa", "Rising 5–20 cm/yr"], [-0.05, "#cbd5e1", "Stable (±5 cm/yr)"], [0.05, "#f87171", "Falling 5–20 cm/yr"], [0.2, "#b91c1c", "Falling > 20 cm/yr"]];
+const wellTrendSteps: [number, string, string][] = [[-Infinity, "#1d4ed8", "Rising > 20 cm/yr · 8 in"], [-0.2, "#60a5fa", "Rising 5–20 cm/yr · 2–8 in"], [-0.05, "#cbd5e1", "Stable (±5 cm/yr · 2 in)"], [0.05, "#f87171", "Falling 5–20 cm/yr · 2–8 in"], [0.2, "#b91c1c", "Falling > 20 cm/yr · 8 in"]];
 const wellCircleColor = ["case", ["==", ["get", "trend"], null], "#94a3b8", ["step", ["get", "trend"], wellTrendSteps[0][1], ...wellTrendSteps.slice(1).flatMap(([bound, color]) => [bound, color])]];
 
 // District colour ramps for the Mouza Census 2020 layer: [lower bound, colour, legend label].
 const censusScales: Record<CensusMode, { property: keyof CensusDistrict; title: string; steps: [number, string, string][] }> = {
-  depth: { property: "medianDepthFt", title: "Median water table depth", steps: [[0, "#fef9c3", "< 50 ft"], [50, "#fde047", "50–100 ft"], [100, "#fb923c", "100–200 ft"], [200, "#ef4444", "200–400 ft"], [400, "#991b1b", "400+ ft"]] },
+  depth: { property: "medianDepthFt", title: "Median water table depth", steps: [[0, "#fef9c3", "< 50 ft · 15 m"], [50, "#fde047", "50–100 ft · 15–30 m"], [100, "#fb923c", "100–200 ft · 30–61 m"], [200, "#ef4444", "200–400 ft · 61–122 m"], [400, "#991b1b", "400+ ft · 122+ m"]] },
   brackish: { property: "brackishPct", title: "Mouzas with brackish groundwater", steps: [[0, "#ede9fe", "< 5%"], [5, "#c4b5fd", "5–15%"], [15, "#a78bfa", "15–30%"], [30, "#7c3aed", "30–50%"], [50, "#4c1d95", "50%+"]] },
 };
 const censusFillColor = (mode: CensusMode) => {
@@ -261,7 +278,11 @@ function makeFeatures(
               : report.sourceLabel || reportCodes.get(report.id) || report.id.slice(0, 8),
             city: location.city,
             count: report.aggregateCount ?? 1,
+<<<<<<< HEAD
             depth: report.depth ? formatDepthMetersAndFeet(report.depth) : "—",
+=======
+            depth: report.depth ? depthM(Number(report.depth)) : "—",
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
             score: riskScore(report),
             risk: report.riskLevel ?? screenWaterReport(report).riskLevel,
           },
@@ -300,7 +321,11 @@ function makeFeatures(
         .map((r) => Number.parseFloat(r.depth ?? ""))
         .filter(Number.isFinite);
       const avgDepth = depthValues.length
+<<<<<<< HEAD
         ? formatDepthMetersAndFeet(depthValues.reduce((a, b) => a + b, 0) / depthValues.length)
+=======
+        ? depthM(depthValues.reduce((a, b) => a + b, 0) / depthValues.length)
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
         : "—";
       return {
         type: "Feature",
@@ -376,6 +401,7 @@ export function GroundwaterMap() {
   const [myReports, setMyReports] = useState<CommunityWaterReport[]>([]);
   const [mySourcesOnly, setMySourcesOnly] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
+  const [publicTrends, setPublicTrends] = useState<PublicAreaSourceTrend[]>([]);
   const [shadeMode, setShadeMode] = useState<ShadeMode>("depth");
   const [heatmapOn, setHeatmapOn] = useState(true);
   const { isAdmin, isSignedIn, authReady } = useAquaRole();
@@ -422,6 +448,7 @@ export function GroundwaterMap() {
   useEffect(() => {
     if (!authReady) return;
     const refresh = () => {
+      void readPublicAreaSourceTrends().then(setPublicTrends).catch(() => {});
       if (isAdmin) {
         void readCommunityWaterReports()
           .then((items) => {
@@ -477,10 +504,30 @@ export function GroundwaterMap() {
     return isAdmin ? subscribeToCommunityWaterReports(refresh) : () => {};
   }, [isAdmin, isSignedIn, authReady]);
 
-  const activeBaseReports = useMemo(
-    () => (mySourcesOnly && isSignedIn && !isAdmin ? myReports : reports),
-    [mySourcesOnly, isSignedIn, isAdmin, myReports, reports]
-  );
+  // Each report carries its area's depth-trend condition, so the level pills, heat colours,
+  // dots and region status all follow the same Normal / Moderate / Critical as the forecast page.
+  const areaConditions = useMemo(() => computeAreaConditions(publicTrends), [publicTrends]);
+  const activeBaseReports = useMemo(() => {
+    const base = mySourcesOnly && isSignedIn && !isAdmin ? myReports : reports;
+    if (!areaConditions.size) return base;
+    return base.map((report) => {
+      const condition =
+        areaConditions.get(report.areaKey ?? "") ??
+        areaConditions.get(report.address) ??
+        areaConditions.get(normalizeAreaName(report.areaName, report.address));
+      if (!condition) return report;
+      const lab = report.riskLevel;
+      const worst =
+        lab === "High concern" || condition === "Critical"
+          ? "High concern"
+          : lab === "Moderate concern" || condition === "Moderate"
+            ? "Moderate concern"
+            : conditionRisk[condition];
+      return { ...report, riskLevel: worst };
+    });
+  }, [mySourcesOnly, isSignedIn, isAdmin, myReports, reports, areaConditions]);
+  const effectiveCensusBins = riskFilter === "all" ? censusBins : LEVEL_BINS[riskFilter].census;
+  const effectiveWellBins = riskFilter === "all" ? wellBins : LEVEL_BINS[riskFilter].wells;
 
   const visibleReports = useMemo(
     () => activeBaseReports.filter((report) => matchesRiskFilter(report, riskFilter)),
@@ -803,7 +850,11 @@ export function GroundwaterMap() {
             const props = event.features?.[0]?.properties;
             if (!props) return;
             const count = Number(props.reportCount ?? 0);
+<<<<<<< HEAD
             const depthText = props.avgDepthM != null && props.avgDepthM !== "null" ? formatDepthMetersAndFeet(Number(props.avgDepthM)) : "—";
+=======
+            const depthText = props.avgDepthM != null && props.avgDepthM !== "null" ? depthM(Number(props.avgDepthM)) : "—";
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
             popup
               .setLngLat(event.lngLat)
               .setHTML(
@@ -878,11 +929,11 @@ export function GroundwaterMap() {
     if (shadeMode === "depth" || shadeMode === "brackish") {
       map.setPaintProperty("census-fill", "fill-color", censusFillColor(shadeMode) as never);
       const { property, steps } = censusScales[shadeMode];
-      const filter = binFilter(property, steps, censusBins) as never;
+      const filter = binFilter(property, steps, effectiveCensusBins) as never;
       map.setFilter("census-fill", filter);
       map.setFilter("census-outline", filter);
     }
-  }, [shadeMode, censusBins]);
+  }, [shadeMode, effectiveCensusBins]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -890,10 +941,10 @@ export function GroundwaterMap() {
     const visibility = wellsOn ? "visible" : "none";
     map.setLayoutProperty("observation-wells", "visibility", visibility);
     map.setLayoutProperty("observation-well-labels", "visibility", visibility);
-    const filter = binFilter("trend", wellTrendSteps, wellBins) as never;
+    const filter = binFilter("trend", wellTrendSteps, effectiveWellBins) as never;
     map.setFilter("observation-wells", filter);
     map.setFilter("observation-well-labels", filter);
-  }, [wellsOn, wellBins]);
+  }, [wellsOn, effectiveWellBins]);
 
   function showMyLocation() {
     if (!("geolocation" in navigator)) { setLocateError("This browser cannot share its location."); return; }
@@ -1234,16 +1285,16 @@ export function GroundwaterMap() {
                   <p className="mb-1.5 font-semibold text-slate-700">{activeScale.title}</p>
                   <div className="space-y-0.5">
                     {activeScale.steps.map(([, color, label], index) => {
-                      const on = censusBins.includes(index);
+                      const on = effectiveCensusBins.includes(index);
                       return (
-                        <button key={label} type="button" aria-pressed={on} onClick={() => setCensusBins((current) => toggle(current, index))} className={legendButton(on, censusBins.length > 0)}>
-                          <span className={`h-3 w-5 rounded-sm ring-1 ring-black/5 ${censusBins.length && !on ? "opacity-40" : ""}`} style={{ background: color }} />
+                        <button key={label} type="button" aria-pressed={on} onClick={() => { if (riskFilter !== "all") { setRiskFilter("all"); setCensusBins([index]); } else setCensusBins((current) => toggle(current, index)); }} className={legendButton(on, effectiveCensusBins.length > 0)}>
+                          <span className={`h-3 w-5 rounded-sm ring-1 ring-black/5 ${effectiveCensusBins.length && !on ? "opacity-40" : ""}`} style={{ background: color }} />
                           {label}
                         </button>
                       );
                     })}
                   </div>
-                  <p className="mt-1.5 text-[10px] text-slate-400">Click to show only those districts</p>
+                  
                 </div>
               )}
               {wellsOn && (
@@ -1251,10 +1302,10 @@ export function GroundwaterMap() {
                   <p className="mb-1.5 font-semibold text-slate-700">Observation well trend</p>
                   <div className="space-y-0.5">
                     {wellTrendSteps.map(([, color, label], index) => {
-                      const on = wellBins.includes(index);
+                      const on = effectiveWellBins.includes(index);
                       return (
-                        <button key={label} type="button" aria-pressed={on} onClick={() => setWellBins((current) => toggle(current, index))} className={legendButton(on, wellBins.length > 0)}>
-                          <span className={`h-3 w-3 rounded-full ring-1 ring-black/5 ${wellBins.length && !on ? "opacity-40" : ""}`} style={{ background: color }} />
+                        <button key={label} type="button" aria-pressed={on} onClick={() => { if (riskFilter !== "all") { setRiskFilter("all"); setWellBins([index]); } else setWellBins((current) => toggle(current, index)); }} className={legendButton(on, effectiveWellBins.length > 0)}>
+                          <span className={`h-3 w-3 rounded-full ring-1 ring-black/5 ${effectiveWellBins.length && !on ? "opacity-40" : ""}`} style={{ background: color }} />
                           {label}
                         </button>
                       );
@@ -1280,7 +1331,7 @@ export function GroundwaterMap() {
                       </div>
                     ))}
                   </div>
-                  <p className="mt-1.5 text-[10px] text-slate-400">Zoom in for individual report dots</p>
+                  
                 </div>
               )}
             </div>
@@ -1299,8 +1350,13 @@ export function GroundwaterMap() {
               <p className="tabular mt-1.5 rounded-md bg-slate-100 px-2 py-1 font-mono text-[11px] text-slate-700">{formatCoordinates(hoverWell.lat, hoverWell.lon)}</p>
               <p className="mt-1.5 text-[11px] text-slate-500">Well {hoverWell.id} · {hoverWell.n} readings · {hoverWell.firstYear}–{hoverWell.lastYear} · click for history</p>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+<<<<<<< HEAD
                 <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.firstYear}</dt><dd className="tabular mt-0.5 text-sm font-semibold text-sky-800">{formatDepthMetersAndFeet(hoverWell.firstDepth, 2)}</dd></div>
                 <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.lastYear}</dt><dd className="tabular mt-0.5 text-sm font-semibold text-sky-800">{formatDepthMetersAndFeet(hoverWell.lastDepth, 2)}</dd></div>
+=======
+                <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.firstYear}</dt><dd className="tabular mt-0.5 text-base font-semibold text-sky-800">{hoverWell.firstDepth} m<span className="ml-1 text-[11px] font-medium text-sky-700/70">{asFeet(hoverWell.firstDepth)}</span></dd></div>
+                <div className="rounded-lg bg-sky-50 p-2"><dt className="text-sky-700/80">Depth {hoverWell.lastYear}</dt><dd className="tabular mt-0.5 text-base font-semibold text-sky-800">{hoverWell.lastDepth} m<span className="ml-1 text-[11px] font-medium text-sky-700/70">{asFeet(hoverWell.lastDepth)}</span></dd></div>
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
               </dl>
               <p className={`mt-2 text-xs font-semibold ${hoverWell.trend != null && hoverWell.trend >= 0.05 ? "text-red-700" : hoverWell.trend != null && hoverWell.trend <= -0.05 ? "text-blue-700" : "text-slate-600"}`}>{wellTrendText(hoverWell.trend)}</p>
             </div>
@@ -1311,10 +1367,10 @@ export function GroundwaterMap() {
               <p className="text-sm font-semibold text-slate-900">{hoverDistrict.name}</p>
               <p className="text-[11px] text-slate-500">{hoverDistrict.province}{hoverDistrict.censusDistricts && hoverDistrict.censusDistricts !== hoverDistrict.name ? ` · includes ${hoverDistrict.censusDistricts}` : ""}</p>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-orange-50 p-2"><dt className="text-orange-700/80">Median depth</dt><dd className="tabular mt-0.5 text-base font-semibold text-orange-800">{hoverDistrict.medianDepthFt != null ? `${hoverDistrict.medianDepthFt} ft` : "—"}</dd></div>
+                <div className="rounded-lg bg-orange-50 p-2"><dt className="text-orange-700/80">Median depth</dt><dd className="tabular mt-0.5 text-base font-semibold text-orange-800">{hoverDistrict.medianDepthFt != null ? <>{hoverDistrict.medianDepthFt} ft<span className="ml-1 text-[11px] font-medium text-orange-700/70">{asMetres(hoverDistrict.medianDepthFt)}</span></> : "—"}</dd></div>
                 <div className="rounded-lg bg-violet-50 p-2"><dt className="text-violet-700/80">Brackish</dt><dd className="tabular mt-0.5 text-base font-semibold text-violet-800">{hoverDistrict.brackishPct != null ? `${hoverDistrict.brackishPct}%` : "—"}</dd></div>
               </dl>
-              <p className="mt-2 text-[11px] text-slate-500">{hoverDistrict.mouzas?.toLocaleString() ?? 0} mouzas surveyed{hoverDistrict.p75DepthFt != null ? ` · 1 in 4 deeper than ${hoverDistrict.p75DepthFt} ft` : ""}</p>
+              <p className="mt-2 text-[11px] text-slate-500">{hoverDistrict.mouzas?.toLocaleString() ?? 0} mouzas surveyed{hoverDistrict.p75DepthFt != null ? ` · 1 in 4 deeper than ${depthFt(hoverDistrict.p75DepthFt)}` : ""}</p>
             </div>
           )}
         </div>
@@ -1324,10 +1380,6 @@ export function GroundwaterMap() {
             {mapError}
           </p>
         )}
-        <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-500">
-          <MapPin size={14} className="mt-0.5 shrink-0" />
-          District shading uses the Pakistan Bureau of Statistics Mouza Census 2020: the median reported water table depth, and the share of mouzas reporting brackish underground water. Districts created after 2019 are merged into the district they were carved from. Observation wells show the October depth to water at each monitoring site and its long-term trend. &ldquo;Report status&rdquo; shading and dots come from community reports; consented GPS coordinates are used when available. Nothing on this map certifies water safety.
-        </p>
       </Panel>
 
       {myLocation && (
@@ -1340,7 +1392,7 @@ export function GroundwaterMap() {
             <button onClick={clearMyLocation} aria-label="Clear my location" className="ml-auto shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"><X size={15} /></button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl bg-orange-50 p-4"><p className="text-xs text-orange-700/80">Median water table depth</p><p className="tabular mt-1 text-2xl font-semibold text-orange-800">{myLocation.district?.medianDepthFt != null ? `${myLocation.district.medianDepthFt} ft` : "—"}</p><p className="mt-1 text-[11px] text-orange-800/70">{myLocation.district ? `Across ${myLocation.district.mouzas?.toLocaleString()} mouzas in the district` : "No census data here"}</p></div>
+            <div className="rounded-xl bg-orange-50 p-4"><p className="text-xs text-orange-700/80">Median water table depth</p><p className="tabular mt-1 text-2xl font-semibold text-orange-800">{myLocation.district?.medianDepthFt != null ? depthFt(myLocation.district.medianDepthFt) : "—"}</p><p className="mt-1 text-[11px] text-orange-800/70">{myLocation.district ? `Across ${myLocation.district.mouzas?.toLocaleString()} mouzas in the district` : "No census data here"}</p></div>
             <div className="rounded-xl bg-violet-50 p-4"><p className="text-xs text-violet-700/80">Brackish groundwater</p><p className="tabular mt-1 text-2xl font-semibold text-violet-800">{myLocation.district?.brackishPct != null ? `${myLocation.district.brackishPct}%` : "—"}</p><p className="mt-1 text-[11px] text-violet-800/70">of mouzas report salty underground water</p></div>
             <button type="button" disabled={!myLocation.nearestWell} onClick={() => { if (!myLocation.nearestWell) return; setSelectedWell(myLocation.nearestWell.well); mapRef.current?.flyTo({ center: [myLocation.nearestWell.well.lon, myLocation.nearestWell.well.lat], zoom: 12 }); }} className="rounded-xl bg-sky-50 p-4 text-left transition hover:bg-sky-100 disabled:hover:bg-sky-50"><p className="text-xs text-sky-700/80">Nearest observation well</p><p className="tabular mt-1 text-2xl font-semibold text-sky-800">{myLocation.nearestWell ? `${myLocation.nearestWell.km < 10 ? myLocation.nearestWell.km.toFixed(1) : Math.round(myLocation.nearestWell.km)} km` : "—"}</p><p className="mt-1 text-[11px] text-sky-800/70">{myLocation.nearestWell ? `${myLocation.nearestWell.well.id} · ${wellTrendText(myLocation.nearestWell.well.trend).toLowerCase()} · open history` : "No monitoring wells loaded"}</p></button>
           </div>
@@ -1359,7 +1411,11 @@ export function GroundwaterMap() {
             </div>
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${selectedWell.trend != null && selectedWell.trend >= 0.05 ? "bg-red-50 text-red-700" : selectedWell.trend != null && selectedWell.trend <= -0.05 ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}`}>{wellTrendText(selectedWell.trend)}</span>
+<<<<<<< HEAD
               <span className="text-xs text-slate-500">Depth to water went from {formatDepthMetersAndFeet(selectedWell.firstDepth, 2)} to {formatDepthMetersAndFeet(selectedWell.lastDepth, 2)}</span>
+=======
+              <span className="text-xs text-slate-500">Depth to water went from {depthM(selectedWell.firstDepth, 2)} to {depthM(selectedWell.lastDepth, 2)}</span>
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
               <button onClick={() => setSelectedWell(null)} aria-label="Close well history" className="ml-auto rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"><X size={15} /></button>
             </div>
             <div className="h-64 w-full">
@@ -1368,8 +1424,13 @@ export function GroundwaterMap() {
                   <defs><linearGradient id="wellFill" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.3} /><stop offset="100%" stopColor="#0ea5e9" stopOpacity={0} /></linearGradient></defs>
                   <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                   <XAxis dataKey="year" type="number" domain={["dataMin", "dataMax"]} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} allowDecimals={false} />
+<<<<<<< HEAD
                   <YAxis reversed width={78} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
                   <Tooltip formatter={(value) => [`${formatDepthMetersAndFeet(Number(value), 2)} below ground`, "Depth to water"]} labelFormatter={(label) => `October ${label}`} />
+=======
+                  <YAxis reversed unit=" m" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                  <Tooltip formatter={(value) => [`${depthM(Number(value), 2)} below ground`, "Depth to water"]} labelFormatter={(label) => `October ${label}`} />
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                   <Area type="linear" dataKey="depth" stroke="#0284c7" strokeWidth={2.5} fill="url(#wellFill)" dot={{ r: 2.5, fill: "#0284c7" }} activeDot={{ r: 5, fill: "#0284c7", stroke: "white", strokeWidth: 2 }} />
                 </AreaChart>
               </ResponsiveContainer>
@@ -1391,7 +1452,11 @@ export function GroundwaterMap() {
               </span>
               {selectedAvgDepth && (
                 <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700">
+<<<<<<< HEAD
                   Avg depth: {formatDepthMetersAndFeet(selectedAvgDepth)}
+=======
+                  Avg depth: {selectedAvgDepth} m{Number.isFinite(Number(selectedAvgDepth)) ? ` · ${asFeet(Number(selectedAvgDepth))}` : ""}
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                 </span>
               )}
               <span className="text-xs text-slate-500">
@@ -1422,11 +1487,19 @@ export function GroundwaterMap() {
                   </div>
                   <p className="mt-2 text-xs text-slate-500">
                     {report.sourceType || "Source type not provided"}
+<<<<<<< HEAD
                     {report.depth ? ` · ${formatDepthMetersAndFeet(report.depth)} deep` : ""}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {report.aggregateCount
                       ? `${report.aggregateCount} reports received · average depth ${report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}`
+=======
+                    {report.depth ? ` · ${depthM(Number(report.depth))} deep` : ""}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {report.aggregateCount
+                      ? `${report.aggregateCount} reports received · average depth ${report.depth ? depthM(Number(report.depth)) : "—"}`
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                       : `${report.sampleDate || "No test date"} · ${report.status}`}
                   </p>
                 </div>
@@ -1444,7 +1517,7 @@ export function GroundwaterMap() {
                 <li key={district.name} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
                   <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-100 text-xs font-bold text-red-700">{index + 1}</span>
                   <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{district.name}</span><span className="block text-xs text-slate-500">{district.province} · {district.mouzas} mouzas</span></span>
-                  <span className="tabular text-sm font-semibold text-red-700">{district.medianDepthFt} ft</span>
+                  <span className="tabular text-sm font-semibold text-red-700">{depthFt(district.medianDepthFt)}</span>
                 </li>
               ))}
             </ol>

@@ -31,6 +31,7 @@ import {
 } from "@/lib/depth-analytics";
 import { buildReportCodes } from "@/lib/report-display-codes";
 import { screenWaterReport } from "@/lib/water-risk-screening";
+import { depthM } from "@/lib/units";
 
 export default function MySourcesPage() {
   const { isSignedIn, currentEmail, emailVerified, authReady } = useAquaRole();
@@ -264,15 +265,24 @@ export default function MySourcesPage() {
                     <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
                       <div>
                         <p className="text-slate-400">Latest Depth</p>
+<<<<<<< HEAD
                         <p className="mt-0.5 text-sm font-bold text-slate-900">
                           {source.currentDepth !== null ? formatDepthMetersAndFeet(source.currentDepth) : "—"}
+=======
+                        <p className="mt-0.5 text-base font-bold text-slate-900">
+                          {source.currentDepth !== null ? `${depthM(source.currentDepth, 1)}` : "—"}
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                         </p>
                       </div>
                       <div>
                         <p className="text-slate-400">6-Mo AI Forecast</p>
                         <p className="mt-0.5 text-sm font-bold text-blue-700">
                           {source.projection
+<<<<<<< HEAD
                             ? formatDepthMetersAndFeet(source.projection.projectedDepth)
+=======
+                            ? `${depthM(source.projection.projectedDepth, 1)}`
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                             : "Need 2+ mo"}
                         </p>
                       </div>
@@ -343,7 +353,11 @@ export default function MySourcesPage() {
                         {report.areaName || report.address}
                       </td>
                       <td className="py-3.5 font-semibold text-slate-800">
+<<<<<<< HEAD
                         {report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}
+=======
+                        {report.depth ? `${depthM(Number(report.depth))}` : "—"}
+>>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                       </td>
                       <td className="py-3.5 text-slate-500">{report.sampleDate || "—"}</td>
                       <td className="py-3.5">
