@@ -64,14 +64,33 @@ export async function submitCommunityWaterReport(report: NewCommunityWaterReport
   const areaName = report.areaName?.trim() ?? "";
   const streetAddress = report.address.trim();
   const sourceId = report.sourceId ?? crypto.randomUUID();
-  const sourceCode = report.sourceCode ?? `SRC-${sourceId.slice(0, 8).toUpperCase()}`;
+  const sourceCode = report.sourceCode ?? "SRC-PENDING";
   const sourceLabel = report.sourceLabel?.trim() ?? "";
   if (!sourceLabel) throw new Error("Enter a name for this water source so future monthly readings can be linked to it.");
   const row: Record<string, string | number | boolean | null> = { id, created_by: authData.user.id, source_id: sourceId, source_code: sourceCode, source_label: sourceLabel, reporter_name: report.reporterName ?? "", address: [streetAddress, areaName].filter(Boolean).join(", "), street_address: streetAddress, area_name: areaName, source_type: report.sourceType ?? "", source_depth_m: Number(report.depth), sample_date: report.sampleDate ?? "", main_concern: report.concern ?? "", review_status: "under_review", location_consent: Boolean(report.locationConsent), latitude: report.latitude ?? null, longitude: report.longitude ?? null, location_accuracy_m: report.locationAccuracyM ?? null, location_captured_at: report.locationCapturedAt ?? null };
-  for (const [name, field] of Object.entries(columns)) row[field] = name === "E. coli" ? report.measurements[name] : Number(report.measurements[name]);
-  const { error } = await supabase.from("water_reports").insert(row);
+  for (const [name, field] of Object.entries(columns)) {
+    const raw = (report.measurements[name] ?? "").trim();
+    if (!raw) {
+      row[field] = null;
+    } else if (name === "E. coli") {
+      row[field] = raw;
+    } else {
+      const parsed = Number(raw);
+      row[field] = Number.isFinite(parsed) ? parsed : null;
+    }
+  }
+  const { data: inserted, error } = await supabase
+    .from("water_reports")
+    .insert(row)
+    .select("id, source_id, source_code, source_label")
+    .single();
   if (error) throw error;
-  return { id, sourceId, sourceCode, sourceLabel };
+  return {
+    id: inserted?.id ?? id,
+    sourceId: inserted?.source_id ?? sourceId,
+    sourceCode: inserted?.source_code ?? sourceCode,
+    sourceLabel: inserted?.source_label ?? sourceLabel,
+  };
 }
 export type ReportReviewStatus = "received" | "under_review" | "verified" | "rejected";
 export async function updateCommunityReportStatus(id: string, status: ReportReviewStatus) {

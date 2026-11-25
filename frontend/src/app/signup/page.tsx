@@ -11,104 +11,126 @@ export default function SignUpPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [resending, setResending] = useState(false);
-  const [created, setCreated] = useState(false);
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function sendOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError("");
     setMessage("");
     try {
-      const { data, error: authError } = await getSupabaseBrowserClient().auth.signUp({
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
+      const { error: authError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        password,
         options: {
+          shouldCreateUser: true,
+          emailRedirectTo: `${window.location.origin}/forecast`,
           data: { full_name: name.trim() },
-          emailRedirectTo: `${window.location.origin}/account`,
         },
       });
       if (authError) throw authError;
-      if (data.session) {
-        router.push("/account");
-        router.refresh();
-        return;
-      }
-      setCreated(true);
+      setOtpSent(true);
       setMessage(
-        `Verification link sent to ${email.trim()}. Open your inbox and confirm your email once, then sign in with your email and password.`
+        `A 6-digit OTP code has been sent to ${email.trim()}. Enter it below to verify your email and create your account.`
       );
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not create your account.");
+      setError(cause instanceof Error ? cause.message : "Could not send verification OTP.");
     } finally {
       setBusy(false);
     }
   }
 
-  async function resendEmail() {
-    if (!email.trim()) return;
-    setResending(true);
+  async function verifyOtp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
     setError("");
     try {
-      const { error: resendError } = await getSupabaseBrowserClient().auth.resend({
-        type: "signup",
+      const supabase = getSupabaseBrowserClient();
+      let { error: verifyError } = await supabase.auth.verifyOtp({
         email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/account` },
+        token: otpCode.trim(),
+        type: "email",
       });
-      if (resendError) throw resendError;
-      setMessage(`Verification email resent to ${email.trim()}. Please check your inbox and spam folder.`);
+      if (verifyError) {
+        ({ error: verifyError } = await supabase.auth.verifyOtp({
+          email: email.trim(),
+          token: otpCode.trim(),
+          type: "signup",
+        }));
+      }
+      if (verifyError) throw verifyError;
+      router.push("/my-sources");
+      router.refresh();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not resend verification email.");
+      setError(cause instanceof Error ? cause.message : "Invalid or expired OTP code.");
     } finally {
-      setResending(false);
+      setBusy(false);
     }
   }
 
   return (
     <>
       <PageIntro
-        eyebrow="Community registration"
-        title="Create a community account"
-        description="Verify your email once, then use this account for all your water reports."
+        eyebrow="Farmer & Community Registration"
+        title="Create account with Email OTP"
+        description="Verify your email using a 6-digit OTP code from Supabase, then track your water depth over time."
       />
       <Panel
-        title={created ? "Verify your email" : "Community signup"}
-        description="Community accounts are for submitting and tracking reports. Administrator access is separate."
+        title={otpSent ? "Enter your 6-digit OTP" : "Register with Email OTP"}
+        description="Community accounts cannot access administrator review tools."
       >
-        {created ? (
-          <div className="max-w-lg space-y-4">
-            <p role="status" className="rounded-xl bg-teal-50 p-4 text-sm leading-6 text-teal-800">
-              {message}
-            </p>
+        {otpSent ? (
+          <form onSubmit={(event) => void verifyOtp(event)} className="max-w-lg space-y-4">
+            {message && (
+              <p role="status" className="rounded-xl bg-teal-50 p-4 text-sm leading-6 text-teal-800">
+                {message}
+              </p>
+            )}
+            <label className="block text-sm font-medium text-slate-700">
+              6-digit OTP Code
+              <input
+                required
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={otpCode}
+                onChange={(event) => setOtpCode(event.target.value)}
+                placeholder="Enter code from email"
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base tracking-widest outline-none focus:border-teal-600"
+              />
+            </label>
             {error && (
               <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
                 {error}
               </p>
             )}
             <div className="flex flex-wrap gap-3">
-              <Link
-                href="/login?role=user"
-                className="inline-flex rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
-              >
-                Continue to sign in
-              </Link>
               <button
-                type="button"
-                disabled={resending}
-                onClick={() => void resendEmail()}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                disabled={busy}
+                className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
               >
                 <MailCheck size={16} />
-                {resending ? "Sending…" : "Resend email"}
+                {busy ? "Verifying…" : "Verify OTP & Continue"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setOtpSent(false);
+                  setOtpCode("");
+                  setError("");
+                }}
+                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Change email / Resend
               </button>
             </div>
-          </div>
+          </form>
         ) : (
-          <form onSubmit={(event) => void submit(event)} className="max-w-lg space-y-4">
+          <form onSubmit={(event) => void sendOtp(event)} className="max-w-lg space-y-4">
             <label className="block text-sm font-medium text-slate-700">
               Your name
               <input
@@ -116,6 +138,7 @@ export default function SignUpPage() {
                 autoComplete="name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                placeholder="e.g. Muhammad Ali"
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
               />
             </label>
@@ -127,21 +150,9 @@ export default function SignUpPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
               />
-            </label>
-            <label className="block text-sm font-medium text-slate-700">
-              Password
-              <input
-                required
-                type="password"
-                minLength={8}
-                autoComplete="new-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
-              />
-              <span className="mt-1 block text-xs text-slate-500">Use at least 8 characters.</span>
             </label>
             {error && (
               <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
@@ -152,7 +163,7 @@ export default function SignUpPage() {
               disabled={busy}
               className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
             >
-              {busy ? "Creating account…" : "Create account"}
+              {busy ? "Sending OTP…" : "Send verification OTP"}
             </button>
             <p className="text-sm text-slate-500">
               Already have an account?{" "}
