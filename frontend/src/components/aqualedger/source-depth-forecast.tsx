@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { AlertTriangle, Droplets, TrendingDown, TrendingUp } from "lucide-react";
 import { Area, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Panel } from "@/components/aqualedger/app-shell";
-import { aggregateSourceMonthlyDepths, forecastDepthForHorizon, type DepthForecastInput } from "@/lib/depth-analytics";
+import { aggregateSourceMonthlyDepths, forecastDepthForHorizon, reportAreaKey, type DepthForecastInput } from "@/lib/depth-analytics";
 
 const statusStyles: Record<string, string> = {
   "Stable / improving": "bg-emerald-50 text-emerald-700",
@@ -23,7 +23,7 @@ export function SourceDepthForecast({ reports }: { reports: DepthForecastInput[]
       const owner = report.createdBy!;
       const id = report.sourceId!;
       const key = `${owner}:${id}`;
-      const source = unique.get(key) ?? { key, id, owner, code: report.sourceCode || `SRC-${id.slice(0, 8).toUpperCase()}`, label: report.sourceLabel || "Tracked source", area: report.areaName || report.areaKey || report.address, type: report.sourceType || "Water source", count: 0 };
+      const source = unique.get(key) ?? { key, id, owner, code: report.sourceCode || `SRC-${id.slice(0, 8).toUpperCase()}`, label: report.sourceLabel || "Tracked source", area: reportAreaKey(report), type: report.sourceType || "Water source", count: 0 };
       source.count += 1;
       unique.set(key, source);
     });

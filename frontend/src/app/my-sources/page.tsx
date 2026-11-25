@@ -23,6 +23,7 @@ import {
 } from "@/lib/community-water-reports";
 import {
   aggregateSourceMonthlyDepths,
+  normalizeAreaName,
   computeAreaDepthBenchmark,
   evaluateSourceCondition,
   forecastDepthForHorizon,
@@ -85,7 +86,7 @@ export default function MySourcesPage() {
     return [...groups.entries()].map(([key, reports]) => {
       const latest = reports[0];
       const screening = screenWaterReport(latest);
-      const areaKey = latest.areaKey || latest.areaName || latest.address;
+      const areaKey = normalizeAreaName(latest.areaKey || latest.areaName, latest.address);
       const monthly =
         latest.sourceId && latest.createdBy
           ? aggregateSourceMonthlyDepths(myReports, latest.sourceId, latest.createdBy)

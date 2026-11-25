@@ -43,6 +43,7 @@ import {
   evaluateSourceCondition,
   forecastDepthForHorizon,
   meanDepth,
+  normalizeAreaName,
   type DepthForecastInput,
 } from "@/lib/depth-analytics";
 import { screenWaterReport } from "@/lib/water-risk-screening";
@@ -322,7 +323,7 @@ export function FarmerDepthWorkspace({
         owner: report.createdBy,
         code: report.sourceCode ?? `SRC-${report.sourceId.slice(0, 8).toUpperCase()}`,
         label: report.sourceLabel ?? "Tracked source",
-        areaKey: report.areaKey || report.areaName || report.address,
+        areaKey: normalizeAreaName(report.areaKey || report.areaName, report.address),
         sourceType: report.sourceType || "Tube well",
         reports: [],
       };
