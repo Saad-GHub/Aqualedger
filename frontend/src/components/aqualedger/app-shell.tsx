@@ -5,7 +5,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Activity,
-  Bell,
   BookmarkCheck,
   Database,
   Droplets,
@@ -23,6 +22,8 @@ import {
   X,
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/community-water-reports";
+import { NotificationBell } from "@/components/aqualedger/notification-bell";
+import { ThemeToggle } from "@/components/aqualedger/theme-toggle";
 
 const adminNav = [
   { label: "Overview", href: "/", icon: LayoutDashboard },
@@ -174,19 +175,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   const nav = role.isAdmin ? adminNav : userNav;
+  const navLinkClass = (active: boolean) =>
+    `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+      active
+        ? "bg-white/10 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.08)]"
+        : "text-slate-300 hover:bg-white/5 hover:text-white"
+    }`;
+
   const sidebar = (
     <>
-      <div className="mb-9 flex items-center gap-3 px-2">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-600 text-white">
-          <Waves size={25} />
+      <Link href="/" onClick={() => setMenuOpen(false)} className="mb-10 flex items-center gap-3 px-2">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-teal-300 to-cyan-500 text-slate-900 shadow-[0_6px_20px_-6px_rgb(45_212_191/0.7)]">
+          <Waves size={24} strokeWidth={2.4} />
         </div>
         <div>
-          <p className="text-xl font-bold tracking-tight">AquaLedger</p>
-          <p className="text-xs text-slate-500">Groundwater Intelligence</p>
+          <p className="text-lg font-semibold tracking-tight text-white">AquaLedger</p>
+          <p className="whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.08em] text-teal-200/70">
+            Groundwater Intelligence
+          </p>
         </div>
-      </div>
+      </Link>
 
-      <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400/80">
         {role.isAdmin ? "Admin workspace" : "Farmer & Community"}
       </p>
 
@@ -199,13 +209,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               href={href}
               onClick={() => setMenuOpen(false)}
               aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
-                active
-                  ? "bg-teal-50 text-teal-700"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
+              className={navLinkClass(active)}
             >
-              <Icon size={19} />
+              {active && <span className="absolute inset-y-2 left-0 w-1 rounded-full bg-teal-300" />}
+              <Icon size={18} className={active ? "text-teal-300" : "text-slate-400 group-hover:text-slate-200"} />
               {label}
             </Link>
           );
@@ -214,55 +221,50 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {role.isAdmin ? (
         <div className="mt-8">
-          <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400/80">
             System
           </p>
           <Link
             href="/settings"
             onClick={() => setMenuOpen(false)}
             aria-current={pathname === "/settings" ? "page" : undefined}
-            className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium ${
-              pathname === "/settings"
-                ? "bg-teal-50 text-teal-700"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
+            className={navLinkClass(pathname === "/settings")}
           >
-            <Settings size={19} />
+            <Settings size={18} className={pathname === "/settings" ? "text-teal-300" : "text-slate-400"} />
             Settings
           </Link>
-          <Link
-            href="/reports"
-            onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
-          >
-            <Database size={19} />
+          <Link href="/reports" onClick={() => setMenuOpen(false)} className={navLinkClass(false)}>
+            <Database size={18} className="text-slate-400" />
             Data management
           </Link>
         </div>
       ) : (
-        <div className="mt-8 rounded-2xl border border-teal-100 bg-teal-50/70 p-4">
-          <p className="text-sm font-semibold text-teal-900">Track your well depth</p>
-          <p className="mt-1 text-xs leading-5 text-slate-600">
+        <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-teal-300/15 text-teal-200">
+            <TrendingUp size={18} />
+          </div>
+          <p className="text-sm font-semibold text-white">Track your well depth</p>
+          <p className="mt-1 text-xs leading-5 text-slate-300">
             Log readings every 3 months to get AI depth predictions, area averages, and water precautions.
           </p>
           <Link
             href="/forecast"
             onClick={() => setMenuOpen(false)}
-            className="mt-3 inline-block text-xs font-semibold text-teal-700 hover:underline"
+            className="mt-4 flex items-center justify-center rounded-lg bg-teal-300 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-teal-200"
           >
-            Open depth forecast →
+            Open depth forecast
           </Link>
         </div>
       )}
 
       {role.isAdmin && (
-        <div className="mt-auto rounded-2xl bg-slate-900 p-4 text-white">
+        <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-white">
           <div className="mb-3 flex items-center gap-2 text-teal-300">
             <ShieldCheck size={18} />
             <span className="text-xs font-semibold">AquaLedger AI</span>
           </div>
           <p className="text-sm font-semibold">Groundwater insights</p>
-          <p className="mt-1 text-xs leading-5 text-slate-400">
+          <p className="mt-1 text-xs leading-5 text-slate-300">
             Turn monitoring data into actionable intelligence.
           </p>
         </div>
@@ -276,10 +278,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ? role.currentEmail.split("@")[0]
       : "Account";
 
+  const pageTitle =
+    pathname === "/reports" && !role.isAdmin ? "Log Water Reading" : titles[pathname] ?? "AquaLedger";
+
   return (
     <AquaRoleContext.Provider value={role}>
-      <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
-        <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-5 py-6 lg:fixed lg:inset-y-0 lg:flex">
+      <div className="aqua-backdrop min-h-screen text-slate-900 lg:flex">
+        <div aria-hidden="true" className="aqua-orbs">
+          <span />
+          <span />
+          <span />
+        </div>
+        <aside className="aqua-sidebar z-30 hidden w-64 shrink-0 flex-col px-4 py-6 lg:fixed lg:inset-y-0 lg:flex">
           {sidebar}
         </aside>
 
@@ -288,14 +298,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <button
               aria-label="Close menu"
               onClick={() => setMenuOpen(false)}
-              className="absolute inset-0 bg-slate-900/40"
+              className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm"
             />
-            <aside className="relative flex h-full w-72 flex-col border-r border-slate-200 bg-white px-5 py-6">
+            <aside className="aqua-sidebar relative flex h-full w-72 flex-col overflow-y-auto px-4 py-6">
               {sidebar}
               <button
                 onClick={() => setMenuOpen(false)}
                 aria-label="Close navigation"
-                className="absolute right-4 top-4 rounded-lg p-2 text-slate-500"
+                className="absolute right-4 top-4 rounded-lg p-2 text-slate-300 hover:bg-white/10"
               >
                 <X size={18} />
               </button>
@@ -303,45 +313,49 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <div className="min-w-0 flex-1 lg:ml-64">
-          <header className="sticky top-0 z-20 flex h-20 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 md:px-8">
-            <div className="flex items-center gap-3">
+        <div className="relative z-10 min-w-0 flex-1 lg:ml-[17.5rem]">
+          <header className="glass-strong sticky top-0 z-20 flex h-16 items-center justify-between border-x-0! border-t-0! px-4 sm:px-6 md:px-8">
+            <div className="flex min-w-0 items-center gap-3">
               <button
                 onClick={() => setMenuOpen(true)}
                 aria-label="Open navigation"
-                className="rounded-xl border border-slate-200 p-2.5 text-slate-600 lg:hidden"
+                className="glass rounded-xl p-2 text-slate-600 lg:hidden"
               >
                 <Menu size={19} />
               </button>
-              <div>
-                <p className="text-xs font-medium text-slate-400">Pakistan / AquaLedger</p>
-                <h1 className="text-lg font-bold text-slate-800 md:text-xl">
-                  {pathname === "/reports" && !role.isAdmin
-                    ? "Log Water Reading"
-                    : titles[pathname] ?? "AquaLedger"}
-                </h1>
-              </div>
+              <Link href="/" aria-label="AquaLedger home" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-teal-300 to-cyan-500 text-slate-900 shadow-[0_6px_18px_-6px_rgb(45_212_191/0.7)] sm:hidden">
+                <Waves size={19} strokeWidth={2.4} />
+              </Link>
+              <p className="truncate text-sm text-slate-500">
+                <span className="hidden sm:inline">
+                  AquaLedger <span className="mx-1.5 text-slate-300">/</span>
+                </span>
+                <span className="font-display font-semibold tracking-tight text-slate-800">{pageTitle}</span>
+              </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              {role.isAdmin && (
-                <button
-                  aria-label="Notifications"
-                  className="relative rounded-xl border border-slate-200 p-2.5 text-slate-600 hover:bg-slate-50"
-                >
-                  <Bell size={19} />
-                </button>
-              )}
+            <div className="flex items-center gap-2.5">
+              <span className="hidden items-center gap-2 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-3 py-1 text-xs font-medium text-emerald-700 md:inline-flex">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60 motion-reduce:animate-none" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                Live data
+              </span>
+
+              <ThemeToggle />
+
+              {role.isAdmin && <NotificationBell />}
 
               {role.isSignedIn ? (
                 <Link
                   href="/account"
                   aria-label={role.isAdmin ? "Admin account" : "My account"}
                   title={role.currentEmail || "My account"}
-                  className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold shadow-sm transition ${
+                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold shadow-sm transition ${
                     role.isAdmin
-                      ? "border-slate-800 bg-slate-900 text-white hover:bg-slate-800"
-                      : "border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100"
+                      ? "bg-slate-900 text-white hover:bg-slate-700"
+                      : "border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100"
                   }`}
                 >
                   {role.isAdmin ? <ShieldCheck size={16} className="text-teal-300" /> : <User size={16} />}
@@ -350,22 +364,60 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ) : (
                 <Link
                   href="/login"
-                  className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-800"
+                  aria-label="Sign in"
+                  className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-slate-900 p-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgb(11_31_58/0.7)] transition hover:bg-slate-700 sm:px-4 sm:py-2"
                 >
-                  <LogIn size={15} />
-                  Sign in
+                  <LogIn size={16} />
+                  <span className="hidden sm:inline">Sign in</span>
                 </Link>
               )}
             </div>
           </header>
 
-          <main className="space-y-6 p-4 sm:p-5 md:p-8">
+          <main key={pathname} className="aqua-stagger mx-auto w-full max-w-[1400px] space-y-5 px-3.5 pt-4 pb-32 sm:space-y-6 sm:p-6 sm:pb-32 md:p-8 lg:pb-8">
             {children}
-            <footer className="pb-2 pt-3 text-center text-xs text-slate-400">
-              AquaLedger · Pakistan Underground Water Intelligence System · Community-reported data
+            <footer className="flex flex-col items-center justify-between gap-2 border-t border-slate-200/70 pb-2 pt-6 text-xs text-slate-400 sm:flex-row">
+              <span className="flex items-center gap-2">
+                <Waves size={14} className="text-teal-600" />
+                AquaLedger · Pakistan Underground Water Intelligence System
+              </span>
+              <span>Community-reported data · screening only</span>
             </footer>
           </main>
         </div>
+
+        {/* Mobile tab bar (iOS style): the four main pages plus "More" for the full menu. */}
+        <nav
+          aria-label="Quick navigation"
+          className="pb-safe fixed inset-x-0 bottom-0 z-30 px-3 pt-2 lg:hidden"
+        >
+          <div className="glass-strong mx-auto flex max-w-md items-stretch justify-between rounded-[26px] p-1.5">
+            {nav.slice(0, 4).map(({ label, href, icon: Icon }) => {
+              const active = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-[20px] px-1 py-2 text-[10.5px] font-semibold transition duration-300 ${
+                    active ? "bg-teal-500 text-white shadow-[0_8px_18px_-8px_rgb(20_184_166/0.9)]" : "text-slate-500"
+                  }`}
+                >
+                  <Icon size={19} strokeWidth={active ? 2.4 : 2} />
+                  <span className="w-full truncate text-center">{label.replace("Groundwater ", "")}</span>
+                </Link>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-[20px] px-1 py-2 text-[10.5px] font-semibold text-slate-500"
+            >
+              <Menu size={19} />
+              <span>More</span>
+            </button>
+          </div>
+        </nav>
       </div>
     </AquaRoleContext.Provider>
   );
@@ -383,15 +435,16 @@ export function PageIntro({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <div className="flex flex-col justify-between gap-4 pt-1 sm:flex-row sm:items-end">
       <div>
         {eyebrow && (
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-teal-700">
+          <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-teal-200/80 bg-teal-50/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-teal-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
             {eyebrow}
           </p>
         )}
-        <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
-        <p className="mt-1 text-sm text-slate-500">{description}</p>
+        <h1 className="text-[28px] text-slate-900 sm:text-4xl">{title}</h1>
+        <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-500 sm:text-[15px]">{description}</p>
       </div>
       {action}
     </div>
@@ -410,10 +463,10 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
+    <section className={`glass rounded-3xl p-5 sm:p-6 ${className}`}>
       <div className="mb-5">
-        <h3 className="font-bold">{title}</h3>
-        {description && <p className="mt-1 text-xs text-slate-500">{description}</p>}
+        <h3 className="text-[17px] font-bold text-slate-900">{title}</h3>
+        {description && <p className="mt-1.5 max-w-3xl text-[13px] leading-5 text-slate-500">{description}</p>}
       </div>
       {children}
     </section>

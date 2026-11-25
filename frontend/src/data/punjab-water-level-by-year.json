@@ -1,0 +1,174 @@
+{
+ "summary": {
+  "wells": 3311,
+  "observations": 38450,
+  "trendWells": 3008,
+  "deepening": 2053,
+  "rising": 954,
+  "medianTrendMPerYear": 0.055,
+  "firstYear": 1900,
+  "lastYear": 2020
+ },
+ "years": [
+  {
+   "year": 1979,
+   "medianDepthM": 3.17,
+   "wells": 225
+  },
+  {
+   "year": 1980,
+   "medianDepthM": 3.13,
+   "wells": 387
+  },
+  {
+   "year": 1981,
+   "medianDepthM": 2.94,
+   "wells": 514
+  },
+  {
+   "year": 1982,
+   "medianDepthM": 3.25,
+   "wells": 645
+  },
+  {
+   "year": 1983,
+   "medianDepthM": 2.72,
+   "wells": 640
+  },
+  {
+   "year": 1984,
+   "medianDepthM": 3.18,
+   "wells": 948
+  },
+  {
+   "year": 1985,
+   "medianDepthM": 3.48,
+   "wells": 1159
+  },
+  {
+   "year": 1986,
+   "medianDepthM": 3.36,
+   "wells": 1119
+  },
+  {
+   "year": 1987,
+   "medianDepthM": 3.53,
+   "wells": 1283
+  },
+  {
+   "year": 1988,
+   "medianDepthM": 3.37,
+   "wells": 1578
+  },
+  {
+   "year": 1989,
+   "medianDepthM": 3.48,
+   "wells": 1695
+  },
+  {
+   "year": 1990,
+   "medianDepthM": 3.5,
+   "wells": 1719
+  },
+  {
+   "year": 1991,
+   "medianDepthM": 3.54,
+   "wells": 1701
+  },
+  {
+   "year": 1992,
+   "medianDepthM": 3.38,
+   "wells": 1637
+  },
+  {
+   "year": 1993,
+   "medianDepthM": 3.45,
+   "wells": 1578
+  },
+  {
+   "year": 1994,
+   "medianDepthM": 3.47,
+   "wells": 1439
+  },
+  {
+   "year": 1995,
+   "medianDepthM": 3.51,
+   "wells": 1486
+  },
+  {
+   "year": 1996,
+   "medianDepthM": 3.5,
+   "wells": 1447
+  },
+  {
+   "year": 1997,
+   "medianDepthM": 3.28,
+   "wells": 1073
+  },
+  {
+   "year": 1998,
+   "medianDepthM": 3.52,
+   "wells": 581
+  },
+  {
+   "year": 1999,
+   "medianDepthM": 3.52,
+   "wells": 929
+  },
+  {
+   "year": 2000,
+   "medianDepthM": 4.0,
+   "wells": 1664
+  },
+  {
+   "year": 2001,
+   "medianDepthM": 4.41,
+   "wells": 1285
+  },
+  {
+   "year": 2002,
+   "medianDepthM": 4.36,
+   "wells": 1691
+  },
+  {
+   "year": 2003,
+   "medianDepthM": 3.95,
+   "wells": 1955
+  },
+  {
+   "year": 2004,
+   "medianDepthM": 4.29,
+   "wells": 1213
+  },
+  {
+   "year": 2005,
+   "medianDepthM": 3.54,
+   "wells": 413
+  },
+  {
+   "year": 2006,
+   "medianDepthM": 3.79,
+   "wells": 2135
+  },
+  {
+   "year": 2007,
+   "medianDepthM": 3.54,
+   "wells": 1724
+  },
+  {
+   "year": 2008,
+   "medianDepthM": 3.37,
+   "wells": 222
+  },
+  {
+   "year": 2009,
+   "medianDepthM": 3.75,
+   "wells": 1188
+  },
+  {
+   "year": 2010,
+   "medianDepthM": 3.97,
+   "wells": 261
+  }
+ ]
+}
