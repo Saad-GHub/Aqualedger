@@ -58,7 +58,7 @@ export default function LoginPage() {
       if (otpError) throw otpError;
       setOtpSent(true);
       setInfo(
-        `A 6-digit verification code has been sent to ${email.trim()}. Enter it below to verify your email and sign in.`
+        `An 8-digit verification code has been sent to ${email.trim()}. Enter it below to verify your email and sign in.`
       );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not send OTP to this email.");
@@ -231,7 +231,7 @@ export default function LoginPage() {
             </div>
             <h3 className="mt-4 text-lg font-bold text-slate-900">Farmer / Community User</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Verify your email with a 6-digit OTP to create an account or sign in, log water depth every 3 months, and get AI depth predictions & precautions.
+              Verify your email with an 8-digit OTP to create an account or sign in, log water depth every 3 months, and get AI depth predictions & precautions.
             </p>
             <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-teal-700">
               Continue as Farmer / User →
@@ -274,7 +274,7 @@ export default function LoginPage() {
         description={
           isAdminMode
             ? "Sign in with the single authorized AquaLedger admin credentials."
-            : "Verify your email using a 6-digit OTP code from Supabase to create an account or sign in."
+            : "Verify your email using an 8-digit OTP code from Supabase to create an account or sign in."
         }
         action={
           <button
@@ -341,7 +341,7 @@ export default function LoginPage() {
           title={userAuthMode === "otp" ? "Email OTP Authentication" : "Password Sign In"}
           description={
             userAuthMode === "otp"
-              ? "New and existing users can enter their email to receive a 6-digit OTP code from Supabase."
+              ? "New and existing users can enter their email to receive an 8-digit OTP code from Supabase."
               : "Sign in with your email and password."
           }
         >
@@ -414,7 +414,7 @@ export default function LoginPage() {
                   disabled={busy}
                   className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
                 >
-                  {busy ? "Sending OTP…" : "Send 6-digit OTP"}
+                  {busy ? "Sending OTP…" : "Send 8-digit OTP"}
                 </button>
               </form>
             ) : (
@@ -425,7 +425,7 @@ export default function LoginPage() {
                   </p>
                 )}
                 <label className="block text-sm font-medium text-slate-700">
-                  6-digit OTP Code
+                  8-digit OTP Code
                   <input
                     required
                     inputMode="numeric"

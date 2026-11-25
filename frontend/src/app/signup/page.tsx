@@ -36,7 +36,7 @@ export default function SignUpPage() {
       if (authError) throw authError;
       setOtpSent(true);
       setMessage(
-        `A 6-digit OTP code has been sent to ${email.trim()}. Enter it below to verify your email and create your account.`
+        `An 8-digit OTP code has been sent to ${email.trim()}. Enter it below to verify your email and create your account.`
       );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not send verification OTP.");
@@ -78,10 +78,10 @@ export default function SignUpPage() {
       <PageIntro
         eyebrow="Farmer & Community Registration"
         title="Create account with Email OTP"
-        description="Verify your email using a 6-digit OTP code from Supabase, then track your water depth over time."
+        description="Verify your email using an 8-digit OTP code from Supabase, then track your water depth over time."
       />
       <Panel
-        title={otpSent ? "Enter your 6-digit OTP" : "Register with Email OTP"}
+        title={otpSent ? "Enter your 8-digit OTP" : "Register with Email OTP"}
         description="Community accounts cannot access administrator review tools."
       >
         {otpSent ? (
@@ -92,7 +92,7 @@ export default function SignUpPage() {
               </p>
             )}
             <label className="block text-sm font-medium text-slate-700">
-              6-digit OTP Code
+              8-digit OTP Code
               <input
                 required
                 inputMode="numeric"

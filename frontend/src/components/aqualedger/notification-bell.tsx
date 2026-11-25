@@ -188,11 +188,7 @@ export function NotificationBell() {
                         </span>
                         <span className="mt-0.5 block text-xs text-slate-500">
                           {alert ? "High concern signal · " : "Reading logged · "}
-<<<<<<< HEAD
                           {report.depth ? formatDepthMetersAndFeet(report.depth) : "depth n/a"}
-=======
-                          {report.depth ? `${depthM(Number(report.depth))}` : "depth n/a"}
->>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                           {report.sampleDate ? ` · ${report.sampleDate}` : ""}
                         </span>
                       </span>

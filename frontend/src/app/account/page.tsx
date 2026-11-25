@@ -175,11 +175,7 @@ export default function AccountPage() {
                       {report.sourceCode ? `${report.sourceCode} · ` : ""}
                       {report.sourceLabel || report.sourceType || "Water source"}
                     </td>
-<<<<<<< HEAD
                     <td className="py-3">{report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}</td>
-=======
-                    <td className="py-3">{report.depth ? `${depthM(Number(report.depth))}` : "—"}</td>
->>>>>>> d8cec3d8088b9c2170ba8e470193557574d3d166
                     <td className="py-3">{report.sampleDate || "—"}</td>
                     <td className="py-3">{report.status.replaceAll("_", " ")}</td>
                   </tr>
