@@ -91,7 +91,7 @@ export type PrecautionItem = {
 };
 
 export type SourceConditionEvaluation = {
-  conditionLabel: "Healthy" | "Watch" | "Critical";
+  conditionLabel: "Normal" | "Moderate" | "Critical";
   conditionTone: "teal" | "amber" | "red";
   diffFromAreaM: number | null;
   areaAverageM: number | null;
@@ -144,6 +144,18 @@ const CANONICAL_AREA_MAP: { canonical: string; aliases: string[] }[] = [
   { canonical: "Quetta, Balochistan", aliases: ["quetta"] },
   { canonical: "Abbottabad, KP", aliases: ["abbottabad"] },
 ];
+
+export const PREDEFINED_PAKISTAN_AREAS = CANONICAL_AREA_MAP.map(
+  (entry) => entry.canonical
+).sort((a, b) => a.localeCompare(b));
+
+export function hasAreaAndProvince(rawArea: string): boolean {
+  const parts = rawArea
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return parts.length >= 2;
+}
 
 export function normalizeAreaName(rawArea?: string, fallbackAddress?: string): string {
   const raw = (rawArea || "").trim() || (fallbackAddress || "").trim();
@@ -591,14 +603,14 @@ export function evaluateSourceCondition(params: {
   const hasQualityWatch =
     riskLevel === "Moderate concern" || flags.length > 0;
 
-  let conditionLabel: SourceConditionEvaluation["conditionLabel"] = "Healthy";
+  let conditionLabel: SourceConditionEvaluation["conditionLabel"] = "Normal";
   let conditionTone: SourceConditionEvaluation["conditionTone"] = "teal";
 
   if (isFastDecline || (isMuchDeeperThanArea && isModerateDecline) || hasHealthRisk) {
     conditionLabel = "Critical";
     conditionTone = "red";
   } else if (isModerateDecline || isDeeperThanArea || hasQualityWatch) {
-    conditionLabel = "Watch";
+    conditionLabel = "Moderate";
     conditionTone = "amber";
   }
 

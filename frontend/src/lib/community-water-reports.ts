@@ -78,18 +78,22 @@ async function fetchAllPages<T>(
 }
 
 function mapReportRow(row: Record<string, unknown>): CommunityWaterReport {
+  const rawArea = (row.area_name as string | null) ?? undefined;
+  const rawKey = (row.area_key as string | null) ?? undefined;
+  const rawAddress = String(row.street_address || row.address || "");
+  const normalizedArea = normalizeAreaName(rawKey || rawArea, rawAddress);
   return {
     id: String(row.id ?? ""),
     reportCode: (row.report_code as string | null) ?? undefined,
     reporterName: (row.reporter_name as string | null) ?? undefined,
-    address: String(row.street_address || row.address || ""),
-    areaName: (row.area_name as string | null) ?? undefined,
+    address: rawAddress,
+    areaName: rawArea ? normalizedArea : undefined,
     sourceType: (row.source_type as string | null) ?? undefined,
     depth: row.source_depth_m == null ? "" : String(row.source_depth_m),
     sampleDate: (row.sample_date as string | null) ?? undefined,
     concern: (row.main_concern as string | null) ?? undefined,
     status: String(row.review_status ?? "received"),
-    areaKey: (row.area_key as string | null) ?? undefined,
+    areaKey: normalizedArea,
     riskLevel: (row.risk_level as string | null) ?? undefined,
     verificationState: (row.verification_state as string | null) ?? undefined,
     latitude: row.latitude == null ? null : Number(row.latitude),
@@ -207,7 +211,7 @@ export async function readMyTrackedWaterSources(): Promise<TrackedWaterSource[]>
   );
   if (error) throw error;
   const sources = new Map<string, TrackedWaterSource>();
-  for (const row of data) if (row.source_id && !sources.has(row.source_id)) sources.set(row.source_id, { id: row.source_id, code: row.source_code ?? `SRC-${String(row.source_id).slice(0, 8).toUpperCase()}`, label: row.source_label ?? "Tracked source", areaName: row.area_name ?? "", address: row.street_address ?? row.address ?? "", sourceType: row.source_type ?? "Tube well" });
+  for (const row of data) if (row.source_id && !sources.has(row.source_id)) sources.set(row.source_id, { id: row.source_id, code: row.source_code ?? `SRC-${String(row.source_id).slice(0, 8).toUpperCase()}`, label: row.source_label ?? "Tracked source", areaName: normalizeAreaName(row.area_name, row.street_address ?? row.address), address: row.street_address ?? row.address ?? "", sourceType: row.source_type ?? "Tube well" });
   return [...sources.values()];
 }
 
