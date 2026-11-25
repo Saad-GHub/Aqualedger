@@ -209,7 +209,9 @@
   --glass-ring: linear-gradient(145deg, rgb(255 255 255 / 1) 0%, rgb(255 255 255 / 0.35) 38%, rgb(153 246 228 / 0.55) 72%, rgb(125 211 252 / 0.6) 100%);
   --glass-sheen: linear-gradient(145deg, rgb(255 255 255 / 0.6) 0%, rgb(255 255 255 / 0.15) 50%, rgb(255 255 255 / 0.3) 100%);
   --glass-bg-strong: rgb(255 255 255 / 0.55);
-  --glass-fill-strong: linear-gradient(145deg, rgb(255 255 255 / 0.82), rgb(255 255 255 / 0.5) 60%, rgb(236 254 255 / 0.6));
+  /* Second-layer surfaces (popovers, hover cards, tooltips, menus, legend): nearly
+     opaque so their text never fights with the content underneath. */
+  --glass-fill-strong: linear-gradient(145deg, rgb(255 255 255 / 0.97), rgb(250 253 255 / 0.93) 60%, rgb(240 253 250 / 0.94));
   --glass-border: rgb(255 255 255 / 0.9);
   --glass-edge: rgb(15 40 70 / 0.08);
   --glass-shadow: 0 1px 2px rgb(11 31 58 / 0.05), 0 22px 44px -22px rgb(14 74 110 / 0.35), 0 8px 18px -12px rgb(13 148 136 / 0.18);
@@ -245,7 +247,7 @@
   --glass-bg: rgb(255 255 255 / 0.035);
   --glass-fill: linear-gradient(145deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0.025) 45%, rgb(20 184 166 / 0.05) 100%);
   --glass-ring: linear-gradient(145deg, rgb(255 255 255 / 0.22) 0%, rgb(255 255 255 / 0.05) 40%, rgb(45 212 191 / 0.3) 100%);
-  --glass-fill-strong: linear-gradient(145deg, rgb(24 30 36 / 0.82), rgb(10 14 18 / 0.72));
+  --glass-fill-strong: linear-gradient(145deg, rgb(26 32 38 / 0.97), rgb(12 16 20 / 0.95));
   --contour: rgb(45 212 191 / 0.05);
   --glass-sheen: linear-gradient(140deg, rgb(255 255 255 / 0.1) 0%, rgb(255 255 255 / 0.02) 40%, rgb(255 255 255 / 0.05) 100%);
   --glass-bg-strong: rgb(14 18 22 / 0.72);
@@ -644,6 +646,36 @@ a[class*="rounded"]:active {
 }
 .recharts-tooltip-label { font-weight: 600; color: var(--color-slate-900) !important; margin-bottom: 2px !important; }
 .recharts-tooltip-cursor { fill: rgb(20 184 166 / 0.08); }
+/* Custom glass hover cards for charts (chart-tooltip.tsx). */
+.aqua-tooltip {
+  border: 1px solid transparent;
+  background: var(--glass-fill-strong) padding-box, var(--glass-ring) border-box;
+  box-shadow: var(--glass-highlight), var(--glass-shadow-hover);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  backdrop-filter: blur(24px) saturate(200%);
+  color: var(--foreground);
+  animation: aqua-tip-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes aqua-tip-in {
+  from { opacity: 0; transform: translateY(4px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.recharts-tooltip-wrapper { outline: none; z-index: 30; }
+/* Dropdown panels (notifications etc.) open with a small drop-in. */
+.aqua-popover { animation: aqua-tip-in 200ms cubic-bezier(0.22, 1, 0.36, 1); transform-origin: top right; }
+
+/* Clickable table rows: a soft turquoise glass highlight with a left accent bar. */
+.aqua-row td {
+  transition: background-color 220ms ease, box-shadow 220ms ease;
+}
+.aqua-row td:first-child { padding-left: 0.75rem; border-radius: 12px 0 0 12px; }
+.aqua-row td:last-child { border-radius: 0 12px 12px 0; }
+.aqua-row:hover td { background-color: rgb(20 184 166 / 0.07); }
+.aqua-row[data-selected] td { background-color: rgb(20 184 166 / 0.12); }
+.aqua-row:hover td:first-child,
+.aqua-row[data-selected] td:first-child { box-shadow: inset 3px 0 0 #14b8a6; }
+.dark .aqua-row:hover td { background-color: rgb(45 212 191 / 0.08); }
+.dark .aqua-row[data-selected] td { background-color: rgb(45 212 191 / 0.14); }
 
 @media (prefers-reduced-motion: reduce) {
   a.rounded-2xl:hover, button.rounded-2xl:hover {

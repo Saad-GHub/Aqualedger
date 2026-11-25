@@ -30,6 +30,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { DepthBarTooltip, DepthTrendTooltip } from "@/components/aqualedger/chart-tooltip";
+import { asFeet, depthM, metresToFeet, rateM } from "@/lib/units";
 import { Panel } from "@/components/aqualedger/app-shell";
 import type {
   CommunityWaterReport,
@@ -89,13 +91,13 @@ function WellCrossSectionInfographic({
           <p className="text-xs text-slate-500">{sourceLabel}</p>
         </div>
         <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
-          Scale: 0 – {maxDepth} m
+          Scale: 0 – {maxDepth} m · {asFeet(maxDepth)}
         </span>
       </div>
 
       <div className="relative h-64 overflow-hidden rounded-xl border border-slate-200 bg-white">
         {/* Ground surface */}
-        <div className="absolute inset-x-0 top-0 flex h-7 items-center justify-between border-b-2 border-emerald-500 bg-emerald-50 px-3 text-[11px] font-semibold text-emerald-800">
+        <div className="absolute inset-x-0 top-0 flex h-7 items-center justify-between border-b-2 border-emerald-500 bg-emerald-50 px-3 text-[11px] font-semibold text-emerald-800 dark:border-emerald-400/70 dark:bg-emerald-500/15 dark:text-emerald-300">
           <span>Ground Level (0 m)</span>
           <span>Surface</span>
         </div>
@@ -110,7 +112,7 @@ function WellCrossSectionInfographic({
         />
 
         {/* Borehole shaft in center */}
-        <div className="absolute top-7 bottom-4 left-1/2 w-10 -translate-x-1/2 border-x-2 border-slate-300 bg-slate-100/70">
+        <div className="absolute top-7 bottom-4 left-1/2 w-10 -translate-x-1/2 border-x-2 border-slate-300 bg-slate-100/70 dark:border-white/15 dark:bg-white/5">
           {currentPct !== null && (
             <div
               className="absolute inset-x-0 bottom-0 bg-gradient-to-b from-cyan-400/70 to-teal-600/80 transition-all"
@@ -122,11 +124,11 @@ function WellCrossSectionInfographic({
         {/* Area Average Marker */}
         {areaPct !== null && areaAverageM !== null && (
           <div
-            className="absolute inset-x-3 border-t-2 border-dashed border-slate-500"
+            className="absolute inset-x-3 border-t-2 border-dashed border-slate-500 dark:border-slate-400"
             style={{ top: `${areaPct}%` }}
           >
-            <span className=" -top-3 left-0 inline-flex -translate-y-1/2 rounded bg-slate-800 px-2 py-0.5 text-[11px] font-semibold text-white">
-              Area Avg: {areaAverageM.toFixed(1)} m
+            <span className="absolute left-0 inline-flex -translate-y-1/2 rounded-md bg-[#0b1f3a] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20">
+              Area Avg: {depthM(areaAverageM)}
             </span>
           </div>
         )}
@@ -137,8 +139,8 @@ function WellCrossSectionInfographic({
             className="absolute inset-x-3 border-t-2 border-teal-600"
             style={{ top: `${currentPct}%` }}
           >
-            <span className="absolute right-0 -translate-y-1/2 rounded bg-teal-700 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
-              Current: {currentDepthM.toFixed(1)} m
+            <span className="absolute right-0 translate-y-1 rounded-md bg-[#0d9488] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+              Current: {depthM(currentDepthM)}
             </span>
           </div>
         )}
@@ -149,16 +151,12 @@ function WellCrossSectionInfographic({
             className="absolute inset-x-3 border-t-2 border-dotted border-blue-600"
             style={{ top: `${projectedPct}%` }}
           >
-            <span className="absolute right-0 translate-y-1 rounded bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
-              +{formatHorizonLabel(horizonMonths)} Forecast: {projectedDepthM.toFixed(1)} m
+            <span className="absolute right-0 -translate-y-[calc(100%+3px)] rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+              +{formatHorizonLabel(horizonMonths)} Forecast: {depthM(projectedDepthM)}
             </span>
           </div>
         )}
       </div>
-
-      <p className="mt-2.5 text-[11px] leading-5 text-slate-500">
-        Greater depth (in metres) means water is farther below the ground surface.
-      </p>
     </div>
   );
 }
@@ -258,10 +256,7 @@ export function AreaDepthInfographicStrip({
               <CartesianGrid strokeDasharray="4 4" vertical={false} />
               <XAxis dataKey="area" tickLine={false} axisLine={false} interval={0} tick={{ fontSize: 11 }} />
               <YAxis unit=" m" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
-              <Tooltip
-                formatter={(value, _name, item) => [`${value} m · ${item.payload.reports} reports`, "Area average depth"]}
-                labelFormatter={(_, payload) => payload?.[0]?.payload?.fullArea ?? "Area"}
-              />
+              <Tooltip content={<DepthBarTooltip titleKey="fullArea" countKey="reports" valueLabel="Area average depth" />} />
               <Bar dataKey="averageDepthM" fill="url(#areaBarFill)" radius={[10, 10, 4, 4]} animationDuration={1300} animationEasing="ease-out" />
             </BarChart>
           </ResponsiveContainer>
@@ -286,7 +281,7 @@ export function AreaDepthInfographicStrip({
                 <CartesianGrid strokeDasharray="4 4" horizontal={false} />
                 <XAxis type="number" unit=" m" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="sourceType" width={120} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value, _name, item) => [`${value} m · ${item.payload.reports} reports`, "Average depth"]} />
+                <Tooltip content={<DepthBarTooltip countKey="reports" color="#38bdf8" />} />
                 <Bar dataKey="averageDepthM" fill="url(#sourceBarFill)" radius={[4, 10, 10, 4]} animationDuration={1300} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
@@ -465,7 +460,7 @@ export function FarmerDepthWorkspace({
             <div className="rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-right shadow-sm">
               <p className="text-[11px] font-medium text-slate-500">Vs. Area Average</p>
               <p className={`text-base font-bold ${condition.diffFromAreaM > 0.5 ? "text-red-600" : condition.diffFromAreaM < -0.5 ? "text-emerald-600" : "text-indigo-700"}`}>
-                {condition.diffFromAreaM > 0 ? `+${condition.diffFromAreaM.toFixed(1)} m deeper` : `${Math.abs(condition.diffFromAreaM).toFixed(1)} m shallower`}
+                {condition.diffFromAreaM > 0 ? `+${depthM(condition.diffFromAreaM)} deeper` : `${depthM(Math.abs(condition.diffFromAreaM))} shallower`}
               </p>
             </div>
           )}
@@ -552,7 +547,7 @@ export function FarmerDepthWorkspace({
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <p className="text-xs text-slate-500">Current Depth</p>
             <p className="mt-1.5 text-2xl font-bold text-slate-900">
-              {currentDepthM !== null ? `${currentDepthM.toFixed(1)} m` : "—"}
+              {currentDepthM !== null ? `${depthM(currentDepthM)}` : "—"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               {activeSource ? `${activeSource.sourceType} · ${activeSource.reports.length} readings` : activeArea || "Area"}
@@ -562,7 +557,7 @@ export function FarmerDepthWorkspace({
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <p className="text-xs text-slate-500">AI Projected ({formatHorizonLabel(horizon)})</p>
             <p className="mt-1.5 text-2xl font-bold text-blue-700">
-              {projection ? `${projection.projectedDepth.toFixed(1)} m` : "Need 2+ months"}
+              {projection ? `${depthM(projection.projectedDepth)}` : "Need 2+ months"}
             </p>
             <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
               {projection ? (
@@ -573,7 +568,7 @@ export function FarmerDepthWorkspace({
                     <ArrowUpRight size={14} className="text-emerald-600" />
                   )}
                   {projection.projectedChange >= 0 ? "+" : ""}
-                  {projection.projectedChange.toFixed(2)} m · {projection.confidence} conf.
+                  {projection.projectedChange.toFixed(2)} m · {metresToFeet(projection.projectedChange).toFixed(1)} ft · {projection.confidence} conf.
                 </>
               ) : (
                 "Add readings across 2+ months"
@@ -584,7 +579,7 @@ export function FarmerDepthWorkspace({
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <p className="text-xs text-slate-500">Area Average Depth</p>
             <p className="mt-1.5 text-2xl font-bold text-slate-900">
-              {condition.areaAverageM !== null ? `${condition.areaAverageM.toFixed(1)} m` : "—"}
+              {condition.areaAverageM !== null ? `${depthM(condition.areaAverageM)}` : "—"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               {areaBenchmark.totalReports} reports in {activeArea || "area"}
@@ -596,7 +591,7 @@ export function FarmerDepthWorkspace({
             <p className="mt-1.5 text-2xl font-bold">{condition.conditionLabel}</p>
             <p className="mt-1 text-xs opacity-90">
               {condition.diffFromAreaM !== null
-                ? `${condition.diffFromAreaM >= 0 ? "+" : ""}${condition.diffFromAreaM.toFixed(1)} m vs area avg`
+                ? `${condition.diffFromAreaM >= 0 ? "+" : ""}${depthM(condition.diffFromAreaM)} vs area avg`
                 : "Based on available trend"}
             </p>
           </div>
@@ -627,7 +622,7 @@ export function FarmerDepthWorkspace({
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 font-semibold text-teal-800">
                   <BrainCircuit size={14} />
-                  {projection.status} · {Math.abs(projection.slopePerMonth * 12).toFixed(2)} m/year
+                  {projection.status} · {Math.abs(projection.slopePerMonth * 12).toFixed(2)} m/yr · {metresToFeet(Math.abs(projection.slopePerMonth * 12)).toFixed(1)} ft/yr
                 </span>
                 <span>R² {projection.rSquared.toFixed(2)} · {projection.monthlyPoints.length} months of history</span>
               </div>
@@ -641,15 +636,12 @@ export function FarmerDepthWorkspace({
                     <XAxis dataKey="month" minTickGap={28} tick={{ fontSize: 11, fill: "#64748b" }} />
                     <YAxis reversed domain={["auto", "auto"]} unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
                     <Tooltip
-                      formatter={(value, name) =>
-                        value == null
-                          ? ["—", name]
-                          : [`${Number(value).toFixed(2)} m`, name === "actual" ? "Recorded" : "AI Projected"]
-                      }
+                      content={<DepthTrendTooltip actualLabel="Recorded" lastMonth={projection.lastMonth} />}
+                      cursor={{ stroke: "#14b8a6", strokeWidth: 1.5, strokeDasharray: "4 4" }}
                     />
                     <ReferenceLine x={projection.lastMonth} stroke="#94a3b8" strokeDasharray="3 3" />
-                    <Area dataKey="lower" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} />
-                    <Area dataKey="band" stackId="band" stroke="none" fill="#bfdbfe" fillOpacity={0.55} isAnimationActive={false} />
+                    <Area dataKey="lower" stackId="band" stroke="none" fill="transparent" isAnimationActive={false} activeDot={false} />
+                    <Area dataKey="band" stackId="band" stroke="none" fill="#38bdf8" fillOpacity={0.16} isAnimationActive={false} activeDot={false} />
                     <Line
                       type="monotone"
                       dataKey="actual"
@@ -705,19 +697,14 @@ export function FarmerDepthWorkspace({
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                     <XAxis dataKey="sourceType" tick={{ fontSize: 11, fill: "#475569" }} />
                     <YAxis unit=" m" domain={[0, "auto"]} tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <Tooltip
-                      formatter={(value, _name, item) => [
-                        `${Number(value).toFixed(2)} m · ${item.payload.reportCount} reports`,
-                        "Average depth",
-                      ]}
-                    />
+                    <Tooltip content={<DepthBarTooltip countKey="reportCount" />} />
                     {areaBenchmark.averageDepthM !== null && (
                       <ReferenceLine
                         y={areaBenchmark.averageDepthM}
                         stroke="#6366f1"
                         strokeDasharray="4 4"
                         label={{
-                          value: `Area Avg ${areaBenchmark.averageDepthM.toFixed(1)} m`,
+                          value: `Area Avg ${depthM(areaBenchmark.averageDepthM)}`,
                           position: "insideTopRight",
                           fill: "#4338ca",
                           fontSize: 11,
@@ -748,7 +735,7 @@ export function FarmerDepthWorkspace({
                           <p className="text-slate-500">{item.reportCount} reports</p>
                         </div>
                       </div>
-                      <span className="font-bold text-indigo-700">{item.averageDepthM.toFixed(1)} m</span>
+                      <span className="font-bold text-indigo-700">{depthM(item.averageDepthM)}</span>
                     </div>
                   );
                 })}
@@ -955,7 +942,7 @@ export function UniversalAreaDepthForecast({
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-xs text-slate-400">
-                  <th className="pb-3 font-medium">Area / Location</th>
+                  <th className="pb-3 pl-3 font-medium">Area / Location</th>
                   <th className="pb-3 font-medium">Total Reports</th>
                   <th className="pb-3 font-medium">Area Avg Depth</th>
                   <th className="pb-3 font-medium">+{formatHorizonLabel(horizon)} Forecast</th>
@@ -979,21 +966,20 @@ export function UniversalAreaDepthForecast({
                         setSelectedAreaKey(item.areaKey);
                         setSelectedSourceType("All sources");
                       }}
-                      className={`cursor-pointer border-b border-slate-50 transition last:border-0 ${
-                        selected ? "bg-teal-50/60" : "hover:bg-slate-50"
-                      }`}
+                      data-selected={selected || undefined}
+                      className="aqua-row cursor-pointer border-b border-slate-200/60 last:border-0"
                     >
                       <td className="py-3.5 font-semibold text-slate-800">{item.areaKey}</td>
                       <td className="py-3.5 text-slate-600">{item.benchmark.totalReports}</td>
                       <td className="py-3.5 font-semibold text-slate-800">
-                        {item.latestDepth !== null ? `${item.latestDepth.toFixed(1)} m` : "—"}
+                        {item.latestDepth !== null ? `${depthM(item.latestDepth)}` : "—"}
                       </td>
                       <td className="py-3.5 font-semibold text-blue-700">
-                        {item.projection ? `${item.projection.projectedDepth.toFixed(1)} m` : "Need 2+ mo"}
+                        {item.projection ? `${depthM(item.projection.projectedDepth)}` : "Need 2+ mo"}
                       </td>
                       <td className="py-3.5 text-xs text-slate-500">
                         {item.projection
-                          ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${(item.projection.slopePerMonth * 12).toFixed(2)} m/yr`
+                          ? rateM(item.projection.slopePerMonth * 12)
                           : "—"}
                       </td>
                       <td className="py-3.5">
@@ -1080,7 +1066,7 @@ export function UniversalAreaDepthForecast({
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <p className="text-xs text-slate-500">Area Average Depth</p>
             <p className="mt-1.5 text-2xl font-bold text-slate-900">
-              {currentDepthM !== null && currentDepthM !== undefined ? `${currentDepthM.toFixed(1)} m` : "—"}
+              {currentDepthM !== null && currentDepthM !== undefined ? `${depthM(currentDepthM)}` : "—"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
               {activeBenchmark.totalReports} total reports · {selectedSourceType}
@@ -1090,7 +1076,7 @@ export function UniversalAreaDepthForecast({
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
             <p className="text-xs text-slate-500">AI Projected ({formatHorizonLabel(horizon)})</p>
             <p className="mt-1.5 text-2xl font-bold text-blue-700">
-              {projection ? `${projection.projectedDepth.toFixed(1)} m` : "Need 2+ months"}
+              {projection ? `${depthM(projection.projectedDepth)}` : "Need 2+ months"}
             </p>
             <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
               {projection ? (
@@ -1101,7 +1087,7 @@ export function UniversalAreaDepthForecast({
                     <ArrowUpRight size={14} className="text-emerald-600" />
                   )}
                   {projection.projectedChange >= 0 ? "+" : ""}
-                  {projection.projectedChange.toFixed(2)} m · {projection.confidence} conf.
+                  {projection.projectedChange.toFixed(2)} m · {metresToFeet(projection.projectedChange).toFixed(1)} ft · {projection.confidence} conf.
                 </>
               ) : (
                 "Needs readings across 2+ months"
@@ -1115,7 +1101,7 @@ export function UniversalAreaDepthForecast({
               {projection ? projection.status : "Baseline building"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              {projection ? `${Math.abs(projection.slopePerMonth * 12).toFixed(2)} m/year rate` : "Awaiting more dates"}
+              {projection ? `${Math.abs(projection.slopePerMonth * 12).toFixed(2)} m/yr · ${metresToFeet(Math.abs(projection.slopePerMonth * 12)).toFixed(1)} ft/yr rate` : "Awaiting more dates"}
             </p>
           </div>
 
@@ -1152,15 +1138,12 @@ export function UniversalAreaDepthForecast({
                   <XAxis dataKey="month" minTickGap={28} tick={{ fontSize: 11, fill: "#64748b" }} />
                   <YAxis reversed domain={["auto", "auto"]} unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
                   <Tooltip
-                    formatter={(value, name) =>
-                      value == null
-                        ? ["—", name]
-                        : [`${Number(value).toFixed(2)} m`, name === "actual" ? "Area Average" : "AI Projected"]
-                    }
+                    content={<DepthTrendTooltip actualLabel="Area average" lastMonth={projection.lastMonth} />}
+                    cursor={{ stroke: "#14b8a6", strokeWidth: 1.5, strokeDasharray: "4 4" }}
                   />
                   <ReferenceLine x={projection.lastMonth} stroke="#94a3b8" strokeDasharray="3 3" />
-                  <Area dataKey="lower" stackId="u-band" stroke="none" fill="transparent" isAnimationActive={false} />
-                  <Area dataKey="band" stackId="u-band" stroke="none" fill="#bfdbfe" fillOpacity={0.55} isAnimationActive={false} />
+                  <Area dataKey="lower" stackId="u-band" stroke="none" fill="transparent" isAnimationActive={false} activeDot={false} />
+                  <Area dataKey="band" stackId="u-band" stroke="none" fill="#38bdf8" fillOpacity={0.16} isAnimationActive={false} activeDot={false} />
                   <Line type="monotone" dataKey="actual" name="Area Average" stroke="#0d9488" strokeWidth={2.5} dot={projection.monthlyPoints.length <= 24 ? { r: 3.5, fill: "#0d9488" } : false} activeDot={{ r: 5, fill: "#0d9488" }} connectNulls />
                   <Line type="monotone" dataKey="projected" name="AI Projected" stroke="#2563eb" strokeWidth={2.5} strokeDasharray="6 4" dot={horizon <= 12 ? { r: 3.5, fill: "#2563eb" } : false} activeDot={{ r: 5, fill: "#2563eb" }} connectNulls />
                 </LineChart>
@@ -1191,8 +1174,8 @@ export function UniversalAreaDepthForecast({
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                     <XAxis dataKey="sourceType" tick={{ fontSize: 11, fill: "#64748b" }} />
                     <YAxis unit=" m" tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <Tooltip formatter={(value) => [`${value} m`, "Area average depth"]} />
-                    <Bar dataKey="averageDepthM" fill="#0d9488" radius={[6, 6, 0, 0]} />
+                    <Tooltip content={<DepthBarTooltip countKey="reportCount" valueLabel="Area average depth" />} />
+                    <Bar dataKey="averageDepthM" fill="#0d9488" radius={[8, 8, 0, 0]} animationDuration={1100} animationEasing="ease-out" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -1203,7 +1186,7 @@ export function UniversalAreaDepthForecast({
                       <p className="font-semibold text-slate-800">{item.sourceType}</p>
                       <p className="text-slate-500">{item.reportCount} reports</p>
                     </div>
-                    <span className="font-bold text-teal-700">{item.averageDepthM.toFixed(1)} m</span>
+                    <span className="font-bold text-teal-700">{depthM(item.averageDepthM)}</span>
                   </div>
                 ))}
               </div>
