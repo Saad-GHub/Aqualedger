@@ -124,18 +124,18 @@ export function PublicWaterSources() {
         description="Select any area to see its exact source counts (boreholes, tube wells, hand pumps) and automatic recommendations for Household vs Farmer / Irrigation use."
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="aqua-stats grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Areas with reports</p>
           <p className="mt-2 text-2xl font-bold">{areaNames.length}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Source categories</p>
           <p className="mt-2 text-2xl font-bold">
             {new Set(trends.map((row) => row.sourceType)).size}
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Total reports analyzed</p>
           <p className="mt-2 text-2xl font-bold">
             {trends.reduce((sum, row) => sum + row.reportCount, 0)}
