@@ -1,0 +1,52 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { AlertTriangle, BrainCircuit, TrendingDown, TrendingUp } from "lucide-react";
+import { Area, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Panel } from "@/components/aqualedger/app-shell";
+import { aggregateMonthlyDepths, forecastDepth, reportAreaKey, type DepthForecastInput } from "@/lib/depth-analytics";
+
+const statusStyles: Record<string, string> = {
+  "Stable / improving": "bg-emerald-50 text-emerald-700",
+  "Normal trend": "bg-teal-50 text-teal-700",
+  "Moderate decline": "bg-amber-50 text-amber-800",
+  "High decline signal": "bg-red-50 text-red-700",
+  "Declining · baseline insufficient": "bg-slate-100 text-slate-700",
+};
+
+export function DepthForecast({ reports }: { reports: DepthForecastInput[] }) {
+  const [areaChoice, setAreaChoice] = useState("");
+  const [sourceChoice, setSourceChoice] = useState("All sources");
+  const areas = useMemo(() => [...new Set(reports.filter((report) => Number.isFinite(Number(report.depth)) && report.sampleDate).map(reportAreaKey))].sort((a, b) => a.localeCompare(b)), [reports]);
+  const area = areas.includes(areaChoice) ? areaChoice : areas[0] ?? "";
+  const sources = useMemo(() => [...new Set(reports.filter((report) => reportAreaKey(report) === area && Number.isFinite(Number(report.depth)) && report.sampleDate).map((report) => report.sourceType?.trim() || "Unspecified source"))].sort((a, b) => a.localeCompare(b)), [area, reports]);
+  const source = sourceChoice === "All sources" || sources.includes(sourceChoice) ? sourceChoice : "All sources";
+  const model = useMemo(() => {
+    if (!area) return null;
+    return forecastDepth(aggregateMonthlyDepths(reports, area, source));
+  }, [area, reports, source]);
+  const readingCount = model?.points.reduce((sum, point) => sum + point.readings, 0) ?? 0;
+  const style = model ? statusStyles[model.status] : "bg-slate-100 text-slate-600";
+  const down = model ? model.changeInSixMonths > 0.05 : false;
+
+  return <Panel title="AI groundwater-depth forecast" description="A fitted trend model projects the selected area's reported depth for six months. The area average combines its reports; select one source for a source-specific forecast.">
+    <div className="mb-5 grid gap-3 sm:grid-cols-2">
+      <label className="text-xs font-semibold text-slate-600">Area<select value={area} onChange={(event) => { setAreaChoice(event.target.value); setSourceChoice("All sources"); }} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" disabled={!areas.length}><option value="">No area data</option>{areas.map((name) => <option key={name} value={name}>{name}</option>)}</select></label>
+      <label className="text-xs font-semibold text-slate-600">Water source<select value={source} onChange={(event) => setSourceChoice(event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" disabled={!sources.length}><option>All sources</option>{sources.map((name) => <option key={name}>{name}</option>)}</select></label>
+    </div>
+    {!area ? <div className="flex min-h-64 items-center justify-center rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">No dated depth readings are available for a forecast yet.</div>
+      : !model ? <div className="flex min-h-64 flex-col items-center justify-center rounded-xl bg-slate-50 p-6 text-center"><AlertTriangle className="mb-2 text-amber-600" size={22}/><p className="font-semibold text-slate-700">Not enough history for a six-month forecast</p><p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">At least three different monthly readings spanning three months are needed. Add dated reports for this area and source; the app will keep recalculating automatically.</p></div>
+      : <>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Latest monthly average</p><p className="mt-2 text-2xl font-bold text-slate-900">{model.points.at(-1)?.depth.toFixed(2)} m</p><p className="mt-1 text-xs text-slate-400">{model.lastMonth} · {readingCount} readings in history</p></div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Projected in 6 months</p><p className="mt-2 text-2xl font-bold text-slate-900">{model.depthInSixMonths.toFixed(2)} m</p><p className="mt-1 text-xs text-slate-400">Trend change {model.changeInSixMonths >= 0 ? "+" : ""}{model.changeInSixMonths.toFixed(2)} m</p></div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Observed rate</p><p className="mt-2 text-2xl font-bold text-slate-900">{Math.abs(model.slopePerMonth * 12).toFixed(2)} m/year</p><p className="mt-1 text-xs text-slate-400">{model.slopePerMonth > 0 ? "Depth increasing" : model.slopePerMonth < 0 ? "Depth decreasing" : "No fitted change"}</p></div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="text-xs text-slate-500">Trend assessment</p><span className={`mt-2 inline-flex rounded-full px-3 py-1.5 text-sm font-semibold ${style}`}>{model.status}</span><p className="mt-1 text-xs text-slate-400">Fit confidence: {model.confidence}</p></div>
+        </div>
+        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(250px,0.8fr)]">
+          <div><div className="mb-2 flex items-center gap-2 text-xs text-slate-500"><span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2.5 py-1 font-semibold text-teal-700"><BrainCircuit size={14}/>Historical fit + 6-month projection</span><span>Depth below ground · metres</span></div><div className="h-72 w-full"><ResponsiveContainer width="100%" height="100%"><LineChart data={model.chart} margin={{ top: 12, right: 15, left: 5, bottom: 4 }}><CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false}/><XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }}/><YAxis reversed unit=" m" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }}/><Tooltip cursor={{ stroke: "#94a3b8", strokeDasharray: "4 4" }} formatter={(value, name) => value == null ? ["—", name] : [`${Number(value).toFixed(2)} m`, name === "actual" ? "Observed average" : name === "projected" ? "Projected depth" : name]} labelFormatter={(label) => `Month: ${label}`}/><ReferenceLine x={model.lastMonth} stroke="#94a3b8" strokeDasharray="3 3"/><Area dataKey="lower" stackId="confidence" stroke="none" fill="transparent" isAnimationActive={false}/><Area dataKey="band" stackId="confidence" stroke="none" fill="#99f6e4" fillOpacity={0.5} isAnimationActive={false}/><Line type="linear" dataKey="actual" name="Observed average" stroke="#0d9488" strokeWidth={2.5} dot={{ r: 3, fill: "#0d9488" }} connectNulls/><Line type="linear" dataKey="projected" name="Projected depth" stroke="#2563eb" strokeWidth={2.5} strokeDasharray="6 4" dot={{ r: 3, fill: "#2563eb" }} connectNulls/></LineChart></ResponsiveContainer></div><p className="mt-2 text-[11px] leading-5 text-slate-400">Shaded band shows a model-based uncertainty interval. More consistent dated measurements generally improve the trend fit.</p></div>
+          <aside className="rounded-xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-center gap-2 text-slate-800">{down ? <TrendingDown className="text-red-600" size={19}/> : <TrendingUp className="text-emerald-600" size={19}/>}<h4 className="font-semibold">What the forecast says</h4></div><p className="mt-3 text-sm leading-6 text-slate-600">{down ? `If the fitted trend continues, water depth may increase by ${model.changeInSixMonths.toFixed(2)} m by ${model.chart.at(-1)?.month}. A greater depth means the water level is farther below ground.` : `The fitted trend does not project a deeper water level over the next six months. Continue monitoring; this is not a guarantee of future supply.`}</p><div className="mt-4 space-y-2 rounded-lg bg-white p-3 text-xs text-slate-600"><p><strong>Data coverage:</strong> {model.points.length} months · {readingCount} dated reports</p><p><strong>Model fit:</strong> R² {model.rSquared.toFixed(2)} · {model.confidence} confidence</p><p><strong>Local baseline:</strong> {model.historyWindows} historical 4–8 month declines used for the status comparison</p>{model.normalThreshold !== null && model.highThreshold !== null && <p><strong>Comparison bands:</strong> typical {model.normalThreshold.toFixed(2)} m · high signal above {model.highThreshold.toFixed(2)} m over six months</p>}</div><p className="mt-3 text-[11px] leading-5 text-amber-800">High decline signal is an alert to investigate, not a certified “danger depth.” Pump intake, aquifer conditions, recharge and seasonal variation are not available in these reports. The forecast does not assess drinking-water quality.</p></aside>
+        </div>
+      </>}
+  </Panel>;
+}
