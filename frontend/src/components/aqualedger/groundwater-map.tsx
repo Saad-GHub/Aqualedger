@@ -398,6 +398,7 @@ export function GroundwaterMap() {
   const [heatmapOn, setHeatmapOn] = useState(true);
   const { isAdmin, isSignedIn, authReady } = useAquaRole();
   const [loadError, setLoadError] = useState("");
+  const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState("");
   const [selection, setSelection] = useState<AreaSelection | null>(null);
 
@@ -408,6 +409,7 @@ export function GroundwaterMap() {
   const [censusBins, setCensusBins] = useState<number[]>([]);
   const [wellsOn, setWellsOn] = useState(true);
   const [legendOpen, setLegendOpen] = useState(false);
+  const [activeCity, setActiveCity] = useState("All Pakistan");
   const wellsById = useRef(new Map<string, ObservationWell>());
   const [wellCount, setWellCount] = useState(0);
   const [wellBins, setWellBins] = useState<number[]>([]);
@@ -451,7 +453,8 @@ export function GroundwaterMap() {
             setLoadError(
               error instanceof Error ? error.message : "Could not load community reports."
             )
-          );
+          )
+          .finally(() => setLoading(false));
         return;
       }
       void readPublicAreaSourceTrends()
@@ -482,7 +485,8 @@ export function GroundwaterMap() {
           setLoadError(
             "Public groundwater summaries are not connected yet. Run supabase/reset-and-renew-schema.sql in Supabase."
           )
-        );
+        )
+        .finally(() => setLoading(false));
 
       if (isSignedIn) {
         void readMyCommunityWaterReports()
@@ -1018,7 +1022,7 @@ export function GroundwaterMap() {
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Reports received</p>
           <p className="tabular mt-2 text-2xl font-semibold text-slate-900">
-            {visibleReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)}
+            {loading && !reports.length ? "…" : visibleReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)}
           </p>
           <p className="mt-1 text-xs text-slate-400">
             {mySourcesOnly ? "Your personal sources" : "Shown as dots on map"}
@@ -1027,21 +1031,21 @@ export function GroundwaterMap() {
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Regions with data</p>
           <p className="tabular mt-2 text-2xl font-semibold text-slate-900">
-            {regionsWithData} / {regionsGeoJson.features.length}
+            {loading && !reports.length ? "…" : `${regionsWithData} / ${regionsGeoJson.features.length}`}
           </p>
           <p className="mt-1 text-xs text-slate-400">From community reports</p>
         </div>
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Critical points</p>
           <p className="tabular mt-2 text-2xl font-semibold text-red-600">
-            {visibleReports.filter((report) => riskScore(report) >= 1.5).length}
+            {loading && !reports.length ? "…" : visibleReports.filter((report) => riskScore(report) >= 1.5).length}
           </p>
           <p className="mt-1 text-xs text-slate-400">High-concern screening flags</p>
         </div>
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Observation wells</p>
-          <p className="tabular mt-2 text-2xl font-semibold text-sky-700">{wellCount.toLocaleString()}</p>
-          <p className="mt-1 text-xs text-slate-400">{censusRankings.mouzas.toLocaleString()} census mouzas</p>
+          <p className="tabular mt-2 text-2xl font-semibold text-sky-700">{wellCount ? wellCount.toLocaleString() : "…"}</p>
+          <p className="mt-1 text-xs text-slate-400">{censusRankings.mouzas ? `${censusRankings.mouzas.toLocaleString()} census mouzas` : "Loading census…"}</p>
         </div>
       </div>
 
@@ -1053,26 +1057,43 @@ export function GroundwaterMap() {
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <button
             type="button"
-            onClick={resetView}
-            className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            aria-pressed={activeCity === "All Pakistan"}
+            onClick={() => {
+              setActiveCity("All Pakistan");
+              resetView();
+            }}
+            className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
+              activeCity === "All Pakistan"
+                ? "border-teal-600 bg-teal-600 text-white shadow-xs"
+                : "border-slate-200 bg-white text-slate-600 hover:border-teal-300 hover:text-teal-800"
+            }`}
           >
             All Pakistan
           </button>
           {cityLocations
             .filter((c) => c.quick)
-            .map((city) => (
-              <button
-                key={city.name}
-                type="button"
-                onClick={() => {
-                  userMovedMapRef.current = true;
-                  mapRef.current?.flyTo({ center: city.position, zoom: 9.2 });
-                }}
-                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:border-teal-300 hover:text-teal-800"
-              >
-                {city.name}
-              </button>
-            ))}
+            .map((city) => {
+              const isActive = activeCity === city.name;
+              return (
+                <button
+                  key={city.name}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => {
+                    setActiveCity(city.name);
+                    userMovedMapRef.current = true;
+                    mapRef.current?.flyTo({ center: city.position, zoom: 9.2 });
+                  }}
+                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
+                    isActive
+                      ? "border-teal-600 bg-teal-600 text-white shadow-xs"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-teal-300 hover:text-teal-800"
+                  }`}
+                >
+                  {city.name}
+                </button>
+              );
+            })}
         </div>
 
         {/* Area shading + layer toggles */}
@@ -1230,13 +1251,13 @@ export function GroundwaterMap() {
             aria-label="Interactive groundwater risk and trend map of Pakistan"
           />
 
-          {/* On phones the legend would cover the map, so it starts folded behind this button. */}
+          {/* Compact collapsible legend toggle so Balochistan/Karachi stay unobstructed by default. */}
           {(shadeMode !== "off" || wellsOn || heatmapOn) && (
             <button
               type="button"
               onClick={() => setLegendOpen((open) => !open)}
               aria-expanded={legendOpen}
-              className="glass-strong absolute bottom-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-slate-700 sm:hidden"
+              className="glass-strong absolute bottom-3 left-3 z-20 inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-slate-800 shadow-sm"
             >
               {legendOpen ? <X size={14} /> : <Layers3 size={14} />}
               {legendOpen ? "Hide legend" : "Legend"}
@@ -1245,7 +1266,7 @@ export function GroundwaterMap() {
 
           {/* Floating legend (bottom-left). Census and well entries are filter buttons. */}
           {(shadeMode !== "off" || wellsOn || heatmapOn) && (
-            <div className={`${legendOpen ? "flex" : "hidden"} glass-strong pointer-events-auto absolute bottom-14 left-3 right-3 z-10 max-h-[calc(100%-4.5rem)] flex-col gap-3 overflow-y-auto rounded-2xl p-3 text-xs sm:bottom-3 sm:right-auto sm:flex sm:max-h-[calc(100%-1.5rem)] sm:flex-row @min-[820px]:left-auto! @min-[820px]:right-3! @min-[820px]:w-[min(22rem,36%)]! @min-[820px]:flex-col! @min-[820px]:[&>div]:border-l-0! @min-[820px]:[&>div]:pl-0!`}>
+            <div className={`${legendOpen ? "flex" : "hidden"} glass-strong pointer-events-auto absolute bottom-14 left-3 right-3 z-10 max-h-[calc(100%-4.5rem)] flex-col gap-3 overflow-y-auto rounded-2xl p-3 text-xs sm:right-auto sm:flex-row @min-[820px]:w-[min(22rem,38%)] @min-[820px]:flex-col`}>
               {shadeMode === "status" && (
                 <div>
                   <p className="mb-1.5 font-semibold text-slate-700">Region status</p>

@@ -340,7 +340,6 @@ function fitLinearDepthTrend(
   const lastX = latestIndex - x0;
   const currentDepth = points.at(-1)!.depth;
 
-  // Blend long-term OLS slope with recent half-window momentum & non-linear curvature
   const midIdx = Math.floor(points.length / 2);
   const segSlope = (seg: MonthlyDepthPoint[]) => {
     if (seg.length < 2) return slopePerMonth;
@@ -358,17 +357,26 @@ function fitLinearDepthTrend(
   const recentWindow = points.slice(-Math.min(4, points.length));
   const recentSlope = segSlope(recentWindow);
 
-  // Preserve real long-term aquifer drift while reflecting recent momentum
-  const blendedSlope = 0.55 * slopePerMonth + 0.45 * secondHalfSlope;
-  const rawAccel = (secondHalfSlope - firstHalfSlope) / Math.max(12, xs.at(-1)!);
-  const maxAccel = Math.max(0.0002, Math.abs(slopePerMonth) * 0.015);
+  const spanMonths = Math.max(1, xs.at(-1)! - xs[0]);
+
+  // Empirical-Bayes shrinkage for sparse/short histories so noisy 1–2 month jumps
+  // (e.g. 4 reports over 1 month) never extrapolate into runaway +88 m/yr trajectories.
+  const reliability = Math.min(1, (n - 1) / 6) * Math.min(1, spanMonths / 12);
+  const rawBlendedSlope = 0.55 * slopePerMonth + 0.45 * secondHalfSlope;
+  const maxMonthlySlope = n >= 10 && spanMonths >= 24 ? 0.35 : 0.25; // max ±3.0 to ±4.2 m/yr
+  const effectiveSlope = Math.max(
+    -maxMonthlySlope,
+    Math.min(maxMonthlySlope, rawBlendedSlope * reliability)
+  );
+
+  const rawAccel = ((secondHalfSlope - firstHalfSlope) * reliability) / Math.max(12, spanMonths);
+  const maxAccel = Math.max(0.0002, Math.abs(effectiveSlope) * 0.012);
   const boundedAccel = Math.max(-maxAccel, Math.min(maxAccel, rawAccel));
 
   // Learn historical volatility (std dev of residuals) from actual backend readings
   const histStd = Math.sqrt(residualSum / Math.max(1, n));
 
-  // Learn calendar-month seasonal anomalies from history when >= 4 distinct months exist,
-  // otherwise apply calibrated Punjab aquifer seasonal cycle (pre-monsoon drawdown vs monsoon recharge).
+  // Calibrated Punjab aquifer seasonal cycle (pre-monsoon drawdown vs monsoon recharge).
   const PUNJAB_SEASONAL_PROFILE = [
     0.15,  // Jan (Rabi pumping)
     0.3,   // Feb
@@ -391,21 +399,30 @@ function fitLinearDepthTrend(
     monthAnomalies.set(calMonth, arr);
   });
   const hasMultiMonthSeasonality = monthAnomalies.size >= 4;
-  const seasonalAmplitude = Math.max(
-    0.25,
-    Math.min(2.2, histStd * 0.45 + currentDepth * 0.035 + Math.abs(recentSlope) * 1.2)
+  // Bound seasonal amplitude proportionally to currentDepth so shallow areas (1–5 m)
+  // never swing negative / clamp to 0.0 m when the underlying trend is deepening.
+  const maxSeasonalSwing = Math.max(0.15, Math.min(1.6, currentDepth * 0.22));
+  const seasonalAmplitude = Math.min(
+    maxSeasonalSwing,
+    Math.max(0.12, histStd * 0.3 + currentDepth * 0.03 + Math.abs(recentSlope * reliability) * 0.8)
   );
-  const multiYearAmplitude = Math.max(0.2, Math.min(2.4, histStd * 0.55 + currentDepth * 0.04));
+  const multiYearAmplitude = Math.min(
+    Math.max(0.15, currentDepth * 0.2),
+    Math.max(0.15, histStd * 0.35 + currentDepth * 0.03)
+  );
 
   const seasonalOffsetForMonth = (mIdx: number) => {
     const calMonth = ((mIdx % 12) + 12) % 12;
+    const profileVal = PUNJAB_SEASONAL_PROFILE[calMonth] * seasonalAmplitude;
     if (hasMultiMonthSeasonality) {
       const vals = monthAnomalies.get(calMonth);
       if (vals && vals.length) {
-        return vals.reduce((s, v) => s + v, 0) / vals.length;
+        const empirical = vals.reduce((s, v) => s + v, 0) / vals.length;
+        const clampedEmpirical = Math.max(-maxSeasonalSwing, Math.min(maxSeasonalSwing, empirical));
+        return 0.5 * profileVal + 0.5 * clampedEmpirical;
       }
     }
-    return PUNJAB_SEASONAL_PROFILE[calMonth] * seasonalAmplitude;
+    return profileVal;
   };
   const climateWaveForStep = (step: number) =>
     multiYearAmplitude *
@@ -418,13 +435,20 @@ function fitLinearDepthTrend(
   let cumulativeTrend = 0;
   const predictions = Array.from({ length: horizonMonths }, (_, i) => {
     const step = i + 1;
-    const stepSlope = (blendedSlope + boundedAccel * step) * Math.pow(0.996, i);
+    const stepSlope = (effectiveSlope + boundedAccel * step) * Math.pow(0.996, i);
     cumulativeTrend += stepSlope;
     const seasonalDelta = seasonalOffsetForMonth(latestIndex + step) - baseSeason;
     const climateDelta =
       horizonMonths > 12 ? climateWaveForStep(step) - baseClimate : 0;
+    const rawProjected = currentDepth + cumulativeTrend + seasonalDelta + climateDelta;
+    // Prevent unrealistic collapse to 0.0 m when the aquifer is deepening or shallow
+    const floorDepth =
+      effectiveSlope > 0.005
+        ? Math.max(0.2, currentDepth * 0.75)
+        : Math.max(0.1, currentDepth * 0.45);
+    const ceilingDepth = currentDepth + Math.max(12, currentDepth * 1.5);
     return Number(
-      Math.max(0, currentDepth + cumulativeTrend + seasonalDelta + climateDelta).toFixed(2)
+      Math.max(floorDepth, Math.min(ceilingDepth, rawProjected)).toFixed(2)
     );
   });
   const projectedDepth = predictions[horizonMonths - 1];
@@ -459,9 +483,9 @@ function fitLinearDepthTrend(
     month: point.month,
     actual: point.depth,
     projected: null,
-    lower: null,
-    upper: null,
-    band: null,
+    lower: point.depth,
+    upper: point.depth,
+    band: 0,
   }));
   const anchorDepth = Math.max(0, currentDepth);
   chart[chart.length - 1] = {
@@ -490,7 +514,7 @@ function fitLinearDepthTrend(
 
   return {
     chart,
-    slopePerMonth,
+    slopePerMonth: effectiveSlope,
     projectedChange,
     projectedDepth,
     rSquared,
@@ -896,18 +920,25 @@ export function recommendAreaWaterSources(
             ((g.normalCount * 0.5 + g.moderateCount + g.highCount * 2) / assessed).toFixed(2)
           )
         : null;
+      const avgDepth = meanDepth(g.depthTotal, g.depthCount);
       const riskLabel: AreaSourceBreakdownItem["riskLabel"] =
-        weightedRiskScore === null
-          ? "Incomplete"
-          : weightedRiskScore >= 1.5
+        weightedRiskScore !== null
+          ? weightedRiskScore >= 1.5
             ? "High concern"
             : weightedRiskScore >= 0.75
               ? "Moderate concern"
-              : "Normal";
+              : "Normal"
+          : avgDepth === null
+            ? "Incomplete"
+            : avgDepth >= 18
+              ? "High concern"
+              : avgDepth >= 10
+                ? "Moderate concern"
+                : "Normal";
       return {
         sourceType,
         reportCount: g.reportCount,
-        averageDepthM: meanDepth(g.depthTotal, g.depthCount),
+        averageDepthM: avgDepth,
         normalCount: g.normalCount,
         moderateCount: g.moderateCount,
         highCount: g.highCount,

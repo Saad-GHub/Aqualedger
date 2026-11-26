@@ -13,6 +13,7 @@ import {
 export default function ForecastPage() {
   const { isSignedIn, authReady } = useAquaRole();
   const [publicTrends, setPublicTrends] = useState<PublicAreaSourceTrend[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -26,7 +27,8 @@ export default function ForecastPage() {
         setError(
           "Public area depth summaries are not connected yet. Run supabase/reset-and-renew-schema.sql in Supabase."
         )
-      );
+      )
+      .finally(() => setLoading(false));
   }, [authReady]);
 
   return (
@@ -51,6 +53,7 @@ export default function ForecastPage() {
       <UniversalAreaDepthForecast
         publicTrends={publicTrends}
         isSignedIn={isSignedIn}
+        loading={loading}
       />
     </>
   );
