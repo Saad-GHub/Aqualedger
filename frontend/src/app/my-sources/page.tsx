@@ -138,7 +138,7 @@ export default function MySourcesPage() {
         <PageIntro
           eyebrow="Personal Workspace"
           title="My Water Sources & Personal Forecast"
-          description="Sign in with Email OTP to view only your own water sources, depth history, AI predictions, and tailored precautions."
+          description="Sign in with your email and password to view only your own water sources, depth history, AI predictions, and tailored precautions."
         />
         <Panel
           title="Sign in to access your personal water data"
@@ -150,7 +150,13 @@ export default function MySourcesPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
             >
               <UserCheck size={16} />
-              Sign in with Email OTP
+              Sign in
+            </Link>
+            <Link
+              href="/signup"
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Create account
             </Link>
             <Link
               href="/forecast"

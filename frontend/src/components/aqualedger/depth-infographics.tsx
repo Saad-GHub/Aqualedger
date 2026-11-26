@@ -458,7 +458,7 @@ export function FarmerDepthWorkspace({
             <p className="mt-0.5 text-xs text-slate-500">
               {activeSource
                 ? "Personal timeline, AI forecast, neighborhood benchmark comparison, and tailored well precautions."
-                : "Explore live groundwater depth trends by area and source type. Sign in with Email OTP to track your own well every 3 months."}
+                : "Explore live groundwater depth trends by area and source type. Sign in to track your own well every 3 months."}
             </p>
           </div>
           {condition.diffFromAreaM !== null && (
