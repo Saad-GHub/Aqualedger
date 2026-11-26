@@ -123,9 +123,12 @@ export function StarterPage({ page }: { page: PageKey }) {
     if (page === "reports" && isSignedIn && emailVerified) {
       void readMyTrackedWaterSources().then(setTrackedSources).catch(() => {});
     }
-    const source = new URLSearchParams(window.location.search).get("source");
+    const params = new URLSearchParams(window.location.search);
+    const source = params.get("source");
+    const openNewForm = page === "reports" && params.get("new") === "1";
     queueMicrotask(() => {
       if (source) setQuery(source);
+      if (openNewForm) setReportFormOpen(true);
       if (page === "settings") {
         setNotifications(localStorage.getItem("aqualedger-notifications") !== "off");
         setRiskAlerts(localStorage.getItem("aqualedger-risk-alerts") !== "off");

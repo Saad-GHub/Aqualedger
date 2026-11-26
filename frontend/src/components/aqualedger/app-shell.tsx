@@ -271,11 +271,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Log readings every 3 months to get AI depth predictions, area averages, and water precautions.
           </p>
           <Link
-            href="/forecast"
+            href="/reports?new=1"
             onClick={() => setMenuOpen(false)}
             className="mt-4 flex items-center justify-center rounded-lg bg-teal-300 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-teal-200"
           >
-            Open depth forecast
+            Submit reading
           </Link>
         </div>
       )}
