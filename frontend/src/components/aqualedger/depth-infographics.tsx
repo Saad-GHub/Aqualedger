@@ -985,14 +985,14 @@ export function UniversalAreaDepthForecast({
                     }}
                     className={`w-full rounded-2xl border p-4 text-left transition ${
                       selected
-                        ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500"
-                        : "border-slate-200 bg-white hover:border-teal-300"
+                        ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500 dark:bg-teal-950/35"
+                        : "border-slate-200 bg-white hover:border-teal-300 dark:border-slate-700 dark:bg-slate-900/85 dark:hover:border-teal-500"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-slate-900">{item.areaKey}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">{item.areaKey}</p>
+                        <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">
                           {item.benchmark.totalReports} reports
                         </p>
                       </div>
@@ -1000,21 +1000,21 @@ export function UniversalAreaDepthForecast({
                         {item.condition.conditionLabel}
                       </span>
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-2.5 text-xs">
+                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-2.5 text-xs dark:border-slate-800">
                       <div>
-                        <p className="text-slate-400">Area Avg Depth</p>
-                        <p className="mt-0.5 font-semibold text-slate-800">
+                        <p className="font-medium text-slate-600 dark:text-slate-300">Area Avg Depth</p>
+                        <p className="mt-0.5 font-semibold text-slate-900 dark:text-slate-100">
                           {item.latestDepth !== null ? formatDepthMetersAndFeet(item.latestDepth) : "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-slate-400">+{formatHorizonLabel(horizon)} Forecast</p>
-                        <p className="mt-0.5 font-semibold text-blue-700">
+                        <p className="font-medium text-slate-600 dark:text-slate-300">+{formatHorizonLabel(horizon)} Forecast</p>
+                        <p className="mt-0.5 font-semibold text-blue-700 dark:text-sky-300">
                           {item.projection ? formatDepthMetersAndFeet(item.projection.projectedDepth) : "Need 2+ mo"}
                         </p>
                       </div>
                     </div>
-                    <p className="mt-2 text-[11px] text-slate-500">
+                    <p className="mt-2 text-[11px] font-medium text-slate-600 dark:text-slate-300">
                       Trend rate:{" "}
                       {item.projection
                         ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2)}/yr`
