@@ -410,7 +410,7 @@ export async function submitCommunityWaterReport(report: NewCommunityWaterReport
   const supabase = getSupabaseBrowserClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError) throw authError;
-  if (!authData.user?.email_confirmed_at) throw new Error("Verify your email with the one-time code before submitting.");
+  if (!authData.user?.email_confirmed_at) throw new Error("Verify your email during sign-up before submitting.");
   const id = crypto.randomUUID();
   const streetAddress = report.address.trim();
   const areaName = normalizeAreaName(report.areaName, streetAddress);

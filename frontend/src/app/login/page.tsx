@@ -3,25 +3,22 @@
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, KeyRound, Mail, ShieldCheck, UserCheck } from "lucide-react";
+import { ArrowLeft, ShieldCheck, UserCheck } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/community-water-reports";
 import { PageIntro, Panel } from "@/components/aqualedger/app-shell";
 
 type LoginRole = "user" | "admin" | null;
-type UserAuthMode = "otp" | "password";
 
 export default function LoginPage() {
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<LoginRole>(null);
-  const [userAuthMode, setUserAuthMode] = useState<UserAuthMode>("otp");
-  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otpCode, setOtpCode] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
+  const [emailNeedsConfirmation, setEmailNeedsConfirmation] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [resending, setResending] = useState(false);
   const [currentEmail, setCurrentEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -39,78 +36,12 @@ export default function LoginPage() {
       .catch(() => {});
   }, []);
 
-  async function handleSendOtp(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    setInfo("");
-    try {
-      const supabase = getSupabaseBrowserClient();
-      await supabase.auth.signOut();
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: {
-          shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}/forecast`,
-          data: fullName.trim() ? { full_name: fullName.trim() } : undefined,
-        },
-      });
-      if (otpError) throw otpError;
-      setOtpSent(true);
-      setInfo(
-        `An 8-digit verification code has been sent to ${email.trim()}. Enter it below to verify your email and sign in.`
-      );
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not send OTP to this email.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleVerifyOtp(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true);
-    setError("");
-    setInfo("");
-    try {
-      const supabase = getSupabaseBrowserClient();
-      let { data, error: verifyError } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: otpCode.trim(),
-        type: "email",
-      });
-      if (verifyError) {
-        ({ data, error: verifyError } = await supabase.auth.verifyOtp({
-          email: email.trim(),
-          token: otpCode.trim(),
-          type: "signup",
-        }));
-      }
-      if (verifyError) throw verifyError;
-
-      const userIsAdmin = data.user?.app_metadata?.role === "admin";
-      if (userIsAdmin) {
-        await supabase.auth.signOut();
-        setError("Administrator accounts must sign in using the Administrator option.");
-        return;
-      }
-
-      setCurrentEmail(data.user?.email ?? email.trim());
-      setIsAdmin(false);
-      router.push("/my-sources");
-      router.refresh();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Invalid or expired OTP code.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function handlePasswordLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError("");
     setInfo("");
+    setEmailNeedsConfirmation(false);
     try {
       const supabase = getSupabaseBrowserClient();
       await supabase.auth.signOut();
@@ -142,14 +73,43 @@ export default function LoginPage() {
       router.refresh();
     } catch (cause) {
       const message = cause instanceof Error ? cause.message : "";
-      setError(
-        message.toLowerCase().includes("invalid login credentials")
-          ? // Accounts made by the earlier email-code flow have no password, so they also land here.
-            "Email or password is incorrect. If you created your account with an email code, it has no password yet: use \"Set / reset password\" below to set one."
-          : message || "Sign in failed. Check your email and password."
-      );
+      const lower = message.toLowerCase();
+      if (lower.includes("email not confirmed")) {
+        setEmailNeedsConfirmation(true);
+        setError(
+          "Your email is not verified yet. Please verify your email using the sign-up OTP or link sent to your inbox."
+        );
+      } else if (lower.includes("invalid login credentials")) {
+        // Accounts made by the earlier email-code flow have no password, so they also land here.
+        setError(
+          "Email or password is incorrect. If you created your account earlier with an email code, use \"Set / reset password\" below to set a password."
+        );
+      } else {
+        setError(message || "Sign in failed. Check your email and password.");
+      }
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleResendConfirmation() {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) return;
+    setResending(true);
+    setError("");
+    setInfo("");
+    try {
+      const { error: resendError } = await getSupabaseBrowserClient().auth.resend({
+        type: "signup",
+        email: trimmedEmail,
+        options: { emailRedirectTo: `${window.location.origin}/my-sources` },
+      });
+      if (resendError) throw resendError;
+      setInfo(`Verification email resent to ${trimmedEmail}. Complete verification, then sign in here.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not resend verification email.");
+    } finally {
+      setResending(false);
     }
   }
 
@@ -157,8 +117,6 @@ export default function LoginPage() {
     await getSupabaseBrowserClient().auth.signOut();
     setCurrentEmail("");
     setIsAdmin(false);
-    setOtpSent(false);
-    setOtpCode("");
   }
 
   if (currentEmail) {
@@ -213,7 +171,7 @@ export default function LoginPage() {
         <PageIntro
           eyebrow="AquaLedger Access"
           title="Select your account type"
-          description="Choose whether you are signing in as a Farmer / Community User (with Email OTP verification) or as the single Administrator."
+          description="Choose whether you are signing in as a Farmer / Community User or as the single Administrator."
         />
         <div className="grid gap-5 md:grid-cols-2">
           <button
@@ -222,7 +180,7 @@ export default function LoginPage() {
               setSelectedRole("user");
               setError("");
               setInfo("");
-              setOtpSent(false);
+              setEmailNeedsConfirmation(false);
             }}
             className="flex flex-col items-start rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-teal-400 hover:bg-teal-50/40"
           >
@@ -231,7 +189,7 @@ export default function LoginPage() {
             </div>
             <h3 className="mt-4 text-lg font-bold text-slate-900">Farmer / Community User</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Verify your email with an 8-digit OTP to create an account or sign in, log water depth every 3 months, and get AI depth predictions & precautions.
+              Sign in directly with your email and password to log water depth every 3 months and get AI depth predictions &amp; precautions. New accounts verify once via OTP on sign-up.
             </p>
             <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-teal-700">
               Continue as Farmer / User →
@@ -244,7 +202,7 @@ export default function LoginPage() {
               setSelectedRole("admin");
               setError("");
               setInfo("");
-              setOtpSent(false);
+              setEmailNeedsConfirmation(false);
             }}
             className="flex flex-col items-start rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
           >
@@ -270,11 +228,11 @@ export default function LoginPage() {
     <>
       <PageIntro
         eyebrow={isAdminMode ? "Administrator access" : "Farmer & Community access"}
-        title={isAdminMode ? "Administrator Sign In" : "User Sign In & Email OTP"}
+        title={isAdminMode ? "Administrator Sign In" : "User Sign In"}
         description={
           isAdminMode
             ? "Sign in with the single authorized AquaLedger admin credentials."
-            : "Verify your email using an 8-digit OTP code from Supabase to create an account or sign in."
+            : "Sign in with your email and password. Email OTP verification is only required once when creating a new account."
         }
         action={
           <button
@@ -283,8 +241,7 @@ export default function LoginPage() {
               setSelectedRole(null);
               setError("");
               setInfo("");
-              setOtpSent(false);
-              setOtpCode("");
+              setEmailNeedsConfirmation(false);
             }}
             className="inline-flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
           >
@@ -338,179 +295,71 @@ export default function LoginPage() {
         </Panel>
       ) : (
         <Panel
-          title={userAuthMode === "otp" ? "Email OTP Authentication" : "Password Sign In"}
-          description={
-            userAuthMode === "otp"
-              ? "New and existing users can enter their email to receive an 8-digit OTP code from Supabase."
-              : "Sign in with your email and password."
-          }
+          title="Password Sign In"
+          description="Sign in with your registered email and password."
         >
-          <div className="mb-5 inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setUserAuthMode("otp");
-                setError("");
-                setInfo("");
-              }}
-              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
-                userAuthMode === "otp"
-                  ? "bg-white text-teal-700 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Mail size={14} />
-              Email OTP (Recommended)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setUserAuthMode("password");
-                setError("");
-                setInfo("");
-              }}
-              className={`inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
-                userAuthMode === "password"
-                  ? "bg-white text-teal-700 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <KeyRound size={14} />
+          <form onSubmit={(event) => void handlePasswordLogin(event)} className="max-w-lg space-y-4">
+            <label className="block text-sm font-medium text-slate-700">
+              Email
+              <input
+                required
+                type="email"
+                autoComplete="username"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
+              />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">
               Password
-            </button>
-          </div>
-
-          {userAuthMode === "otp" ? (
-            !otpSent ? (
-              <form onSubmit={(event) => void handleSendOtp(event)} className="max-w-lg space-y-4">
-                <label className="block text-sm font-medium text-slate-700">
-                  Full Name <span className="text-xs font-normal text-slate-400">(for new accounts)</span>
-                  <input
-                    autoComplete="name"
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    placeholder="e.g. Muhammad Ali"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-700">
-                  Email Address
-                  <input
-                    required
-                    type="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
-                  />
-                </label>
-                {error && (
-                  <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
-                    {error}
-                  </p>
-                )}
-                <button
-                  disabled={busy}
-                  className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
-                >
-                  {busy ? "Sending OTP…" : "Send 8-digit OTP"}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={(event) => void handleVerifyOtp(event)} className="max-w-lg space-y-4">
-                {info && (
-                  <p role="status" className="rounded-xl bg-teal-50 p-3 text-sm text-teal-800">
-                    {info}
-                  </p>
-                )}
-                <label className="block text-sm font-medium text-slate-700">
-                  8-digit OTP Code
-                  <input
-                    required
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    value={otpCode}
-                    onChange={(event) => setOtpCode(event.target.value)}
-                    placeholder="Enter code from email"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-base tracking-widest outline-none focus:border-teal-600"
-                  />
-                </label>
-                {error && (
-                  <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
-                    {error}
-                  </p>
-                )}
-                <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    disabled={busy}
-                    className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
-                  >
-                    {busy ? "Verifying…" : "Verify OTP & Sign in"}
-                  </button>
+              <input
+                required
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
+              />
+            </label>
+            {info && (
+              <p role="status" className="rounded-xl bg-teal-50 p-3 text-sm text-teal-800">
+                {info}
+              </p>
+            )}
+            {error && (
+              <div role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
+                <p>{error}</p>
+                {emailNeedsConfirmation && email.trim() && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setOtpSent(false);
-                      setOtpCode("");
-                      setError("");
-                      setInfo("");
-                    }}
-                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                    disabled={resending}
+                    onClick={() => void handleResendConfirmation()}
+                    className="mt-2 inline-flex items-center rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-teal-800 shadow-sm hover:bg-teal-50 disabled:opacity-60"
                   >
-                    Change email / Resend
+                    {resending ? "Resending…" : "Resend verification email"}
                   </button>
-                </div>
-              </form>
-            )
-          ) : (
-            <form onSubmit={(event) => void handlePasswordLogin(event)} className="max-w-lg space-y-4">
-              <label className="block text-sm font-medium text-slate-700">
-                Email
-                <input
-                  required
-                  type="email"
-                  autoComplete="username"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
-                />
-              </label>
-              <label className="block text-sm font-medium text-slate-700">
-                Password
-                <input
-                  required
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
-                />
-              </label>
-              {error && (
-                <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">
-                  {error}
-                </p>
-              )}
-              <button
-                disabled={busy}
-                className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
-              >
-                {busy ? "Signing in…" : "Sign in"}
-              </button>
-              <div className="flex flex-wrap justify-between gap-3 pt-1 text-sm">
-                <Link href="/reset-password" className="font-semibold text-teal-700 hover:underline">
-                  Set / reset password
-                </Link>
-                <span className="text-slate-500">
-                  New here?{" "}
-                  <Link href="/signup" className="font-semibold text-teal-700 hover:underline">
-                    Create account with OTP
-                  </Link>
-                </span>
+                )}
               </div>
-            </form>
-          )}
+            )}
+            <button
+              disabled={busy}
+              className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+            >
+              {busy ? "Signing in…" : "Sign in"}
+            </button>
+            <div className="flex flex-wrap justify-between gap-3 pt-1 text-sm">
+              <Link href="/reset-password" className="font-semibold text-teal-700 hover:underline">
+                Set / reset password
+              </Link>
+              <span className="text-slate-500">
+                New here?{" "}
+                <Link href="/signup" className="font-semibold text-teal-700 hover:underline">
+                  Create account (OTP verified)
+                </Link>
+              </span>
+            </div>
+          </form>
         </Panel>
       )}
     </>
