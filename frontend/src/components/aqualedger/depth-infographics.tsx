@@ -818,9 +818,11 @@ export function FarmerDepthWorkspace({
 export function UniversalAreaDepthForecast({
   publicTrends,
   isSignedIn,
+  loading = false,
 }: {
   publicTrends: PublicAreaSourceTrend[];
   isSignedIn: boolean;
+  loading?: boolean;
 }) {
   const [horizon, setHorizon] = useState(6);
   const [selectedAreaKey, setSelectedAreaKey] = useState("");
@@ -843,14 +845,15 @@ export function UniversalAreaDepthForecast({
           sampleDate: row.sampleDay ?? row.sampleMonth ?? undefined,
         }));
       const monthly = aggregateMonthlyDepths(inputs, areaKey, "All sources");
-      const projection = forecastDepthForHorizon(monthly, horizon);
+      const areaAvgDepth = benchmark.averageDepthM ?? monthly.at(-1)?.depth ?? null;
+      const projection = forecastDepthForHorizon(monthly, horizon, areaAvgDepth);
       const rowsForArea = publicTrends.filter((row) => row.areaKey === areaKey);
       const totalHigh = rowsForArea.reduce((s, r) => s + r.highCount, 0);
       const totalMod = rowsForArea.reduce((s, r) => s + r.moderateCount, 0);
       const areaRiskLevel =
         totalHigh > 0 ? "High concern" : totalMod > 0 ? "Moderate concern" : "Normal";
       const condition = evaluateSourceCondition({
-        currentDepthM: monthly.at(-1)?.depth ?? benchmark.averageDepthM,
+        currentDepthM: areaAvgDepth,
         projectedDepthM: projection?.projectedDepth ?? null,
         projectedChangeM: projection?.projectedChange ?? null,
         slopePerMonth: projection?.slopePerMonth ?? null,
@@ -863,7 +866,7 @@ export function UniversalAreaDepthForecast({
         benchmark,
         projection,
         condition,
-        latestDepth: monthly.at(-1)?.depth ?? benchmark.averageDepthM,
+        latestDepth: areaAvgDepth,
       };
     });
   }, [publicTrends, horizon]);
@@ -902,16 +905,20 @@ export function UniversalAreaDepthForecast({
     [areaInputs, activeArea, selectedSourceType]
   );
 
+  const currentDepthM =
+    selectedSourceType === "All sources"
+      ? (activeBenchmark.averageDepthM ?? areaMonthly.at(-1)?.depth ?? null)
+      : (activeBenchmark.sameSourceAverageM ?? areaMonthly.at(-1)?.depth ?? activeBenchmark.averageDepthM);
+
   const projection = useMemo(
-    () => forecastDepthForHorizon(areaMonthly, horizon),
-    [areaMonthly, horizon]
+    () => forecastDepthForHorizon(areaMonthly, horizon, currentDepthM),
+    [areaMonthly, horizon, currentDepthM]
   );
 
-  const currentDepthM =
-    areaMonthly.at(-1)?.depth ??
-    (selectedSourceType === "All sources"
-      ? activeBenchmark.averageDepthM
-      : activeBenchmark.sameSourceAverageM ?? activeBenchmark.averageDepthM);
+  const filteredReportCount =
+    selectedSourceType === "All sources"
+      ? activeBenchmark.totalReports
+      : (activeBenchmark.bySource.find((s) => s.sourceType === selectedSourceType)?.reportCount ?? 0);
 
   const activeRows = publicTrends.filter((r) => r.areaKey === activeArea);
   const activeHigh = activeRows.reduce((s, r) => s + r.highCount, 0);
@@ -946,66 +953,135 @@ export function UniversalAreaDepthForecast({
         title="All Areas Trend & Criticality Overview"
         description="Aggregated from every user's reports across Pakistan. Click any area to inspect its detailed depth trend, source averages, and precautions."
       >
-        {areaSummaries.length === 0 ? (
+        {loading && areaSummaries.length === 0 ? (
+          <div className="space-y-2.5 py-2">
+            {[1, 2, 3, 4].map((row) => (
+              <div key={row} className="h-10 animate-pulse rounded-xl bg-slate-100" />
+            ))}
+          </div>
+        ) : areaSummaries.length === 0 ? (
           <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">
             No area depth summaries available yet.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-160 text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 text-xs text-slate-400">
-                  <th className="pb-3 pl-3 font-medium">Area / Location</th>
-                  <th className="pb-3 font-medium">Total Reports</th>
-                  <th className="pb-3 font-medium">Area Avg Depth</th>
-                  <th className="pb-3 font-medium">+{formatHorizonLabel(horizon)} Forecast</th>
-                  <th className="pb-3 font-medium">Trend Rate</th>
-                  <th className="pb-3 font-medium">Area Condition</th>
-                </tr>
-              </thead>
-              <tbody>
-                {areaSummaries.map((item) => {
-                  const selected = item.areaKey === activeArea;
-                  const pillClass =
-                    item.condition.conditionTone === "red"
-                      ? "bg-red-50 text-red-700"
-                      : item.condition.conditionTone === "amber"
-                        ? "bg-amber-50 text-amber-800"
-                        : "bg-teal-50 text-teal-700";
-                  return (
-                    <tr
-                      key={item.areaKey}
-                      onClick={() => {
-                        setSelectedAreaKey(item.areaKey);
-                        setSelectedSourceType("All sources");
-                      }}
-                      data-selected={selected || undefined}
-                      className="aqua-row cursor-pointer border-b border-slate-200/60 last:border-0"
-                    >
-                      <td className="py-3.5 font-semibold text-slate-800">{item.areaKey}</td>
-                      <td className="py-3.5 text-slate-600">{item.benchmark.totalReports}</td>
-                      <td className="py-3.5 font-semibold text-slate-800">
-                        {item.latestDepth !== null ? formatDepthMetersAndFeet(item.latestDepth) : "—"}
-                      </td>
-                      <td className="py-3.5 font-semibold text-blue-700">
-                        {item.projection ? formatDepthMetersAndFeet(item.projection.projectedDepth) : "Need 2+ mo"}
-                      </td>
-                      <td className="py-3.5 text-xs text-slate-500">
-                        {item.projection
-                          ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2)}/yr`
-                          : "—"}
-                      </td>
-                      <td className="py-3.5">
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}>
-                          {item.condition.conditionLabel}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Mobile stacked cards (prevents 6-column clipping on narrow screens) */}
+            <div className="grid gap-3 md:hidden">
+              {areaSummaries.map((item) => {
+                const selected = item.areaKey === activeArea;
+                const pillClass =
+                  item.condition.conditionTone === "red"
+                    ? "bg-red-50 text-red-700"
+                    : item.condition.conditionTone === "amber"
+                      ? "bg-amber-50 text-amber-800"
+                      : "bg-teal-50 text-teal-700";
+                return (
+                  <button
+                    key={`card-${item.areaKey}`}
+                    type="button"
+                    onClick={() => {
+                      setSelectedAreaKey(item.areaKey);
+                      setSelectedSourceType("All sources");
+                    }}
+                    className={`w-full rounded-2xl border p-4 text-left transition ${
+                      selected
+                        ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500"
+                        : "border-slate-200 bg-white hover:border-teal-300"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-slate-900">{item.areaKey}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {item.benchmark.totalReports} reports
+                        </p>
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}>
+                        {item.condition.conditionLabel}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-2.5 text-xs">
+                      <div>
+                        <p className="text-slate-400">Area Avg Depth</p>
+                        <p className="mt-0.5 font-semibold text-slate-800">
+                          {item.latestDepth !== null ? formatDepthMetersAndFeet(item.latestDepth) : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400">+{formatHorizonLabel(horizon)} Forecast</p>
+                        <p className="mt-0.5 font-semibold text-blue-700">
+                          {item.projection ? formatDepthMetersAndFeet(item.projection.projectedDepth) : "Need 2+ mo"}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-[11px] text-slate-500">
+                      Trend rate:{" "}
+                      {item.projection
+                        ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2)}/yr`
+                        : "—"}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Desktop table with clean cell padding */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-160 text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 text-xs text-slate-400">
+                    <th className="px-3 pb-3 font-medium">Area / Location</th>
+                    <th className="px-3 pb-3 font-medium">Total Reports</th>
+                    <th className="px-3 pb-3 font-medium">Area Avg Depth</th>
+                    <th className="px-3 pb-3 font-medium">+{formatHorizonLabel(horizon)} Forecast</th>
+                    <th className="px-3 pb-3 font-medium">Trend Rate</th>
+                    <th className="px-3 pb-3 font-medium">Area Condition</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {areaSummaries.map((item) => {
+                    const selected = item.areaKey === activeArea;
+                    const pillClass =
+                      item.condition.conditionTone === "red"
+                        ? "bg-red-50 text-red-700"
+                        : item.condition.conditionTone === "amber"
+                          ? "bg-amber-50 text-amber-800"
+                          : "bg-teal-50 text-teal-700";
+                    return (
+                      <tr
+                        key={item.areaKey}
+                        onClick={() => {
+                          setSelectedAreaKey(item.areaKey);
+                          setSelectedSourceType("All sources");
+                        }}
+                        data-selected={selected || undefined}
+                        className="aqua-row cursor-pointer border-b border-slate-200/60 last:border-0"
+                      >
+                        <td className="px-3 py-3.5 font-semibold text-slate-800">{item.areaKey}</td>
+                        <td className="px-3 py-3.5 text-slate-600">{item.benchmark.totalReports}</td>
+                        <td className="px-3 py-3.5 font-semibold text-slate-800">
+                          {item.latestDepth !== null ? formatDepthMetersAndFeet(item.latestDepth) : "—"}
+                        </td>
+                        <td className="px-3 py-3.5 font-semibold text-blue-700">
+                          {item.projection ? formatDepthMetersAndFeet(item.projection.projectedDepth) : "Need 2+ mo"}
+                        </td>
+                        <td className="px-3 py-3.5 text-xs text-slate-500">
+                          {item.projection
+                            ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2)}/yr`
+                            : "—"}
+                        </td>
+                        <td className="px-3 py-3.5">
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}>
+                            {item.condition.conditionLabel}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Panel>
 
@@ -1026,7 +1102,8 @@ export function UniversalAreaDepthForecast({
               className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"
               disabled={!areaSummaries.length}
             >
-              {!areaSummaries.length && <option value="">No area data</option>}
+              {loading && !areaSummaries.length && <option value="">Loading areas…</option>}
+              {!loading && !areaSummaries.length && <option value="">No area data</option>}
               {areaSummaries.map((a) => (
                 <option key={a.areaKey} value={a.areaKey}>
                   {a.areaKey} ({a.benchmark.totalReports} reports)
@@ -1082,7 +1159,7 @@ export function UniversalAreaDepthForecast({
               {currentDepthM !== null && currentDepthM !== undefined ? formatDepthMetersAndFeet(currentDepthM) : "—"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              {activeBenchmark.totalReports} total reports · {selectedSourceType}
+              {filteredReportCount} {selectedSourceType === "All sources" ? "total " : ""}report{filteredReportCount === 1 ? "" : "s"} · {selectedSourceType}
             </p>
           </div>
 

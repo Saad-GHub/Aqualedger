@@ -407,9 +407,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Mobile tab bar (iOS style): the four main pages plus "More" for the full menu. */}
         <nav
           aria-label="Quick navigation"
-          className="pb-safe fixed inset-x-0 bottom-0 z-30 pt-2 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] lg:hidden"
+          className="pb-safe fixed inset-x-0 bottom-0 z-30 pt-2 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] lg:hidden"
         >
-          <div className="glass-strong mx-auto flex max-w-md items-stretch justify-between rounded-[26px] p-1.5">
+          <div className="glass-strong mx-auto flex w-full max-w-lg items-stretch justify-between gap-0.5 rounded-[26px] p-1 sm:gap-1 sm:p-1.5">
             {nav.slice(0, 4).map(({ label, href, icon: Icon }) => {
               const active = pathname === href;
               return (
@@ -417,21 +417,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   key={href}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-[20px] px-1 py-2 text-[10.5px] font-semibold transition duration-300 ${
+                  className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-2 text-[clamp(9.5px,2.6vw,11.5px)] font-semibold leading-tight transition duration-200 sm:px-2 ${
                     active ? "bg-teal-500 text-white shadow-[0_8px_18px_-8px_rgb(20_184_166/0.9)]" : "text-slate-500"
                   }`}
                 >
-                  <Icon size={19} strokeWidth={active ? 2.4 : 2} />
-                  <span className="w-full truncate text-center">{label.replace("Groundwater ", "")}</span>
+                  <Icon size={18} strokeWidth={active ? 2.4 : 2} className="shrink-0" />
+                  <span className="w-full truncate text-center">
+                    {label
+                      .replace("Groundwater ", "")
+                      .replace("Depth Forecast", "Forecast")
+                      .replace("Water Sources", "Sources")}
+                  </span>
                 </Link>
               );
             })}
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-[20px] px-1 py-2 text-[10.5px] font-semibold text-slate-500"
+              className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-2 text-[clamp(9.5px,2.6vw,11.5px)] font-semibold leading-tight text-slate-500 sm:px-2"
             >
-              <Menu size={19} />
+              <Menu size={18} className="shrink-0" />
               <span>More</span>
             </button>
           </div>

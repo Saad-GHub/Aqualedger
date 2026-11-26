@@ -32,6 +32,7 @@ const colors = ["#0d9488", "#2563eb", "#f59e0b", "#7c3aed", "#e11d48", "#0891b2"
 
 export function PublicWaterSources() {
   const [trends, setTrends] = useState<PublicAreaSourceTrend[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
@@ -47,7 +48,8 @@ export function PublicWaterSources() {
         setError(
           "Public area trends are not connected yet. Run supabase/reset-and-renew-schema.sql in the Supabase SQL Editor."
         )
-      );
+      )
+      .finally(() => setLoading(false));
   }, []);
 
   const areaNames = useMemo(
@@ -127,23 +129,27 @@ export function PublicWaterSources() {
       <div className="aqua-stats grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Areas with reports</p>
-          <p className="mt-2 text-2xl font-bold">{areaNames.length}</p>
+          <p className="mt-2 text-2xl font-bold">{loading && !trends.length ? "…" : areaNames.length}</p>
         </div>
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Source categories</p>
           <p className="mt-2 text-2xl font-bold">
-            {new Set(trends.map((row) => row.sourceType)).size}
+            {loading && !trends.length ? "…" : new Set(trends.map((row) => row.sourceType)).size}
           </p>
         </div>
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">Total reports analyzed</p>
           <p className="mt-2 text-2xl font-bold">
-            {trends.reduce((sum, row) => sum + row.reportCount, 0)}
+            {loading && !trends.length ? "…" : trends.reduce((sum, row) => sum + row.reportCount, 0)}
           </p>
         </div>
       </div>
 
-      {error ? (
+      {loading && !trends.length ? (
+        <Panel title="Loading Water Sources…" description="Fetching area-wise source counts and AI recommendations.">
+          <div className="h-48 animate-pulse rounded-2xl bg-slate-100" />
+        </Panel>
+      ) : error ? (
         <p className="rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-800">
           {error}
         </p>
@@ -158,7 +164,7 @@ export function PublicWaterSources() {
               <select
                 value={activeArea}
                 onChange={(e) => setSelectedArea(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-teal-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
               >
                 {areaNames.map((name) => (
                   <option key={name} value={name}>
@@ -224,7 +230,7 @@ export function PublicWaterSources() {
                 <div className="flex items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-800">
                     <Home size={16} />
-                    Best for Aam User / Household
+                    Best for Household / Domestic
                   </span>
                   <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-teal-800 shadow-sm">
                     {activeIntel.householdBest.riskLabel}
@@ -354,7 +360,7 @@ export function PublicWaterSources() {
             <button
               type="button"
               onClick={() => setShowAllAreas((prev) => !prev)}
-              className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 transition hover:border-teal-400 hover:text-teal-700"
+              className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs transition hover:border-teal-500 hover:text-teal-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-teal-400 dark:hover:text-teal-300"
             >
               {showAllAreas ? "Show top 3 areas" : `Show all ${filteredAreas.length} areas`}
             </button>
