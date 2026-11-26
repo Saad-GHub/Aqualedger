@@ -845,13 +845,13 @@ export function UniversalAreaDepthForecast({
           sampleDate: row.sampleDay ?? row.sampleMonth ?? undefined,
         }));
       const monthly = aggregateMonthlyDepths(inputs, areaKey, "All sources");
-      const projection = forecastDepthForHorizon(monthly, horizon);
+      const areaAvgDepth = benchmark.averageDepthM ?? monthly.at(-1)?.depth ?? null;
+      const projection = forecastDepthForHorizon(monthly, horizon, areaAvgDepth);
       const rowsForArea = publicTrends.filter((row) => row.areaKey === areaKey);
       const totalHigh = rowsForArea.reduce((s, r) => s + r.highCount, 0);
       const totalMod = rowsForArea.reduce((s, r) => s + r.moderateCount, 0);
       const areaRiskLevel =
         totalHigh > 0 ? "High concern" : totalMod > 0 ? "Moderate concern" : "Normal";
-      const areaAvgDepth = benchmark.averageDepthM ?? monthly.at(-1)?.depth ?? null;
       const condition = evaluateSourceCondition({
         currentDepthM: areaAvgDepth,
         projectedDepthM: projection?.projectedDepth ?? null,
@@ -905,15 +905,15 @@ export function UniversalAreaDepthForecast({
     [areaInputs, activeArea, selectedSourceType]
   );
 
-  const projection = useMemo(
-    () => forecastDepthForHorizon(areaMonthly, horizon),
-    [areaMonthly, horizon]
-  );
-
   const currentDepthM =
     selectedSourceType === "All sources"
       ? (activeBenchmark.averageDepthM ?? areaMonthly.at(-1)?.depth ?? null)
       : (activeBenchmark.sameSourceAverageM ?? areaMonthly.at(-1)?.depth ?? activeBenchmark.averageDepthM);
+
+  const projection = useMemo(
+    () => forecastDepthForHorizon(areaMonthly, horizon, currentDepthM),
+    [areaMonthly, horizon, currentDepthM]
+  );
 
   const filteredReportCount =
     selectedSourceType === "All sources"

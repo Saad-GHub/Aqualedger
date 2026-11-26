@@ -309,7 +309,8 @@ function fitLinearDepthTrend(
   horizonMonths: number,
   minPoints: number,
   minSpanMonths: number,
-  minResidualScale: number
+  minResidualScale: number,
+  anchorDepthOverride?: number | null
 ) {
   if (
     points.length < minPoints ||
@@ -338,7 +339,10 @@ function fitLinearDepthTrend(
   const latestIndex = monthIndex(points.at(-1)!.month);
   const lastMonth = monthLabel(latestIndex);
   const lastX = latestIndex - x0;
-  const currentDepth = points.at(-1)!.depth;
+  const currentDepth =
+    anchorDepthOverride != null && Number.isFinite(anchorDepthOverride)
+      ? anchorDepthOverride
+      : points.at(-1)!.depth;
 
   const midIdx = Math.floor(points.length / 2);
   const segSlope = (seg: MonthlyDepthPoint[]) => {
@@ -433,6 +437,7 @@ function fitLinearDepthTrend(
   const baseClimate = climateWaveForStep(0);
 
   let cumulativeTrend = 0;
+  let prevProjected = currentDepth;
   const predictions = Array.from({ length: horizonMonths }, (_, i) => {
     const step = i + 1;
     const stepSlope = (effectiveSlope + boundedAccel * step) * Math.pow(0.996, i);
@@ -440,16 +445,26 @@ function fitLinearDepthTrend(
     const seasonalDelta = seasonalOffsetForMonth(latestIndex + step) - baseSeason;
     const climateDelta =
       horizonMonths > 12 ? climateWaveForStep(step) - baseClimate : 0;
-    const rawProjected = currentDepth + cumulativeTrend + seasonalDelta + climateDelta;
-    // Prevent unrealistic collapse to 0.0 m when the aquifer is deepening or shallow
+    // Keep seasonal/climate modulation gentle so horizons (3 mo -> 7 yr) stay monotonic with effectiveSlope
+    const maxWave = Math.max(0.08, Math.abs(cumulativeTrend) * 0.25);
+    const boundedWave = Math.max(-maxWave, Math.min(maxWave, seasonalDelta + climateDelta));
+    let rawProjected = currentDepth + cumulativeTrend + boundedWave;
+    // Enforce sign consistency & monotonic progression across horizons
+    if (effectiveSlope >= 0) {
+      rawProjected = Math.max(prevProjected, rawProjected);
+    } else {
+      rawProjected = Math.min(prevProjected, rawProjected);
+    }
     const floorDepth =
       effectiveSlope > 0.005
         ? Math.max(0.2, currentDepth * 0.75)
         : Math.max(0.1, currentDepth * 0.45);
     const ceilingDepth = currentDepth + Math.max(12, currentDepth * 1.5);
-    return Number(
+    const clamped = Number(
       Math.max(floorDepth, Math.min(ceilingDepth, rawProjected)).toFixed(2)
     );
+    prevProjected = clamped;
+    return clamped;
   });
   const projectedDepth = predictions[horizonMonths - 1];
   const projectedChange = projectedDepth - currentDepth;
@@ -548,9 +563,10 @@ export function forecastDepth(points: MonthlyDepthPoint[]): DepthForecast | null
 
 export function forecastDepthForHorizon(
   points: MonthlyDepthPoint[],
-  horizonMonths: number
+  horizonMonths: number,
+  anchorDepthOverride?: number | null
 ): SourceDepthProjection | null {
-  const fit = fitLinearDepthTrend(points, horizonMonths, 2, 1, 0.05);
+  const fit = fitLinearDepthTrend(points, horizonMonths, 2, 1, 0.05, anchorDepthOverride);
   if (!fit) return null;
   return {
     ...fit,
