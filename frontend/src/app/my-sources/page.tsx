@@ -215,7 +215,7 @@ export default function MySourcesPage() {
         title={tr(lang, "My Sources & Depth Predictions", "میرے ذرائع اور گہرائی کی پیشگوئی")}
         description={
           demoMode
-            ? tr(lang, "Interactive Demo Farmer workspace (Bahawalpur, Punjab sample readings). Sign in with Email OTP to track your own wells.", "انٹرایکٹو ڈیمو کسان ورک اسپیس (بہاولپور کے نمونہ ریکارڈ)۔ اپنے کنوؤں کو ٹریک کرنے کے لیے ای میل سے سائن ان کریں۔")
+            ? tr(lang, "Interactive Demo Farmer workspace (Bahawalpur, Punjab sample readings). Sign in with your email and password to track your own wells.", "انٹرایکٹو ڈیمو کسان ورک اسپیس (بہاولپور کے نمونہ ریکارڈ)۔ اپنے کنوؤں کو ٹریک کرنے کے لیے ای میل اور پاس ورڈ سے سائن ان کریں۔")
             : tr(lang, `Private workspace for ${currentEmail}. Only your own tracked sources, readings, and predictions are shown here.`, `${currentEmail} کے لیے ذاتی ورک اسپیس۔ یہاں صرف آپ کے ذرائع اور پیشگوئیاں دکھائی جا رہی ہیں۔`)
         }
         action={

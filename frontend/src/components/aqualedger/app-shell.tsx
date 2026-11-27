@@ -393,16 +393,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="relative z-10 min-w-0 flex-1 lg:ml-[17.5rem]">
           {/* Solid-backed sticky header so scrolled cards never bleed above or behind it. */}
-          <header className="aqua-header sticky top-0 z-30 bg-[#e8f3f6]/95 px-2.5 pb-1.5 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur-md dark:bg-black/95 sm:px-4 lg:px-6 lg:pt-3">
+          <header className="aqua-header sticky top-0 z-30 bg-[#e8f3f6] px-2.5 pb-1.5 pt-[max(0.25rem,env(safe-area-inset-top))] dark:bg-black sm:px-4 lg:px-6 lg:pt-2.5">
            <div
             data-scrolled={scrolled || undefined}
-            className="aqua-header-bar glass-strong flex h-14 items-center justify-between gap-3 rounded-[22px] bg-white/95 pl-2 pr-2 shadow-sm dark:bg-[#0b1016]/95 sm:h-16 sm:pl-3 sm:pr-3"
+            className="aqua-header-bar glass-strong flex h-14 items-center justify-between gap-2 rounded-[22px] bg-white pl-2 pr-2 shadow-sm dark:bg-[#0b1016] sm:h-16 sm:gap-3 sm:pl-3 sm:pr-3"
            >
-            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <Link
                 href="/"
                 aria-label="AquaLedger home"
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-teal-400 to-sky-500 text-white shadow-[0_8px_20px_-8px_rgb(14_165_233/0.8),inset_0_1px_0_rgb(255_255_255/0.35)] sm:h-11 sm:w-11"
+                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-teal-400 to-sky-500 text-white shadow-[0_8px_20px_-8px_rgb(14_165_233/0.8),inset_0_1px_0_rgb(255_255_255/0.35)] sm:flex sm:h-11 sm:w-11"
               >
                 <PageIcon size={20} strokeWidth={2.2} />
               </Link>

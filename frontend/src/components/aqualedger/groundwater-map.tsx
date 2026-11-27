@@ -1390,7 +1390,7 @@ export function GroundwaterMap() {
             </div>
           )}
 
-          {!hoverWell && hoverDistrict && activeScale && (
+          {!hoverWell && hoverDistrict && activeScale && !legendOpen && (
             <div className="pointer-events-none absolute right-3 top-3 z-30 w-64 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur dark:border-white/15 dark:bg-[#0b1320]/95 @min-[820px]:left-3! @min-[820px]:right-auto!">
               <p className="text-sm font-semibold text-slate-900">{hoverDistrict.name}</p>
               <p className="text-[11px] text-slate-500">{hoverDistrict.province}{hoverDistrict.censusDistricts && hoverDistrict.censusDistricts !== hoverDistrict.name ? ` · includes ${hoverDistrict.censusDistricts}` : ""}</p>
@@ -1535,10 +1535,10 @@ export function GroundwaterMap() {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-red-300 hover:bg-red-50/40 dark:border-slate-800 dark:bg-slate-900/70"
+                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-red-300 hover:bg-red-50/40 dark:border-white/10 dark:bg-[#0b1320] dark:hover:bg-[#111c2d]"
                   >
                     <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-100 text-xs font-bold text-red-700">{index + 1}</span>
-                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{district.name}</span><span className="block text-xs text-slate-500">{district.province} · {district.mouzas} {tr(lang, "mouzas", "مواضعات")}</span></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-white">{district.name}</span><span className="block text-xs text-slate-500 dark:text-slate-400">{district.province} · {district.mouzas} {tr(lang, "mouzas", "مواضعات")}</span></span>
                     <span className="tabular text-sm font-semibold text-red-700 dark:text-red-400">{depthFt(district.medianDepthFt)}</span>
                   </button>
                 </li>
@@ -1563,10 +1563,10 @@ export function GroundwaterMap() {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-violet-300 hover:bg-violet-50/40 dark:border-slate-800 dark:bg-slate-900/70"
+                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-violet-300 hover:bg-violet-50/40 dark:border-white/10 dark:bg-[#0b1320] dark:hover:bg-[#111c2d]"
                   >
                     <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">{index + 1}</span>
-                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{district.name}</span><span className="block text-xs text-slate-500">{district.province} · {district.mouzas} mouzas</span></span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-white">{district.name}</span><span className="block text-xs text-slate-500 dark:text-slate-400">{district.province} · {district.mouzas} {tr(lang, "mouzas", "مواضعات")}</span></span>
                     <span className="tabular text-sm font-semibold text-violet-700 dark:text-purple-300">{district.brackishPct}%</span>
                   </button>
                 </li>

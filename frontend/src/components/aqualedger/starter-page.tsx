@@ -419,7 +419,7 @@ export function StarterPage({ page }: { page: PageKey }) {
               }}
               className="rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
             >
-              Reset defaults
+              {tr(lang, "Reset defaults", "بنیادی ترتیبات بحال کریں")}
             </button>
           </div>
         </Panel>

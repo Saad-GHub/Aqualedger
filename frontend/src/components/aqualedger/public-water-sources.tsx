@@ -173,7 +173,7 @@ export function PublicWaterSources() {
               <select
                 value={activeArea}
                 onChange={(e) => setSelectedArea(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-teal-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-teal-500 dark:border-white/20 dark:bg-[#0f172a] dark:text-white"
               >
                 {areaNames.map((name) => (
                   <option key={name} value={name}>

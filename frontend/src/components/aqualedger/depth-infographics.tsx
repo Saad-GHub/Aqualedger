@@ -90,7 +90,11 @@ function WellCrossSectionInfographic({
   const projectedPct = pct(projectedDepthM);
   const areaPct = pct(areaAverageM);
   const closeCurrentProjected =
-    currentPct !== null && projectedPct !== null && Math.abs(currentPct - projectedPct) < 13;
+    currentPct !== null && projectedPct !== null && Math.abs(currentPct - projectedPct) < 16;
+  const closeAreaRight =
+    areaPct !== null &&
+    ((currentPct !== null && Math.abs(areaPct - currentPct) < 14) ||
+      (projectedPct !== null && Math.abs(areaPct - projectedPct) < 14));
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-linear-to-b from-emerald-50/40 via-amber-50/30 to-cyan-50/50 p-4">
@@ -138,7 +142,11 @@ function WellCrossSectionInfographic({
             className="absolute inset-x-3 border-t-2 border-dashed border-slate-500 dark:border-slate-400"
             style={{ top: `${areaPct}%` }}
           >
-            <span className="absolute left-0 z-10 inline-flex -translate-y-1/2 rounded-md bg-[#0b1f3a] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20">
+            <span
+              className={`absolute left-0 z-10 inline-flex rounded-md bg-[#0b1f3a] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20 ${
+                closeAreaRight ? "-translate-y-[calc(100%+3px)]" : "-translate-y-1/2"
+              }`}
+            >
               {tr(lang, "Area Avg", "علاقائی اوسط")}: {depthM(areaAverageM)}
             </span>
           </div>
@@ -152,7 +160,7 @@ function WellCrossSectionInfographic({
           >
             <span
               className={`absolute right-0 z-20 rounded-md bg-[#0d9488] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ${
-                closeCurrentProjected ? "translate-y-1.5" : "-translate-y-1/2"
+                closeCurrentProjected ? "translate-y-2" : "-translate-y-1/2"
               }`}
             >
               {tr(lang, "Current", "موجودہ")}: {depthM(currentDepthM)}
@@ -168,13 +176,27 @@ function WellCrossSectionInfographic({
           >
             <span
               className={`absolute right-0 z-30 rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ${
-                closeCurrentProjected ? "-translate-y-[calc(100%+4px)]" : "-translate-y-1/2"
+                closeCurrentProjected ? "-translate-y-[calc(100%+6px)]" : "-translate-y-1/2"
               }`}
             >
               +{formatHorizonLabel(horizonMonths)} {tr(lang, "Forecast", "پیشگوئی")}: {depthM(projectedDepthM)}
             </span>
           </div>
         )}
+      </div>
+      <div className="mt-2.5 grid grid-cols-3 gap-1.5 text-center text-[11px]">
+        <div className="rounded-lg bg-white/80 px-2 py-1 dark:bg-[#0b1320]">
+          <span className="block text-[10px] text-slate-500">{tr(lang, "Area Avg", "علاقائی اوسط")}</span>
+          <strong className="text-slate-900 dark:text-white">{areaAverageM !== null ? depthM(areaAverageM) : "—"}</strong>
+        </div>
+        <div className="rounded-lg bg-white/80 px-2 py-1 dark:bg-[#0b1320]">
+          <span className="block text-[10px] text-teal-700 dark:text-teal-300">{tr(lang, "Current", "موجودہ")}</span>
+          <strong className="text-teal-800 dark:text-teal-200">{currentDepthM !== null ? depthM(currentDepthM) : "—"}</strong>
+        </div>
+        <div className="rounded-lg bg-white/80 px-2 py-1 dark:bg-[#0b1320]">
+          <span className="block text-[10px] text-blue-700 dark:text-blue-300">+{formatHorizonLabel(horizonMonths)}</span>
+          <strong className="text-blue-700 dark:text-blue-200">{projectedDepthM !== null ? depthM(projectedDepthM) : "—"}</strong>
+        </div>
       </div>
     </div>
   );
@@ -231,7 +253,7 @@ export function TopAreasDepthPanel({ trends }: { trends: PublicAreaSourceTrend[]
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="4 4" horizontal={false} />
-              <XAxis type="number" tickCount={5} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+              <XAxis type="number" ticks={[0, 15, 30, 45, 60]} domain={[0, "dataMax"]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <YAxis type="category" dataKey="area" width={105} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <Tooltip
                 formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} · ${item.payload.reports} reports`, "Area average depth"]}
@@ -296,7 +318,7 @@ export function SourceTypeDepthPanel({ trends }: { trends: PublicAreaSourceTrend
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="4 4" horizontal={false} />
-              <XAxis type="number" tickCount={5} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+              <XAxis type="number" ticks={[0, 15, 30, 45, 60]} domain={[0, "dataMax"]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <YAxis type="category" dataKey="sourceType" width={115} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} · ${item.payload.reports} reports`, "Average depth"]} />
               <Bar dataKey="averageDepthM" fill="url(#sourceBarFill)" radius={[4, 10, 10, 4]} animationDuration={1200} animationEasing="ease-out" />
@@ -484,7 +506,7 @@ export function AreaDepthInfographicStrip({
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="4 4" horizontal={false} />
-                <XAxis type="number" tickCount={5} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                <XAxis type="number" ticks={[0, 15, 30, 45, 60]} domain={[0, "dataMax"]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="sourceType" width={120} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} · ${item.payload.reports} reports`, "Average depth"]} />
                 <Bar dataKey="averageDepthM" fill="url(#sourceBarFill)" radius={[4, 10, 10, 4]} animationDuration={1300} animationEasing="ease-out" />
@@ -645,7 +667,7 @@ export function FarmerDepthWorkspace({
   return (
     <div className="space-y-6">
       {/* Controls & Selection */}
-      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-cyan-50/60 p-5 shadow-sm dark:border-indigo-500/30 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
+      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-cyan-50/60 p-5 shadow-sm dark:border-indigo-500/30 dark:from-[#0b1320] dark:via-[#0d1726] dark:to-[#070b12]">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-200">
@@ -830,7 +852,12 @@ export function FarmerDepthWorkspace({
                   <BrainCircuit size={14} />
                   {projection.status} · {Math.abs(projection.slopePerMonth * 12).toFixed(2)} m/yr · {metresToFeet(Math.abs(projection.slopePerMonth * 12)).toFixed(1)} ft/yr
                 </span>
-                <span>R² {projection.rSquared.toFixed(2)} · {projection.monthlyPoints.length} months of history</span>
+                <span>
+                  R² {projection.rSquared.toFixed(2)} · {projection.monthlyPoints.length} readings
+                  {projection.monthlyPoints.length >= 2
+                    ? ` · ${Math.max(1, (Number(projection.monthlyPoints.at(-1)!.month.slice(0, 4)) - Number(projection.monthlyPoints[0].month.slice(0, 4))) * 12 + (Number(projection.monthlyPoints.at(-1)!.month.slice(5, 7)) - Number(projection.monthlyPoints[0].month.slice(5, 7))))} mo span`
+                    : ""}
+                </span>
               </div>
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1208,7 +1235,7 @@ export function UniversalAreaDepthForecast({
                 setSelectedSourceType("All sources");
                 setAreaAlertSaved(false);
               }}
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 dark:border-white/20 dark:bg-[#0f172a] dark:text-white"
               disabled={!areaSummaries.length}
             >
               {loading && !areaSummaries.length && <option value="">{tr(lang, "Loading areas…", "علاقے لوڈ ہو رہے ہیں…")}</option>}
@@ -1226,7 +1253,7 @@ export function UniversalAreaDepthForecast({
             <select
               value={selectedSourceType}
               onChange={(e) => setSelectedSourceType(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 dark:border-white/20 dark:bg-[#0f172a] dark:text-white"
             >
               <option value="All sources">{tr(lang, "All sources", "تمام ذرائع")}</option>
               {activeBenchmark.bySource.map((s) => (
