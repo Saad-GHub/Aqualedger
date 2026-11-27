@@ -474,6 +474,80 @@ export async function deleteWaterReportsByIds(ids: string[]) {
   notifyCommunityWaterReportsUpdated();
   return deleted;
 }
+
+export async function deleteOwnWaterReport(id: string) {
+  const supabase = getSupabaseBrowserClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    throw new Error("Please sign in to delete your report.");
+  }
+  const { error, count } = await supabase
+    .from("water_reports")
+    .delete({ count: "exact" })
+    .eq("id", id)
+    .eq("created_by", authData.user.id);
+  if (error) throw error;
+  if (count === 0) {
+    throw new Error("Could not delete this report. Ensure supabase/user-delete-own-policy.sql is applied in Supabase.");
+  }
+  notifyCommunityWaterReportsUpdated();
+}
+
+export async function updateOwnWaterReport(
+  id: string,
+  updates: {
+    reporterName?: string;
+    address: string;
+    areaName: string;
+    sourceType: string;
+    sourceLabel?: string;
+    depth: string;
+    sampleDate: string;
+    concern: string;
+  }
+) {
+  const supabase = getSupabaseBrowserClient();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData.user) {
+    throw new Error("Please sign in to update your report.");
+  }
+  const parsedDepthM = Number(updates.depth);
+  const streetAddress = updates.address.trim();
+  const areaName = normalizeAreaName(updates.areaName, streetAddress);
+  try {
+    const currentTrends = await readPublicAreaSourceTrends();
+    const anomalyReason = checkSubmissionAnomaly(parsedDepthM, currentTrends, areaName);
+    if (anomalyReason) throw new Error(anomalyReason);
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith("AI Anomaly Guard:")) {
+      throw err;
+    }
+  }
+  const row: Record<string, string | number | null> = {
+    reporter_name: updates.reporterName ?? "",
+    address: streetAddress,
+    street_address: streetAddress,
+    area_name: areaName,
+    source_type: updates.sourceType,
+    source_depth_m: parsedDepthM,
+    sample_date: updates.sampleDate,
+    main_concern: updates.concern,
+  };
+  if (updates.sourceLabel?.trim()) {
+    row.source_label = updates.sourceLabel.trim();
+  }
+  const { error, count } = await supabase
+    .from("water_reports")
+    .update(row, { count: "exact" })
+    .eq("id", id)
+    .eq("created_by", authData.user.id);
+  if (error) throw error;
+  if (count === 0) {
+    throw new Error("Could not update this report. Ensure supabase/user-delete-own-policy.sql is applied in Supabase.");
+  }
+  invalidateReadCaches();
+  notifyCommunityWaterReportsUpdated();
+}
 export function notifyCommunityWaterReportsUpdated() {
   invalidateReadCaches();
   if (typeof window !== "undefined") window.dispatchEvent(new Event(UPDATED_EVENT));

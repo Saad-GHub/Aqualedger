@@ -211,14 +211,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const sidebar = (
     <>
-      <Link href="/" onClick={() => setMenuOpen(false)} className="mb-10 flex items-center gap-3 px-2">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-teal-300 to-cyan-500 text-slate-900 shadow-[0_6px_20px_-6px_rgb(45_212_191/0.7)]">
-          <Waves size={24} strokeWidth={2.4} />
-        </div>
-        <div>
-          <p className="text-lg font-semibold tracking-tight text-white">AquaLedger</p>
-          <p className="whitespace-nowrap text-[10px] font-medium uppercase tracking-[0.08em] text-teal-200/70">
-            {tr(lang, "Groundwater Intelligence", "زیرِ زمین پانی کی ذہانت")}
+      <Link href="/" onClick={() => setMenuOpen(false)} className="mb-9 flex items-center gap-2.5 px-1">
+        <img
+          src="/aqualedger-logo.jpg"
+          alt="AquaLedger logo"
+          className="h-10 w-10 shrink-0 rounded-xl bg-white object-contain p-0.5 shadow-[0_6px_20px_-6px_rgb(45_212_191/0.7)]"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[17px] font-semibold leading-tight tracking-tight text-white">AquaLedger</p>
+          <p className="truncate text-[9.5px] font-medium uppercase leading-tight tracking-[0.04em] text-teal-200/75">
+            Groundwater Intelligence
           </p>
         </div>
       </Link>
@@ -443,7 +445,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <main key={pathname} className="aqua-stagger mx-auto w-full max-w-[1400px] space-y-5 px-3.5 pt-4 pb-28 sm:space-y-6 sm:p-6 sm:pb-28 md:p-8 md:pb-28 lg:pb-8">
             {children}
-            <footer className="flex items-center justify-center gap-2 pb-2 pt-4 text-xs text-slate-400"><Waves size={14} className="text-teal-600" />AquaLedger</footer>
+            <footer className="flex items-center justify-center gap-2 pb-2 pt-4 text-xs text-slate-400">
+              <img src="/aqualedger-logo.jpg" alt="" className="h-4 w-4 rounded bg-white object-contain p-0.5" />
+              AquaLedger
+            </footer>
           </main>
         </div>
 
