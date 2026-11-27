@@ -89,12 +89,8 @@ function WellCrossSectionInfographic({
   const currentPct = pct(currentDepthM);
   const projectedPct = pct(projectedDepthM);
   const areaPct = pct(areaAverageM);
-  const closeCurrentProjected =
-    currentPct !== null && projectedPct !== null && Math.abs(currentPct - projectedPct) < 16;
-  const closeAreaRight =
-    areaPct !== null &&
-    ((currentPct !== null && Math.abs(areaPct - currentPct) < 14) ||
-      (projectedPct !== null && Math.abs(areaPct - projectedPct) < 14));
+  const closeAreaCurrent =
+    areaPct !== null && currentPct !== null && Math.abs(areaPct - currentPct) < 16;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-linear-to-b from-emerald-50/40 via-amber-50/30 to-cyan-50/50 p-4">
@@ -105,7 +101,7 @@ function WellCrossSectionInfographic({
           </p>
           <p className="text-xs text-slate-500">{sourceLabel}</p>
         </div>
-        <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
+        <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm dark:bg-[#0f172a] dark:text-white/90">
           {tr(lang, "Scale", "پیمانہ")}: 0 – {maxDepth} m · {asFeet(maxDepth)}
         </span>
       </div>
@@ -136,15 +132,15 @@ function WellCrossSectionInfographic({
           )}
         </div>
 
-        {/* Area Average Marker */}
+        {/* Area Average Marker (Left) */}
         {areaPct !== null && areaAverageM !== null && (
           <div
             className="absolute inset-x-3 border-t-2 border-dashed border-slate-500 dark:border-slate-400"
             style={{ top: `${areaPct}%` }}
           >
             <span
-              className={`absolute left-0 z-10 inline-flex rounded-md bg-[#0b1f3a] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20 ${
-                closeAreaRight ? "-translate-y-[calc(100%+3px)]" : "-translate-y-1/2"
+              className={`absolute left-0 z-10 inline-flex whitespace-nowrap rounded-md bg-[#0b1f3a] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20 ${
+                closeAreaCurrent ? "-translate-y-[calc(100%+4px)]" : "-translate-y-1/2"
               }`}
             >
               {tr(lang, "Area Avg", "علاقائی اوسط")}: {depthM(areaAverageM)}
@@ -152,15 +148,15 @@ function WellCrossSectionInfographic({
           </div>
         )}
 
-        {/* Current Depth Marker */}
+        {/* Current Depth Marker (Left, staggered below Area Avg when close) */}
         {currentPct !== null && currentDepthM !== null && (
           <div
             className="absolute inset-x-3 border-t-2 border-teal-600"
             style={{ top: `${currentPct}%` }}
           >
             <span
-              className={`absolute right-0 z-20 rounded-md bg-[#0d9488] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ${
-                closeCurrentProjected ? "translate-y-2" : "-translate-y-1/2"
+              className={`absolute left-0 z-20 whitespace-nowrap rounded-md bg-[#0d9488] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ${
+                closeAreaCurrent ? "translate-y-1.5" : "-translate-y-1/2"
               }`}
             >
               {tr(lang, "Current", "موجودہ")}: {depthM(currentDepthM)}
@@ -168,34 +164,30 @@ function WellCrossSectionInfographic({
           </div>
         )}
 
-        {/* Projected Depth Marker */}
+        {/* Projected Depth Marker (Right, never collides with Left pills) */}
         {projectedPct !== null && projectedDepthM !== null && (
           <div
             className="absolute inset-x-3 border-t-2 border-dotted border-blue-600"
             style={{ top: `${projectedPct}%` }}
           >
-            <span
-              className={`absolute right-0 z-30 rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ${
-                closeCurrentProjected ? "-translate-y-[calc(100%+6px)]" : "-translate-y-1/2"
-              }`}
-            >
+            <span className="absolute right-0 z-30 -translate-y-1/2 whitespace-nowrap rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
               +{formatHorizonLabel(horizonMonths)} {tr(lang, "Forecast", "پیشگوئی")}: {depthM(projectedDepthM)}
             </span>
           </div>
         )}
       </div>
       <div className="mt-2.5 grid grid-cols-3 gap-1.5 text-center text-[11px]">
-        <div className="rounded-lg bg-white/80 px-2 py-1 dark:bg-[#0b1320]">
-          <span className="block text-[10px] text-slate-500">{tr(lang, "Area Avg", "علاقائی اوسط")}</span>
+        <div className="rounded-lg border border-slate-200/70 bg-white px-2 py-1.5 dark:border-white/10 dark:bg-[#0f172a]">
+          <span className="block text-[10px] text-slate-500 dark:text-white/70">{tr(lang, "Area Avg", "علاقائی اوسط")}</span>
           <strong className="text-slate-900 dark:text-white">{areaAverageM !== null ? depthM(areaAverageM) : "—"}</strong>
         </div>
-        <div className="rounded-lg bg-white/80 px-2 py-1 dark:bg-[#0b1320]">
+        <div className="rounded-lg border border-teal-200/70 bg-white px-2 py-1.5 dark:border-teal-500/30 dark:bg-[#0f172a]">
           <span className="block text-[10px] text-teal-700 dark:text-teal-300">{tr(lang, "Current", "موجودہ")}</span>
-          <strong className="text-teal-800 dark:text-teal-200">{currentDepthM !== null ? depthM(currentDepthM) : "—"}</strong>
+          <strong className="text-teal-800 dark:text-white">{currentDepthM !== null ? depthM(currentDepthM) : "—"}</strong>
         </div>
-        <div className="rounded-lg bg-white/80 px-2 py-1 dark:bg-[#0b1320]">
-          <span className="block text-[10px] text-blue-700 dark:text-blue-300">+{formatHorizonLabel(horizonMonths)}</span>
-          <strong className="text-blue-700 dark:text-blue-200">{projectedDepthM !== null ? depthM(projectedDepthM) : "—"}</strong>
+        <div className="rounded-lg border border-blue-200/70 bg-white px-2 py-1.5 dark:border-blue-500/30 dark:bg-[#0f172a]">
+          <span className="block text-[10px] text-blue-700 dark:text-sky-300">+{formatHorizonLabel(horizonMonths)}</span>
+          <strong className="text-blue-700 dark:text-white">{projectedDepthM !== null ? depthM(projectedDepthM) : "—"}</strong>
         </div>
       </div>
     </div>
@@ -667,7 +659,7 @@ export function FarmerDepthWorkspace({
   return (
     <div className="space-y-6">
       {/* Controls & Selection */}
-      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-cyan-50/60 p-5 shadow-sm dark:border-indigo-500/30 dark:from-[#0b1320] dark:via-[#0d1726] dark:to-[#070b12]">
+      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-cyan-50/60 p-5 shadow-sm dark:border-indigo-500/30 dark:bg-none dark:bg-[#0b1320]">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-200">
@@ -1266,7 +1258,7 @@ export function UniversalAreaDepthForecast({
             <p className="mb-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
               {tr(lang, "Forecast Horizon", "پیشگوئی کی مدت")}
             </p>
-            <div className="inline-flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-900" role="group" aria-label="Forecast horizon">
+            <div className="inline-flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-white/20 dark:bg-[#0f172a]" role="group" aria-label="Forecast horizon">
               {([
                 [3, "3M"],
                 [6, "6M"],
@@ -1283,7 +1275,7 @@ export function UniversalAreaDepthForecast({
                   className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
                     horizon === months
                       ? "bg-teal-600 text-white shadow-xs"
-                      : "text-slate-600 hover:bg-white hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                      : "text-slate-700 hover:bg-white hover:text-slate-900 dark:text-white/85 dark:hover:bg-white/10 dark:hover:text-white"
                   }`}
                 >
                   {label}
@@ -1573,7 +1565,7 @@ export function UniversalAreaDepthForecast({
             aria-label="Sort areas"
             value={areaSort}
             onChange={(e) => setAreaSort(e.target.value as typeof areaSort)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 dark:border-white/20 dark:bg-[#0f172a] dark:text-white"
           >
             <option value="alpha">{tr(lang, "Sort: A – Z", "ترتیب: A – Z")}</option>
             <option value="deepest">{tr(lang, "Sort: Deepest first", "ترتیب: سب سے گہرا پہلے")}</option>

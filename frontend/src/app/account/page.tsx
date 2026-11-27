@@ -111,26 +111,28 @@ export default function AccountPage() {
       <PageIntro
         title={tr(lang, "My account", "میرا اکاؤنٹ")}
         description={tr(lang, "Your submissions and tracked sources are saved under this account.", "آپ کی تمام رپورٹس اور ذرائع اس اکاؤنٹ کے تحت محفوظ ہیں۔")}
-        action={
-          <button
-            disabled={busy}
-            onClick={() => void signOut()}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            {busy ? tr(lang, "Signing out…", "سائن آؤٹ ہو رہا ہے…") : tr(lang, "Sign out", "سائن آؤٹ")}
-          </button>
-        }
       />
 
       <Panel
         title={isAdmin ? tr(lang, "Administrator account", "ایڈمنسٹریٹر اکاؤنٹ") : tr(lang, "Community account", "کمیونٹی اکاؤنٹ")}
         description={tr(lang, "Report records are associated with this signed-in identity.", "رپورٹ ریکارڈز اس اکاؤنٹ سے منسلک ہیں۔")}
       >
-        <p className="text-sm font-semibold text-slate-800">{currentEmail}</p>
-        <p className="mt-1 text-xs text-slate-500">
-          Email status: {emailVerified ? "Verified" : "Not verified"}
-          {isAdmin ? " · Administrator role" : " · Community member"}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-800">{currentEmail}</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Email status: {emailVerified ? "Verified" : "Not verified"}
+              {isAdmin ? " · Administrator role" : " · Community member"}
+            </p>
+          </div>
+          <button
+            disabled={busy}
+            onClick={() => void signOut()}
+            className="inline-flex shrink-0 items-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-white/20 dark:bg-[#0f172a] dark:text-white dark:hover:bg-white/10"
+          >
+            {busy ? tr(lang, "Signing out…", "سائن آؤٹ ہو رہا ہے…") : tr(lang, "Sign out", "سائن آؤٹ")}
+          </button>
+        </div>
         {!emailVerified && (
           <div className="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
             <p>Verify your email before submitting water reports.</p>

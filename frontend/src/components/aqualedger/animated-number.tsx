@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from "react";
  * counts up with the same decimals, the unit stays put, and non-numbers render as-is.
  */
 export function StatValue({ value }: { value: string }) {
+  // Do not animate compound slash values like "8.5 m / 28.0 ft" or "8 / 36" to avoid 0.0 / 28.0 desync.
+  if (value.includes("/")) return <>{value}</>;
   const match = /^\s*(-?[\d,]*\.?\d+)(.*)$/.exec(value);
   if (!match) return <>{value}</>;
   const number = Number(match[1].replace(/,/g, ""));

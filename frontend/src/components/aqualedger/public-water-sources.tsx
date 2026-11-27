@@ -167,7 +167,7 @@ export function PublicWaterSources() {
           title={`${tr(lang, "Area Spotlight", "علاقے کی تفصیل")}: ${activeArea}`}
           description={tr(lang, "Select an area below to inspect its exact water source counts and see which source is most beneficial for residents vs farmers.", "نیچے علاقہ منتخب کریں اور جانیں کہ رہائشیوں اور کسانوں کے لیے کون سا ذریعہ سب سے بہتر ہے۔")}
         >
-          <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <label className="w-full max-w-sm text-xs font-semibold text-slate-600">
               {tr(lang, "Select Area", "علاقہ منتخب کریں")}
               <select
@@ -182,7 +182,7 @@ export function PublicWaterSources() {
                 ))}
               </select>
             </label>
-            <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-800">
+            <span className="inline-flex items-center gap-2 self-end rounded-full bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-800 sm:mb-0.5">
               <Sparkles size={14} />
               {activeIntel.totalReports} {tr(lang, `total source reports in ${activeArea}`, `کل رپورٹس (${activeArea})`)}
             </span>
@@ -377,14 +377,14 @@ export function PublicWaterSources() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-              placeholder={tr(lang, "Search areas or source types (e.g. Chakwal, Tube well, Borehole)…", "علاقہ یا ذریعہ تلاش کریں (مثلاً چکوال، ٹیوب ویل، بورویل)…")}
+              placeholder={tr(lang, "Search areas or sources (e.g. Chakwal)…", "علاقہ یا ذریعہ تلاش کریں (مثلاً چکوال)…")}
             />
           </label>
           {filteredAreas.length > 3 && !query.trim() && dominantFilter === "all" ? (
             <button
               type="button"
               onClick={() => setShowAllAreas((prev) => !prev)}
-              className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs transition hover:border-teal-500 hover:text-teal-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-teal-400 dark:hover:text-teal-300"
+              className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs transition hover:border-teal-500 hover:text-teal-700 dark:border-white/20 dark:bg-[#0f172a] dark:text-white dark:hover:border-teal-400 dark:hover:text-teal-300"
             >
               {showAllAreas ? tr(lang, "Show top 3 areas", "ٹاپ 3 علاقے دکھائیں") : tr(lang, `Show all ${filteredAreas.length} areas`, `تمام ${filteredAreas.length} علاقے دکھائیں`)}
             </button>
@@ -403,8 +403,8 @@ export function PublicWaterSources() {
               onClick={() => setDominantFilter(val)}
               className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
                 dominantFilter === val
-                  ? "bg-slate-900 text-white dark:bg-teal-500 dark:text-slate-950"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-teal-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                  ? "bg-teal-600 text-white"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-teal-300 dark:border-white/20 dark:bg-[#0f172a] dark:text-white/90 dark:hover:border-teal-400"
               }`}
             >
               {lbl}

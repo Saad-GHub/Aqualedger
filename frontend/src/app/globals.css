@@ -382,10 +382,10 @@ input:is(.bg-white), select:is(.bg-white), textarea:is(.bg-white) {
   backdrop-filter: none;
 }
 
-/* Solid accent buttons: bright turquoise / white pill with dark text in the Black theme. */
+/* Solid accent buttons: consistent crisp white text on #0d9488 in both themes. */
 .dark .bg-teal-700,
-.dark .bg-teal-800 { background-color: var(--aqua-turquoise); color: #031513; }
-.dark .hover\:bg-teal-800:hover { background-color: var(--aqua-turquoise-bright); }
+.dark .bg-teal-800 { background-color: #0d9488; color: #ffffff; }
+.dark .hover\:bg-teal-800:hover { background-color: #0f766e; }
 .dark .bg-slate-900 { background-color: var(--aqua-turquoise); color: #031513; }
 .dark .hover\:bg-slate-700:hover { background-color: var(--aqua-turquoise-bright); }
 

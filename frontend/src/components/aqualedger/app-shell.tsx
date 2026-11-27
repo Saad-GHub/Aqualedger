@@ -356,7 +356,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const mobilePageTitle =
     lang === "ur"
       ? pageTitle
-      : (pathname === "/reports" && !role.isAdmin ? "Log Reading" : mobileEnTitles[pathname] ?? pageTitle);
+      : (pathname === "/reports" ? (role.isAdmin ? "Reports" : "Log Reading") : mobileEnTitles[pathname] ?? pageTitle);
 
   return (
     <AquaRoleContext.Provider value={role}>
@@ -392,11 +392,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         <div className="relative z-10 min-w-0 flex-1 lg:ml-[17.5rem]">
-          {/* Solid-backed sticky header so scrolled cards never bleed above or behind it. */}
-          <header className="aqua-header sticky top-0 z-30 bg-[#e8f3f6] px-2.5 pb-1.5 pt-[max(0.25rem,env(safe-area-inset-top))] dark:bg-black sm:px-4 lg:px-6 lg:pt-2.5">
+          {/* Solid-backed flush sticky header so scrolled cards never bleed above or behind it. */}
+          <header className="aqua-header sticky top-0 z-30 bg-[#e8f3f6] px-2 pb-1.5 pt-[max(0px,env(safe-area-inset-top))] dark:bg-black sm:px-4 lg:px-6 lg:pt-2">
            <div
             data-scrolled={scrolled || undefined}
-            className="aqua-header-bar glass-strong flex h-14 items-center justify-between gap-2 rounded-[22px] bg-white pl-2 pr-2 shadow-sm dark:bg-[#0b1016] sm:h-16 sm:gap-3 sm:pl-3 sm:pr-3"
+            className="aqua-header-bar glass-strong flex h-13 items-center justify-between gap-1.5 rounded-[20px] bg-white pl-2.5 pr-2 shadow-sm dark:bg-[#0b1016] sm:h-16 sm:gap-3 sm:rounded-[22px] sm:pl-3 sm:pr-3"
            >
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <Link
@@ -413,7 +413,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     ? tr(lang, "Admin workspace", "ایڈمن ورک اسپیس")
                     : tr(lang, "Farmer & Community", "کسان اور کمیونٹی")}
                 </p>
-                <h2 className="truncate text-[15px] font-bold text-slate-900 sm:hidden">{mobilePageTitle}</h2>
+                <h2 className="truncate text-[14px] font-bold text-slate-900 sm:hidden">{mobilePageTitle}</h2>
                 <h2 className="hidden truncate text-lg font-bold text-slate-900 sm:block">{pageTitle}</h2>
               </div>
             </div>
