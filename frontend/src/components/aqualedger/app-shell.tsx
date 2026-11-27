@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/community-water-reports";
 import { NotificationBell } from "@/components/aqualedger/notification-bell";
+import { ChatbotLauncher } from "@/components/aqualedger/chatbot-launcher";
 import { ThemeToggle } from "@/components/aqualedger/theme-toggle";
 import { LanguageToggle, tr, useLanguage } from "@/components/aqualedger/language-toggle";
 
@@ -55,6 +56,7 @@ const titles: Record<string, string> = {
   "/reports": "Community Reports",
   "/settings": "Settings",
   "/data-management": "Data Management",
+  "/chatbot": "Aqua Chatbot",
   "/login": "Sign in",
   "/signup": "Create Account",
   "/account": "My Account",
@@ -331,6 +333,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     "/reports": "کمیونٹی رپورٹس",
     "/settings": "سیٹنگز",
     "/data-management": "ڈیٹا مینجمنٹ",
+    "/chatbot": "ایکوا چیٹ بوٹ",
     "/login": "سائن ان",
     "/signup": "اکاؤنٹ بنائیں",
     "/account": "میرا اکاؤنٹ",
@@ -360,7 +363,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <AquaRoleContext.Provider value={role}>
-      <div className="aqua-backdrop min-h-dvh text-slate-900 lg:flex">
+      <div className="aqua-backdrop min-h-dvh overflow-x-clip text-slate-900 lg:flex">
         <div aria-hidden="true" className="aqua-orbs">
           <span />
           <span />
@@ -447,7 +450,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   href="/login"
                   aria-label="Sign in"
-                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-slate-900 px-2.5 text-xs font-semibold text-white shadow-[0_8px_20px_-10px_rgb(11_31_58/0.7)] transition hover:bg-slate-700 sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
+                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-teal-600 px-2.5 text-xs font-semibold text-white shadow-[0_8px_20px_-10px_rgb(13_148_136/0.7)] transition hover:bg-teal-700 sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
                 >
                   <LogIn size={16} />
                   <span className="hidden sm:inline">{tr(lang, "Sign in", "سائن ان")}</span>
@@ -469,6 +472,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </footer>
           </main>
         </div>
+
+        <ChatbotLauncher />
 
         {/* Mobile tab bar (iOS style): the four main pages plus "More" for the full menu. */}
         <nav

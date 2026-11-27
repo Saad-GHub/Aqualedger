@@ -87,11 +87,43 @@ function WellCrossSectionInfographic({
   const pct = (depth: number | null) =>
     depth === null ? null : Math.min(88, Math.max(14, (depth / maxDepth) * 78 + 10));
 
-  const currentPct = pct(currentDepthM);
-  const projectedPct = pct(projectedDepthM);
-  const areaPct = pct(areaAverageM);
-  const closeAreaCurrent =
-    areaPct !== null && currentPct !== null && Math.abs(areaPct - currentPct) < 16;
+  const rawAreaPct = pct(areaAverageM);
+  const rawCurrentPct = pct(currentDepthM);
+  const rawProjectedPct = pct(projectedDepthM);
+
+  // Guarantee >= 20% vertical spacing between any two depth pills so labels never collide.
+  const slots = [
+    rawAreaPct !== null ? { key: "area", pct: rawAreaPct } : null,
+    rawCurrentPct !== null ? { key: "current", pct: rawCurrentPct } : null,
+    rawProjectedPct !== null ? { key: "projected", pct: rawProjectedPct } : null,
+  ]
+    .filter((s): s is { key: string; pct: number } => s !== null)
+    .sort((a, b) => a.pct - b.pct);
+
+  for (let i = 1; i < slots.length; i++) {
+    if (slots[i].pct - slots[i - 1].pct < 20) {
+      slots[i].pct = slots[i - 1].pct + 20;
+    }
+  }
+  const maxSlot = slots.at(-1)?.pct ?? 0;
+  if (maxSlot > 86) {
+    const shift = maxSlot - 86;
+    for (let i = slots.length - 1; i >= 0; i--) {
+      slots[i].pct = Math.max(12, slots[i].pct - shift);
+      if (i < slots.length - 1 && slots[i + 1].pct - slots[i].pct < 20) {
+        slots[i].pct = Math.max(12, slots[i + 1].pct - 20);
+      }
+    }
+  }
+  const slotPct = (key: string, fallback: number | null) =>
+    slots.find((s) => s.key === key)?.pct ?? fallback;
+
+  const areaPct = rawAreaPct;
+  const currentPct = rawCurrentPct;
+  const projectedPct = rawProjectedPct;
+  const areaLabelPct = slotPct("area", areaPct);
+  const currentLabelPct = slotPct("current", currentPct);
+  const projectedLabelPct = slotPct("projected", projectedPct);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-linear-to-b from-emerald-50/40 via-amber-50/30 to-cyan-50/50 p-4">
@@ -133,48 +165,52 @@ function WellCrossSectionInfographic({
           )}
         </div>
 
-        {/* Area Average Marker (Left) */}
+        {/* Area Average Marker & Pill (Left) */}
         {areaPct !== null && areaAverageM !== null && (
-          <div
-            className="absolute inset-x-3 border-t-2 border-dashed border-slate-500 dark:border-slate-400"
-            style={{ top: `${areaPct}%` }}
-          >
+          <>
+            <div
+              className="absolute inset-x-3 border-t-2 border-dashed border-slate-500 dark:border-slate-400"
+              style={{ top: `${areaPct}%` }}
+            />
             <span
-              className={`absolute left-0 z-10 inline-flex whitespace-nowrap rounded-md bg-[#0b1f3a] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20 ${
-                closeAreaCurrent ? "-translate-y-[calc(100%+4px)]" : "-translate-y-1/2"
-              }`}
+              style={{ top: `${areaLabelPct}%` }}
+              className="absolute left-3 z-10 inline-flex -translate-y-1/2 whitespace-nowrap rounded-md bg-[#0b1f3a] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20"
             >
               {tr(lang, "Area Avg", "علاقائی اوسط")}: {depthM(areaAverageM)}
             </span>
-          </div>
+          </>
         )}
 
-        {/* Current Depth Marker (Left, staggered below Area Avg when close) */}
+        {/* Current Depth Marker & Pill (Left) */}
         {currentPct !== null && currentDepthM !== null && (
-          <div
-            className="absolute inset-x-3 border-t-2 border-teal-600"
-            style={{ top: `${currentPct}%` }}
-          >
+          <>
+            <div
+              className="absolute inset-x-3 border-t-2 border-teal-600"
+              style={{ top: `${currentPct}%` }}
+            />
             <span
-              className={`absolute left-0 z-20 whitespace-nowrap rounded-md bg-[#0d9488] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ${
-                closeAreaCurrent ? "translate-y-1.5" : "-translate-y-1/2"
-              }`}
+              style={{ top: `${currentLabelPct}%` }}
+              className="absolute left-3 z-20 -translate-y-1/2 whitespace-nowrap rounded-md bg-[#0d9488] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm"
             >
               {tr(lang, "Current", "موجودہ")}: {depthM(currentDepthM)}
             </span>
-          </div>
+          </>
         )}
 
-        {/* Projected Depth Marker (Right, never collides with Left pills) */}
+        {/* Projected Depth Marker & Pill (Right) */}
         {projectedPct !== null && projectedDepthM !== null && (
-          <div
-            className="absolute inset-x-3 border-t-2 border-dotted border-blue-600"
-            style={{ top: `${projectedPct}%` }}
-          >
-            <span className="absolute right-0 z-30 -translate-y-1/2 whitespace-nowrap rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+          <>
+            <div
+              className="absolute inset-x-3 border-t-2 border-dotted border-blue-600"
+              style={{ top: `${projectedPct}%` }}
+            />
+            <span
+              style={{ top: `${projectedLabelPct}%` }}
+              className="absolute right-3 z-30 -translate-y-1/2 whitespace-nowrap rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm"
+            >
               +{formatHorizonLabel(horizonMonths)} {tr(lang, "Forecast", "پیشگوئی")}: {depthM(projectedDepthM)}
             </span>
-          </div>
+          </>
         )}
       </div>
       <div className="mt-2.5 grid grid-cols-3 gap-1.5 text-center text-[11px]">

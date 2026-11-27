@@ -1314,7 +1314,7 @@ export function GroundwaterMap() {
 
           {/* Floating legend (bottom-left). Census and well entries are filter buttons. */}
           {(shadeMode !== "off" || wellsOn || heatmapOn) && (
-            <div className={`${legendOpen ? "flex" : "hidden"} glass-strong pointer-events-auto absolute bottom-14 left-3 right-3 z-20 max-h-[55%] flex-col gap-3 overflow-y-auto rounded-2xl p-3 text-xs sm:right-auto sm:flex-row @min-[820px]:w-[min(22rem,38%)] @min-[820px]:flex-col`}>
+            <div className={`${legendOpen ? "flex" : "hidden"} glass-strong pointer-events-auto absolute bottom-14 left-3 right-3 z-20 max-h-[42%] flex-col gap-2.5 overflow-y-auto rounded-2xl p-2.5 text-[11px] sm:right-auto sm:max-h-[75%] sm:flex-row sm:gap-3 sm:p-3 sm:text-xs @min-[820px]:w-[min(22rem,38%)] @min-[820px]:flex-col`}>
               {shadeMode === "status" && (
                 <div>
                   <p className="mb-1.5 font-semibold text-slate-700">Region status</p>
