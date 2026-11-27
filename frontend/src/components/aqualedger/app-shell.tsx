@@ -437,14 +437,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   href="/account"
                   aria-label={role.isAdmin ? "Admin account" : "My account"}
                   title={role.currentEmail || "My account"}
-                  className={`inline-flex h-9 items-center gap-1.5 rounded-full px-2 text-xs font-semibold shadow-sm transition sm:h-10 sm:gap-2 sm:px-3.5 ${
+                  className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm transition sm:min-h-10 sm:gap-2 sm:px-3.5 ${
                     role.isAdmin
                       ? "bg-slate-900 text-white hover:bg-slate-700"
                       : "border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100"
                   }`}
                 >
-                  {role.isAdmin ? <ShieldCheck size={16} className="text-teal-300" /> : <User size={16} />}
-                  <span className="hidden max-w-[120px] truncate sm:inline">{accountLabel}</span>
+                  {role.isAdmin ? <ShieldCheck size={16} className="shrink-0 text-teal-300" /> : <User size={16} className="shrink-0" />}
+                  <span className={`hidden max-w-[140px] sm:inline ${lang === "ur" ? "leading-[1.9]" : "truncate"}`}>{accountLabel}</span>
                 </Link>
               ) : (
                 <Link
@@ -460,7 +460,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
            </div>
           </header>
 
-          <main key={pathname} className="aqua-stagger mx-auto w-full max-w-[1400px] space-y-5 px-3.5 pt-4 pb-32 sm:space-y-6 sm:p-6 sm:pb-32 md:p-8 md:pb-32 lg:pb-8">
+          <main key={pathname} className="aqua-stagger mx-auto w-full max-w-[1400px] space-y-5 px-3.5 pt-4 pb-36 sm:space-y-6 sm:p-6 sm:pb-36 md:p-8 md:pb-36 lg:pb-10">
             {children}
             <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pb-2 pt-4 text-center text-xs text-slate-400">
               <span className="inline-flex items-center gap-1.5 font-semibold text-slate-500">

@@ -730,10 +730,22 @@ export async function handleMessage(input: BotInput, ctx: BotContext): Promise<B
     }
   }
 
-  // No language yet: greet first, keep the question and answer it after the choice.
+  // No language yet: auto-detect from the message (or default to English) and answer right away.
   if (!lang) {
-    if (input.kind !== "unsupported") heldQuestion.set(input.from, input);
-    return reply([greeting()]);
+    if (input.kind === "text") {
+      const txt = input.text.trim();
+      if (/[\u0600-\u06FF]/.test(txt)) {
+        lang = "ur";
+      } else if (/\b(paani|pani|kitna|gehra|kaise|kahan|mera|meri|mere|chahiye|lagwana|mein|hain|hai|hoon|kya|kitni|zameen|maslan|batao|bataein|shukriya|madad)\b/i.test(txt)) {
+        lang = "roman";
+      } else {
+        lang = ctx.lang ?? "en";
+      }
+      languages.set(input.from, lang);
+    } else {
+      if (input.kind !== "unsupported") heldQuestion.set(input.from, input);
+      return reply([greeting()]);
+    }
   }
 
   const districts = await loadDistricts(ctx.origin);

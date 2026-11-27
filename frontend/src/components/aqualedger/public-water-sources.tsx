@@ -136,8 +136,8 @@ export function PublicWaterSources() {
         title={tr(lang, "Water Sources & Smart Recommendations", "پانی کے ذرائع اور ذہین سفارشات")}
         description={tr(
           lang,
-          "Select any area to see its exact source counts (boreholes, tube wells, hand pumps) and automatic recommendations for Household vs Farmer / Irrigation use.",
-          "کسی بھی علاقے کو منتخب کر کے بورویل، ٹیوب ویل، ہینڈ پمپ کی تعداد اور گھریلو بمقابلہ زرعی استعمال کے لیے خودکار مشورے دیکھیں۔"
+          "Select any area to see its exact source counts (boreholes, tube wells, community wells) and automatic recommendations for Household vs Farmer / Irrigation use.",
+          "کسی بھی علاقے کو منتخب کر کے بورویل، ٹیوب ویل، کمیونٹی کنویں کی تعداد اور گھریلو بمقابلہ زرعی استعمال کے لیے خودکار مشورے دیکھیں۔"
         )}
       />
 

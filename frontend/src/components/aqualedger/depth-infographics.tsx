@@ -1290,8 +1290,8 @@ export function UniversalAreaDepthForecast({
 
   return (
     <div className="space-y-6">
-      {/* 1. Top Control Bar (Sticky only on desktop md+ so mobile keeps full reading space) */}
-      <div className="glass-strong rounded-2xl p-3.5 shadow-sm md:sticky md:top-20 md:z-10 sm:p-4">
+      {/* 1. Top Control Bar */}
+      <div className="glass-strong rounded-2xl p-3.5 shadow-sm sm:p-4">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,220px)_auto] lg:items-end">
           <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
             {tr(lang, "Select Area", "علاقہ منتخب کریں")} ({areaSummaries.length})
@@ -1376,9 +1376,9 @@ export function UniversalAreaDepthForecast({
             sourceLabel={`${activeArea || "Area"} · ${selectedSourceType}`}
           />
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs dark:border-slate-700 dark:bg-slate-900/80">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800 dark:bg-teal-950/60 dark:text-teal-200">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
                 <BrainCircuit size={14} />
                 {tr(lang, "Confidence", "اعتماد")}: {projection?.confidence ?? "Low"} ({filteredReportCount} {tr(lang, "reports", "رپورٹس")})
                 {projection?.backtestMaeM != null ? ` · MAE ±${projection.backtestMaeM.toFixed(2)} m` : ""}
@@ -1386,7 +1386,7 @@ export function UniversalAreaDepthForecast({
               <button
                 type="button"
                 onClick={() => setShowHowAiWorks((v) => !v)}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-teal-700 dark:text-slate-300"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-teal-700"
               >
                 <Info size={14} />
                 {tr(lang, "How AI Predicts", "AI کیسے پیشگوئی کرتا ہے")}
@@ -1394,7 +1394,7 @@ export function UniversalAreaDepthForecast({
             </div>
 
             {showHowAiWorks && (
-              <p className="mt-3 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <p className="mt-3 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
                 {tr(
                   lang,
                   "Uses OLS regression blended with recent momentum, Empirical-Bayes shrinkage for sparse histories, calibrated seasonal monsoon/dry cycles, and a 95% residual standard-error confidence band.",
@@ -1408,7 +1408,7 @@ export function UniversalAreaDepthForecast({
                 type="button"
                 onClick={exportAreaCsv}
                 disabled={!projection}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 transition hover:border-teal-500 hover:text-teal-700 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 transition hover:border-teal-500 hover:text-teal-700 disabled:opacity-50"
               >
                 <Download size={14} />
                 {tr(lang, "Export Area CSV", "علاقائی CSV ڈاؤن لوڈ کریں")}
