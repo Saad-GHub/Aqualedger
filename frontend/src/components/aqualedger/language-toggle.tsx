@@ -112,12 +112,12 @@ export function LanguageToggle() {
     <div
       role="radiogroup"
       aria-label="Language"
-      className="glass relative inline-flex items-center rounded-full p-1 text-[11px] font-bold"
+      className="glass relative inline-flex items-center rounded-full p-0.5 text-[10.5px] font-bold sm:p-1 sm:text-[11px]"
     >
       <span
         aria-hidden="true"
-        className={`absolute top-1 bottom-1 w-9 rounded-full bg-teal-500 shadow-[0_4px_14px_-4px_rgb(20_184_166/0.8)] transition-transform duration-200 ${
-          lang === "ur" ? "translate-x-9" : "translate-x-0"
+        className={`absolute top-0.5 bottom-0.5 w-8 rounded-full bg-teal-500 shadow-[0_4px_14px_-4px_rgb(20_184_166/0.8)] transition-transform duration-200 sm:top-1 sm:bottom-1 sm:w-9 ${
+          lang === "ur" ? "translate-x-8 sm:translate-x-9" : "translate-x-0"
         }`}
       />
       {(
@@ -132,7 +132,7 @@ export function LanguageToggle() {
           role="radio"
           aria-checked={lang === value}
           onClick={() => choose(value)}
-          className={`relative z-10 flex h-7 w-9 items-center justify-center rounded-full transition ${
+          className={`relative z-10 flex h-7 w-8 items-center justify-center rounded-full transition sm:w-9 ${
             lang === value ? "text-white" : "text-slate-700 hover:text-slate-900 dark:text-white/90 dark:hover:text-white"
           }`}
         >

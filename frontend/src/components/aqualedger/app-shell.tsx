@@ -402,9 +402,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 href="/"
                 aria-label="AquaLedger home"
-                className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-teal-400 to-sky-500 text-white shadow-[0_8px_20px_-8px_rgb(14_165_233/0.8),inset_0_1px_0_rgb(255_255_255/0.35)] sm:flex sm:h-11 sm:w-11"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-gradient-to-br from-teal-400 to-sky-500 text-white shadow-[0_6px_16px_-6px_rgb(14_165_233/0.8),inset_0_1px_0_rgb(255_255_255/0.35)] sm:h-11 sm:w-11 sm:rounded-[14px]"
               >
-                <PageIcon size={20} strokeWidth={2.2} />
+                <PageIcon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.2} />
               </Link>
               <div className="min-w-0 leading-tight">
                 <p className="hidden truncate text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:block sm:text-[11px]">
@@ -413,7 +413,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     ? tr(lang, "Admin workspace", "ایڈمن ورک اسپیس")
                     : tr(lang, "Farmer & Community", "کسان اور کمیونٹی")}
                 </p>
-                <h2 className="truncate text-[14px] font-bold text-slate-900 sm:hidden">{mobilePageTitle}</h2>
+                <h2 className="truncate text-[13.5px] font-bold text-slate-900 sm:hidden">{mobilePageTitle}</h2>
                 <h2 className="hidden truncate text-lg font-bold text-slate-900 sm:block">{pageTitle}</h2>
               </div>
             </div>
@@ -434,7 +434,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   href="/account"
                   aria-label={role.isAdmin ? "Admin account" : "My account"}
                   title={role.currentEmail || "My account"}
-                  className={`inline-flex h-10 items-center gap-2 rounded-full px-2.5 text-xs font-semibold shadow-sm transition sm:px-3.5 ${
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-full px-2 text-xs font-semibold shadow-sm transition sm:h-10 sm:gap-2 sm:px-3.5 ${
                     role.isAdmin
                       ? "bg-slate-900 text-white hover:bg-slate-700"
                       : "border border-teal-200 bg-teal-50 text-teal-800 hover:bg-teal-100"
@@ -447,7 +447,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   href="/login"
                   aria-label="Sign in"
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-slate-900 px-3 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgb(11_31_58/0.7)] transition hover:bg-slate-700 sm:px-4"
+                  className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-slate-900 px-2.5 text-xs font-semibold text-white shadow-[0_8px_20px_-10px_rgb(11_31_58/0.7)] transition hover:bg-slate-700 sm:h-10 sm:gap-2 sm:px-4 sm:text-sm"
                 >
                   <LogIn size={16} />
                   <span className="hidden sm:inline">{tr(lang, "Sign in", "سائن ان")}</span>

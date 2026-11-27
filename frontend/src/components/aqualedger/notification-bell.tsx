@@ -123,7 +123,7 @@ export function NotificationBell() {
           setShowRiskAlerts(riskAlertsEnabled());
           setOpen((value) => !value);
         }}
-        className="glass relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600"
+        className="glass relative flex h-9 w-9 items-center justify-center rounded-full text-slate-600 sm:h-10 sm:w-10"
       >
         {bellsOn ? <Bell size={19} /> : <BellOff size={19} className="text-slate-400" />}
         {bellsOn && items.length > 0 && (
