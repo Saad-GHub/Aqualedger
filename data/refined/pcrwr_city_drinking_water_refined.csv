@@ -1,0 +1,30 @@
+city,province,survey_year,samples,safe,unsafe,pct_safe,pct_unsafe,contaminants_found,district,has_bacterial,has_arsenic,has_fluoride,has_nitrate,has_tds,has_iron,has_hardness,has_turbidity,has_chloride
+Muzaffarabad,Azad Jammu And Kashmir,2020,10,3,7,30,70,"Turbidity, Bacteriological",Azad Kashmir,1,0,0,0,0,0,0,1,0
+Khuzdar,Balochistan,2020,11,5,6,45,55,"Turbidity, Nitrate, Bacteriological",Khuzdar,1,0,0,1,0,0,0,1,0
+Loralai,Balochistan,2020,17,7,10,41,59,"Turbidity, Bacteriological, Iron",Loralai,1,0,0,0,0,1,0,1,0
+Quetta,Balochistan,2020,37,13,24,35,65,"Turbidity, Bacteriological, Fluoride, Hardness, Chlorides, TDS.",Quetta,1,0,1,0,1,0,1,1,1
+Ziarat,Balochistan,2020,11,6,5,55,45,"Bacteriological, Iron",Ziarat,1,0,0,0,0,1,0,0,0
+Gilgit,Gilgit Baltistan,2020,10,0,10,0,100,"Turbidity, Bacteriological",Gilgit,1,0,0,0,0,0,0,1,0
+Islamabad,Islamabad Capital Territory,2020,24,17,7,71,29,"Iron, Bacteriological",Islamabad Capital Territory,1,0,0,0,0,1,0,0,0
+Abbottabad,Khyber Pakhtunkhwa,2020,11,5,6,45,55,Iron,Abbottabad,0,0,0,0,0,1,0,0,0
+Mangora,Khyber Pakhtunkhwa,2020,10,8,2,80,20,Iron,Swat,0,0,0,0,0,1,0,0,0
+Mardan,Khyber Pakhtunkhwa,2020,11,6,5,55,45,Iron,Mardan,0,0,0,0,0,1,0,0,0
+Peshawar,Khyber Pakhtunkhwa,2020,12,6,6,50,50,Iron,Peshawar,0,0,0,0,0,1,0,0,0
+Bahawalpur,Punjab,2020,25,6,19,24,76,"Turbidity, Hardness, Fluoride, TDS, Iron, Arsenic, Bacteriological",Bahawalpur,1,1,1,0,1,1,1,1,0
+Faisalabad,Punjab,2020,22,9,13,41,59,"Hardness, Chloride, TDS, Iron, Fluoride, Bacteriological",Faisalabad,1,0,1,0,1,1,1,0,1
+Gujranwala,Punjab,2020,14,7,7,50,50,Bacteriological,Gujranwala,1,0,0,0,0,0,0,0,0
+Gujrat,Punjab,2020,9,9,0,100,0,-,Gujrat,0,0,0,0,0,0,0,0,0
+Kasur,Punjab,2020,10,9,1,90,10,"Turbidity, Bacteriological",Kasur,1,0,0,0,0,0,0,1,0
+Lahore,Punjab,2020,16,11,5,69,31,"Arsenic, TDS, Iron, Turbidity, Bacteriological",Lahore,1,1,0,0,1,1,0,1,0
+Multan,Punjab,2020,16,1,15,6,94,"Arsenic, Bacteriological",Multan,1,1,0,0,0,0,0,0,0
+Rawalpindi,Punjab,2020,13,8,5,62,38,"Bacteriological , TDS",Rawalpindi,1,0,0,0,1,0,0,0,0
+Sargodha,Punjab,2020,24,4,20,17,83,"Hardness, Chloride, Fluoride, TDS, Iron, Nitrate Bacteriological",Sargodha,1,0,1,1,1,1,1,0,1
+Sheikhupura,Punjab,2020,10,4,6,40,60,"Arsenic, Turbidity, Hardness, TDS, Iron, Nitrate Bacteriological",Sheikhpura,1,1,0,1,1,1,1,1,0
+Sialkot,Punjab,2020,9,9,0,100,0,-,Sialkot,0,0,0,0,0,0,0,0,0
+Badin,Sindh,2020,12,1,11,8,92,"pH, Turbidity, Hardness, Chloride, TDS, Bacteriological",Badin,1,0,0,0,1,0,1,1,1
+Hyderabad,Sindh,2020,15,3,12,20,80,"Turbidity, Hardness, Chloride, TDS, Bacteriological",Hyderabad,1,0,0,0,1,0,1,1,1
+Karachi,Sindh,2020,28,2,26,7,93,"Turbidity, Hardness, Chloride, TDS, Fluoride, Bacteriological",Karachi,1,0,1,0,1,0,1,1,1
+Mirpur Khas,Sindh,2020,12,0,12,0,100,"Turbidity, Hardness, Chloride, TDS, Bacteriological",Mirpurkhas,1,0,0,0,1,0,1,1,1
+Shaheed Benazirabad,Sindh,2020,13,0,13,0,100,"Turbidity, Hardness, Chloride, TDS, Iron, Bacteriological",Nawabshah,1,0,0,0,1,1,1,1,1
+Sukkur,Sindh,2020,9,3,6,33,67,"Arsenic, Turbidity, Hardness, Chloride, TDS, Iron, Fluoride, Bacteriological",Sukkur,1,1,1,0,1,1,1,1,1
+Tando Allahyar,Sindh,2020,14,6,8,43,57,"Hardness, TDS, Bacteriological",Tando Allahyar,1,0,0,0,1,0,1,0,0

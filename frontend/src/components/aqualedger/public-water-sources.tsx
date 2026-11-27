@@ -28,6 +28,7 @@ import {
   type PublicAreaSourceTrend,
 } from "@/lib/community-water-reports";
 import { formatAxisDepthMetersAndFeet, formatDepthMetersAndFeet, meanDepth, recommendAreaWaterSources } from "@/lib/depth-analytics";
+import { findDistrictIntelligence } from "@/lib/district-intelligence";
 
 const colors = ["#0d9488", "#2563eb", "#f59e0b", "#7c3aed", "#e11d48", "#0891b2"];
 
@@ -73,6 +74,11 @@ export function PublicWaterSources() {
         ? recommendAreaWaterSources(trends, activeArea)
         : null,
     [trends, activeArea]
+  );
+
+  const districtIntel = useMemo(
+    () => (activeArea ? findDistrictIntelligence(activeArea) : null),
+    [activeArea]
   );
 
   const activeMonthlyChartData = useMemo(() => {
@@ -242,6 +248,77 @@ export function PublicWaterSources() {
               </div>
             )}
           </div>
+
+          {/* District Baseline Intelligence (PBS, PCRWR, MICS, GRACE, CHIRPS, WRI) */}
+          {districtIntel && (
+            <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0b1320]">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  {tr(lang, "Stress & Satellite (2002–26)", "آبی دباؤ اور سیٹلائٹ")}
+                </p>
+                <p className="mt-1.5 text-lg font-bold text-slate-900 dark:text-white">
+                  {districtIntel.stressScore !== null ? `${Math.round(districtIntel.stressScore)} / 100` : "—"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {districtIntel.graceTrendCmYr !== null
+                    ? `GRACE: ${districtIntel.graceTrendCmYr > 0 ? "+" : ""}${districtIntel.graceTrendCmYr} cm/yr`
+                    : "GRACE n/a"}
+                  {districtIntel.aqueductStressLabel ? ` · ${districtIntel.aqueductStressLabel}` : ""}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0b1320]">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  {tr(lang, "Quality (PCRWR / MICS)", "پانی کا معیار")}
+                </p>
+                <p className="mt-1.5 text-lg font-bold text-slate-900 dark:text-white">
+                  {districtIntel.arsenicPctOver10 !== null
+                    ? `${districtIntel.arsenicPctOver10}% As >10 µg/L`
+                    : districtIntel.ecoliPctHousehold !== null
+                      ? `${districtIntel.ecoliPctHousehold}% E. coli`
+                      : districtIntel.citySafePct !== null
+                        ? `${districtIntel.citySafePct}% city safe`
+                        : tr(lang, "No survey data", "سروے دستیاب نہیں")}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {districtIntel.ecoliPctHousehold !== null && districtIntel.arsenicPctOver10 !== null
+                    ? `E. coli (HH): ${districtIntel.ecoliPctHousehold}%`
+                    : districtIntel.citySafePct !== null
+                      ? `2020 city safe: ${districtIntel.citySafePct}%`
+                      : "Arsenic & E. coli baseline"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0b1320]">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  {tr(lang, "Extraction Demand (2023–24)", "پانی کی طلب")}
+                </p>
+                <p className="mt-1.5 text-lg font-bold text-slate-900 dark:text-white">
+                  {districtIntel.censusMotorPumpPct !== null
+                    ? `${districtIntel.censusMotorPumpPct}% motor pumps`
+                    : districtIntel.tubewellsTotal !== null
+                      ? `${districtIntel.tubewellsTotal.toLocaleString()} tube wells`
+                      : "—"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {districtIntel.tubewellsTotal !== null
+                    ? `${districtIntel.tubewellsTotal.toLocaleString()} tube wells (${districtIntel.twElectric?.toLocaleString() ?? 0} elec · ${districtIntel.twDiesel?.toLocaleString() ?? 0} diesel)`
+                    : "PBS 2023–24 Census"}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0b1320]">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  {tr(lang, "Rainfall (CHIRPS)", "بارش کا ریکارڈ")}
+                </p>
+                <p className="mt-1.5 text-lg font-bold text-slate-900 dark:text-white">
+                  {districtIntel.normalRainMm !== null ? `${districtIntel.normalRainMm} mm/yr` : "—"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {districtIntel.rainVsNormalPct !== null
+                    ? `2021–25: ${districtIntel.rainVsNormalPct >= 0 ? "+" : ""}${districtIntel.rainVsNormalPct}% vs normal`
+                    : "1991–2020 normal"}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Exact Source Type Counts for Selected Area */}
           <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

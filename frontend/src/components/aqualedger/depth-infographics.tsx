@@ -56,6 +56,7 @@ import {
   type DepthForecastInput,
 } from "@/lib/depth-analytics";
 import { screenWaterReport } from "@/lib/water-risk-screening";
+import { findDistrictIntelligence } from "@/lib/district-intelligence";
 
 function formatHorizonLabel(months: number) {
   if (months >= 12 && months % 12 === 0) {
@@ -587,6 +588,11 @@ export function FarmerDepthWorkspace({
     [publicTrends, activeArea, activeSource?.sourceType]
   );
 
+  const districtIntel = useMemo(
+    () => (activeArea ? findDistrictIntelligence(activeArea) : null),
+    [activeArea]
+  );
+
   // Personal source forecast if signed in with tracked source, otherwise public area forecast
   const sourceMonthly = useMemo(() => {
     if (!activeSource) return [];
@@ -816,6 +822,39 @@ export function FarmerDepthWorkspace({
             </p>
           </div>
         </div>
+
+        {districtIntel && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/90 px-4 py-3 text-xs dark:border-white/15 dark:bg-[#0f172a]">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600 dark:text-slate-300">
+              <strong className="text-slate-900 dark:text-white">{districtIntel.district} Baseline:</strong>
+              {districtIntel.stressScore !== null && (
+                <span>Stress <strong>{Math.round(districtIntel.stressScore)}/100</strong></span>
+              )}
+              {districtIntel.graceTrendCmYr !== null && (
+                <span>GRACE 2002–26 <strong>{districtIntel.graceTrendCmYr > 0 ? "+" : ""}{districtIntel.graceTrendCmYr} cm/yr</strong></span>
+              )}
+              {districtIntel.rainVsNormalPct !== null && (
+                <span>Rainfall <strong>{districtIntel.rainVsNormalPct >= 0 ? "+" : ""}{districtIntel.rainVsNormalPct}% vs normal</strong></span>
+              )}
+              {districtIntel.arsenicPctOver10 !== null && (
+                <span className={districtIntel.arsenicPctOver10 >= 15 ? "font-semibold text-red-700 dark:text-red-400" : ""}>
+                  Arsenic &gt;10 µg/L: <strong>{districtIntel.arsenicPctOver10}%</strong>
+                </span>
+              )}
+              {districtIntel.ecoliPctHousehold !== null && (
+                <span className={districtIntel.ecoliPctHousehold >= 30 ? "font-semibold text-amber-700 dark:text-amber-300" : ""}>
+                  E. coli (HH): <strong>{districtIntel.ecoliPctHousehold}%</strong>
+                </span>
+              )}
+            </div>
+            {((districtIntel.arsenicPctOver10 ?? 0) >= 15 || (districtIntel.ecoliPctHousehold ?? 0) >= 30) && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 font-semibold text-red-700 dark:bg-red-500/15 dark:text-red-300">
+                <ShieldAlert size={13} />
+                {tr(lang, "Test/filter drinking water in this district", "اس ضلع میں پینے کا پانی ٹیسٹ/فلٹر کریں")}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Infographic + AI Forecast Grid */}

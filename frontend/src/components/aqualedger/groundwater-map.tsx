@@ -52,10 +52,28 @@ type AreaSelection = {
 };
 type RiskFilter = "all" | "high" | "moderate" | "normal";
 
-// ---- Area shading: community report status, or the Mouza Census 2020 district layers ----
-type ShadeMode = "status" | "depth" | "brackish" | "off";
-type CensusMode = Extract<ShadeMode, "depth" | "brackish">;
-type CensusDistrict = { name: string; province?: string; censusDistricts?: string; mouzas?: number; medianDepthFt?: number; p75DepthFt?: number; brackishPct?: number };
+// ---- Area shading: community report status, Mouza Census 2020, or Tier 1 district layers ----
+type ShadeMode = "status" | "depth" | "brackish" | "stress" | "grace" | "arsenic" | "off";
+type CensusMode = Extract<ShadeMode, "depth" | "brackish" | "stress" | "grace" | "arsenic">;
+type CensusDistrict = {
+  name: string;
+  province?: string;
+  censusDistricts?: string;
+  mouzas?: number;
+  medianDepthFt?: number;
+  p75DepthFt?: number;
+  brackishPct?: number;
+  stressScore?: number;
+  graceTrend?: number;
+  graceChangeCm?: number;
+  graceStatus?: string;
+  arsenicPct?: number;
+  ecoliPct?: number;
+  rainVsNormalPct?: number;
+  tubewellsTotal?: number;
+  motorPumpPct?: number;
+  aqueductRisk?: string;
+};
 type CensusFeature = { properties: CensusDistrict; geometry: { type: "Polygon"; coordinates: Position[][] } | { type: "MultiPolygon"; coordinates: Position[][][] } };
 type ObservationWell = { id: string; lon: number; lat: number; trend: number | null; n: number; firstYear: number; lastYear: number; firstDepth: number; lastDepth: number; series: [number, number][] };
 type MyLocation = { position: Position; accuracyM: number; place: string | null; district: CensusDistrict | null; nearestWell: { well: ObservationWell; km: number } | null };
@@ -83,16 +101,19 @@ const fitPadding = (el: HTMLElement) =>
 const wellTrendSteps: [number, string, string][] = [[-Infinity, "#1d4ed8", "Rising > 20 cm/yr · 8 in"], [-0.2, "#60a5fa", "Rising 5–20 cm/yr · 2–8 in"], [-0.05, "#cbd5e1", "Stable (±5 cm/yr · 2 in)"], [0.05, "#f87171", "Falling 5–20 cm/yr · 2–8 in"], [0.2, "#b91c1c", "Falling > 20 cm/yr · 8 in"]];
 const wellCircleColor = ["case", ["==", ["get", "trend"], null], "#94a3b8", ["step", ["get", "trend"], wellTrendSteps[0][1], ...wellTrendSteps.slice(1).flatMap(([bound, color]) => [bound, color])]];
 
-// District colour ramps for the Mouza Census 2020 layer: [lower bound, colour, legend label].
+// District colour ramps for the Mouza Census 2020 & external Tier 1 district layers: [lower bound, colour, legend label].
 const censusScales: Record<CensusMode, { property: keyof CensusDistrict; title: string; steps: [number, string, string][] }> = {
   depth: { property: "medianDepthFt", title: "Median water table depth", steps: [[0, "#fef9c3", "< 50 ft · 15 m"], [50, "#fde047", "50–100 ft · 15–30 m"], [100, "#fb923c", "100–200 ft · 30–61 m"], [200, "#ef4444", "200–400 ft · 61–122 m"], [400, "#991b1b", "400+ ft · 122+ m"]] },
   brackish: { property: "brackishPct", title: "Mouzas with brackish groundwater", steps: [[0, "#ede9fe", "< 5%"], [5, "#c4b5fd", "5–15%"], [15, "#a78bfa", "15–30%"], [30, "#7c3aed", "30–50%"], [50, "#4c1d95", "50%+"]] },
+  stress: { property: "stressScore", title: "Composite water stress (0–100)", steps: [[0, "#dcfce7", "< 25 (Low)"], [25, "#fef08a", "25–45 (Moderate)"], [45, "#fb923c", "45–65 (High)"], [65, "#ef4444", "65–80 (Very high)"], [80, "#991b1b", "80+ (Extreme)"]] },
+  grace: { property: "graceTrend", title: "Satellite storage trend (2002–26)", steps: [[-Infinity, "#991b1b", "Loss > 1.5 cm/yr"], [-1.5, "#f87171", "Loss 0.5–1.5 cm/yr"], [-0.5, "#cbd5e1", "Stable (±0.5 cm/yr)"], [0.2, "#60a5fa", "Gain 0.2–0.8 cm/yr"], [0.8, "#1d4ed8", "Gain > 0.8 cm/yr"]] },
+  arsenic: { property: "arsenicPct", title: "Arsenic > 10 µg/L (PCRWR)", steps: [[0, "#dcfce7", "< 5% unsafe"], [5, "#fde047", "5–15% unsafe"], [15, "#fb923c", "15–30% unsafe"], [30, "#ef4444", "30–50% unsafe"], [50, "#991b1b", "50%+ unsafe"]] },
 };
 const censusFillColor = (mode: CensusMode) => {
   const { property, steps } = censusScales[mode];
   return ["case", ["has", property], ["step", ["get", property], steps[0][1], ...steps.slice(1).flatMap(([bound, color]) => [bound, color])], "#e2e8f0"];
 };
-const shadeModes: [ShadeMode, string][] = [["depth", "Water table depth"], ["brackish", "Brackish water"], ["status", "Report status"], ["off", "Off"]];
+const shadeModes: [ShadeMode, string][] = [["depth", "Depth"], ["brackish", "Brackish"], ["stress", "Water stress"], ["grace", "Satellite 2002–26"], ["arsenic", "Arsenic"], ["status", "Reports"], ["off", "Off"]];
 
 function pointInRing([x, y]: Position, ring: Position[]) {
   let inside = false;
@@ -619,10 +640,11 @@ export function GroundwaterMap() {
           const initialMode = shadeModeRef.current;
           const geojson = (id: string) => map?.getSource(id) as import("maplibre-gl").GeoJSONSource | undefined;
 
-          // 1. Mouza Census 2020 district shading (water table depth / brackish water)
+          // 1. Mouza Census 2020 & external district shading
           map.addSource("census-districts", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-          const censusVisibility = initialMode === "depth" || initialMode === "brackish" ? "visible" : "none";
-          map.addLayer({ id: "census-fill", type: "fill", source: "census-districts", layout: { visibility: censusVisibility }, paint: { "fill-color": censusFillColor(initialMode === "brackish" ? "brackish" : "depth") as never, "fill-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0.72, 9, 0.45] } });
+          const isCensusInitial = initialMode !== "status" && initialMode !== "off";
+          const censusVisibility = isCensusInitial ? "visible" : "none";
+          map.addLayer({ id: "census-fill", type: "fill", source: "census-districts", layout: { visibility: censusVisibility }, paint: { "fill-color": censusFillColor(isCensusInitial ? initialMode : "depth") as never, "fill-opacity": ["interpolate", ["linear"], ["zoom"], 4, 0.72, 9, 0.45] } });
           map.addLayer({ id: "census-outline", type: "line", source: "census-districts", layout: { visibility: censusVisibility }, paint: { "line-color": "#ffffff", "line-width": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 9, 1.6], "line-opacity": 0.85 } });
           void fetch(CENSUS_DATA_URL)
             .then((response) => { if (!response.ok) throw new Error(String(response.status)); return response.json(); })
@@ -922,12 +944,13 @@ export function GroundwaterMap() {
     const map = mapRef.current;
     if (!map?.getLayer("region-fills") || !map.getLayer("census-fill")) return;
     const regions = shadeMode === "status" ? "visible" : "none";
-    const census = shadeMode === "depth" || shadeMode === "brackish" ? "visible" : "none";
+    const isCensusShade = shadeMode !== "status" && shadeMode !== "off";
+    const census = isCensusShade ? "visible" : "none";
     map.setLayoutProperty("region-fills", "visibility", regions);
     map.setLayoutProperty("region-borders", "visibility", regions);
     map.setLayoutProperty("census-fill", "visibility", census);
     map.setLayoutProperty("census-outline", "visibility", census);
-    if (shadeMode === "depth" || shadeMode === "brackish") {
+    if (isCensusShade) {
       map.setPaintProperty("census-fill", "fill-color", censusFillColor(shadeMode) as never);
       const { property, steps } = censusScales[shadeMode];
       const filter = binFilter(property, steps, effectiveCensusBins) as never;
@@ -980,9 +1003,10 @@ export function GroundwaterMap() {
 
   const censusRankings = useMemo(() => {
     const top = (property: "medianDepthFt" | "brackishPct") => censusDistricts.filter((district) => district[property] != null && (district.mouzas ?? 0) >= 40).sort((a, b) => (b[property] ?? 0) - (a[property] ?? 0)).slice(0, 5);
-    return { deepest: top("medianDepthFt"), brackish: top("brackishPct"), mouzas: censusDistricts.reduce((sum, district) => sum + (district.mouzas ?? 0), 0) };
+    const stressed = censusDistricts.filter((d) => d.stressScore != null).sort((a, b) => (b.stressScore ?? 0) - (a.stressScore ?? 0)).slice(0, 5);
+    return { deepest: top("medianDepthFt"), brackish: top("brackishPct"), stressed, mouzas: censusDistricts.reduce((sum, district) => sum + (district.mouzas ?? 0), 0) };
   }, [censusDistricts]);
-  const activeScale = shadeMode === "depth" || shadeMode === "brackish" ? censusScales[shadeMode] : null;
+  const activeScale = shadeMode !== "status" && shadeMode !== "off" ? censusScales[shadeMode] : null;
 
   const riskColor = (score: number) =>
     score >= 1.5
@@ -1391,14 +1415,16 @@ export function GroundwaterMap() {
           )}
 
           {!hoverWell && hoverDistrict && activeScale && !legendOpen && (
-            <div className="pointer-events-none absolute right-3 top-3 z-30 w-64 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur dark:border-white/15 dark:bg-[#0b1320]/95 @min-[820px]:left-3! @min-[820px]:right-auto!">
+            <div className="pointer-events-none absolute right-3 top-3 z-30 w-72 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur dark:border-white/15 dark:bg-[#0b1320]/95 @min-[820px]:left-3! @min-[820px]:right-auto!">
               <p className="text-sm font-semibold text-slate-900">{hoverDistrict.name}</p>
               <p className="text-[11px] text-slate-500">{hoverDistrict.province}{hoverDistrict.censusDistricts && hoverDistrict.censusDistricts !== hoverDistrict.name ? ` · includes ${hoverDistrict.censusDistricts}` : ""}</p>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-lg bg-orange-50 p-2 dark:bg-orange-500/10"><dt className="text-orange-700/80 dark:text-orange-300">Median depth</dt><dd className="tabular mt-0.5 whitespace-nowrap text-sm font-semibold text-orange-800 dark:text-orange-200">{hoverDistrict.medianDepthFt != null ? <>{hoverDistrict.medianDepthFt} ft <span className="text-[11px] font-medium text-orange-700/80 dark:text-orange-300/80">({asMetres(hoverDistrict.medianDepthFt)})</span></> : "—"}</dd></div>
-                <div className="rounded-lg bg-violet-50 p-2 dark:bg-violet-500/10"><dt className="text-violet-700/80 dark:text-purple-300">Brackish</dt><dd className="tabular mt-0.5 whitespace-nowrap text-sm font-semibold text-violet-800 dark:text-purple-200">{hoverDistrict.brackishPct != null ? `${hoverDistrict.brackishPct}%` : "—"}</dd></div>
+                <div className="rounded-lg bg-violet-50 p-2 dark:bg-violet-500/10"><dt className="text-violet-700/80 dark:text-purple-300">Brackish / Stress</dt><dd className="tabular mt-0.5 whitespace-nowrap text-sm font-semibold text-violet-800 dark:text-purple-200">{hoverDistrict.brackishPct != null ? `${hoverDistrict.brackishPct}%` : "—"}{hoverDistrict.stressScore != null ? ` · ${Math.round(hoverDistrict.stressScore)}/100` : ""}</dd></div>
+                <div className="rounded-lg bg-sky-50 p-2 dark:bg-sky-500/10"><dt className="text-sky-700/80 dark:text-sky-300">GRACE 2002–26</dt><dd className="tabular mt-0.5 whitespace-nowrap text-xs font-semibold text-sky-900 dark:text-sky-200">{hoverDistrict.graceTrend != null ? `${hoverDistrict.graceTrend > 0 ? "+" : ""}${hoverDistrict.graceTrend} cm/yr` : "—"}</dd></div>
+                <div className="rounded-lg bg-rose-50 p-2 dark:bg-rose-500/10"><dt className="text-rose-700/80 dark:text-rose-300">Arsenic / E. coli</dt><dd className="tabular mt-0.5 whitespace-nowrap text-xs font-semibold text-rose-900 dark:text-rose-200">{hoverDistrict.arsenicPct != null ? `${hoverDistrict.arsenicPct}% As` : hoverDistrict.ecoliPct != null ? `${hoverDistrict.ecoliPct}% E.coli` : "No survey"}</dd></div>
               </dl>
-              <p className="mt-2 text-[11px] text-slate-500">{hoverDistrict.mouzas?.toLocaleString() ?? 0} mouzas surveyed{hoverDistrict.p75DepthFt != null ? ` · 1 in 4 deeper than ${depthFt(hoverDistrict.p75DepthFt)}` : ""}</p>
+              <p className="mt-2 text-[11px] text-slate-500">{hoverDistrict.mouzas?.toLocaleString() ?? 0} mouzas{hoverDistrict.motorPumpPct != null ? ` · ${hoverDistrict.motorPumpPct}% motor pumps` : ""}{hoverDistrict.rainVsNormalPct != null ? ` · ${hoverDistrict.rainVsNormalPct >= 0 ? "+" : ""}${hoverDistrict.rainVsNormalPct}% rain` : ""}</p>
             </div>
           )}
         </div>
@@ -1517,7 +1543,7 @@ export function GroundwaterMap() {
       )}
 
           {censusDistricts.length > 0 && (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-3">
           <Panel title={tr(lang, "Deepest water tables", "سب سے گہری پانی کی سطح")} description={tr(lang, `Click any district to fly to it on the map · ${censusRankings.mouzas.toLocaleString()} mouzas surveyed`, `نقشے پر دیکھنے کے لیے کسی بھی ضلع پر کلک کریں · ${censusRankings.mouzas.toLocaleString()} مواضعات کا سروے`)}>
             <ol className="space-y-2">
               {censusRankings.deepest.map((district, index) => (
@@ -1568,6 +1594,34 @@ export function GroundwaterMap() {
                     <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">{index + 1}</span>
                     <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-white">{district.name}</span><span className="block text-xs text-slate-500 dark:text-slate-400">{district.province} · {district.mouzas} {tr(lang, "mouzas", "مواضعات")}</span></span>
                     <span className="tabular text-sm font-semibold text-violet-700 dark:text-purple-300">{district.brackishPct}%</span>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </Panel>
+          <Panel title={tr(lang, "Highest water stress (0–100)", "سب سے زیادہ آبی دباؤ (0–100)")} description={tr(lang, "Combined depth, GRACE loss, brackishness, arsenic & tube-well demand", "گہرائی، سیٹلائٹ کمی، کھارا پن، آرسینک اور ٹیوب ویل دباؤ")}>
+            <ol className="space-y-2">
+              {censusRankings.stressed.map((district, index) => (
+                <li key={district.name}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const feat = censusFeaturesRef.current.find((f) => f.properties.name === district.name);
+                      const ring = feat?.geometry.type === "Polygon" ? feat.geometry.coordinates[0] : feat?.geometry.type === "MultiPolygon" ? feat.geometry.coordinates[0]?.[0] : undefined;
+                      if (ring?.length) {
+                        const center = ring.reduce<[number, number]>(([ax, ay], [x, y]) => [ax + x / ring.length, ay + y / ring.length], [0, 0]);
+                        userMovedMapRef.current = true;
+                        setHoverDistrict(district);
+                        setShadeMode("stress");
+                        mapRef.current?.flyTo({ center, zoom: 8.5 });
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-amber-300 hover:bg-amber-50/40 dark:border-white/10 dark:bg-[#0b1320] dark:hover:bg-[#111c2d]"
+                  >
+                    <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-xs font-bold text-amber-800">{index + 1}</span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-white">{district.name}</span><span className="block text-xs text-slate-500 dark:text-slate-400">{district.province}{district.graceTrend != null ? ` · ${district.graceTrend} cm/yr` : ""}</span></span>
+                    <span className="tabular text-sm font-semibold text-amber-700 dark:text-amber-300">{district.stressScore?.toFixed(0)}</span>
                   </button>
                 </li>
               ))}

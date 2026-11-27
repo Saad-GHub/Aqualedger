@@ -1,0 +1,114 @@
+district,province,source_districts,tubewells_and_lift_pumps,tubewells_total,tw_electric,tw_diesel,tw_petrol,tw_others,electric_share_pct,diesel_share_pct
+Awaran,Balochistan,Awaran,123,104,1,98,0,8,1,94.2
+Barkhan,Balochistan,Barkhan,9884,9845,927,9268,52,62,9.4,94.1
+Chagai,Balochistan,Chagai,1499,1474,21,1414,1,4,1.4,95.9
+Dera Bugti,Balochistan,Dera Bugti,2472,2416,585,1884,0,58,24.2,78
+Gwadar,Balochistan,Gwadar,546,324,0,288,0,0,0,88.9
+Jafarabad,Balochistan,Jaffarabad; Sohbatpur,272,98,3,0,0,1,3.1,0
+Jhal Magsi,Balochistan,Jhal Magsi,998,751,264,470,0,1,35.2,62.6
+Kachhi,Balochistan,Kachhi,664,642,301,366,12,1,46.9,57
+Kalat,Balochistan,Kalat; Surab,14958,14593,3063,11743,73,144,21,80.5
+Kech,Balochistan,Kech,2908,2798,487,2600,6,19,17.4,92.9
+Kharan,Balochistan,Kharan; Washuk,14856,14671,1328,13423,5,230,9.1,91.5
+Khuzdar,Balochistan,Khuzdar,3682,3487,165,3327,3,1,4.7,95.4
+Kohlu,Balochistan,Kohlu,4660,4641,401,4572,3,23,8.6,98.5
+Lasbela,Balochistan,Lasbela,11349,11091,1298,9814,13,48,11.7,88.5
+Loralai,Balochistan,Duki; Loralai,7469,7396,1120,6715,27,0,15.1,90.8
+Mastung,Balochistan,Mastung,7193,7156,4587,2600,12,11,64.1,36.3
+Musakhel,Balochistan,Musakhel,1797,1791,20,1776,5,0,1.1,99.2
+Nasirabad,Balochistan,Nasirabad,3750,3030,185,2761,131,2,6.1,91.1
+Nushki,Balochistan,Nushki,4174,4161,677,3688,14,94,16.3,88.6
+Panjgur,Balochistan,Panjgur,2927,2914,0,2913,0,0,0,100
+Pishin,Balochistan,Pishin,12047,12032,1689,10402,1,8,14,86.5
+Qilla Abdullah,Balochistan,Chaman; Killa Abdullah,19463,19287,5777,14930,73,42,30,77.4
+Qilla Saifullah,Balochistan,Killa Saifullah,6734,6708,1273,5571,27,107,19,83.1
+Quetta,Balochistan,Quetta,2225,2190,1726,505,0,0,78.8,23.1
+Sibi,Balochistan,Harnai; Sibi,2660,2595,451,2491,0,11,17.4,96
+Zhob,Balochistan,Sherani; Zhob,9028,9002,41,8678,24,302,0.5,96.4
+Ziarat,Balochistan,Ziarat,3052,2279,423,1197,0,76,18.6,52.5
+Abbottabad,Khyber Pakhtunkhwa,Abbottabad,181,45,38,7,0,0,84.4,15.6
+Bajaur,Khyber Pakhtunkhwa,Bajaur,7472,7250,1600,5653,0,0,22.1,78
+Bannu,Khyber Pakhtunkhwa,Bannu,760,737,34,536,166,0,4.6,72.7
+Battagram,Khyber Pakhtunkhwa,Batagram,0,0,0,0,0,0,,
+Buner,Khyber Pakhtunkhwa,Buner,1705,1037,159,265,0,64,15.3,25.6
+Charsadda,Khyber Pakhtunkhwa,Charsadda,1668,1582,101,1021,7,1,6.4,64.5
+Chitral,Khyber Pakhtunkhwa,Lower Chitral; Upper Chitral,2,2,2,0,0,0,100,0
+Dera Ismail Khan,Khyber Pakhtunkhwa,Dera Ismail Khan,4490,3573,29,2044,76,9,0.8,57.2
+Hangu,Khyber Pakhtunkhwa,Hangu,857,759,148,298,165,148,19.5,39.3
+Haripur,Khyber Pakhtunkhwa,Haripur,1622,1435,1142,230,22,21,79.6,16
+Karak,Khyber Pakhtunkhwa,Karak,3175,2928,704,2080,433,10,24,71
+Khyber,Khyber Pakhtunkhwa,Khyber,5912,5632,1990,5264,0,5,35.3,93.5
+Kohat,Khyber Pakhtunkhwa,Kohat,4668,4142,1301,3285,123,61,31.4,79.3
+Kohistan,Khyber Pakhtunkhwa,Kolai Palas Kohistan; Lower Kohistan; Upper Kohistan,2,2,0,2,0,0,0,100
+Kurram,Khyber Pakhtunkhwa,Kurram,506,502,32,441,27,0,6.4,87.8
+Lakki Marwat,Khyber Pakhtunkhwa,Lakki Marwat,2322,2135,175,1793,0,0,8.2,84
+Lower Dir,Khyber Pakhtunkhwa,Lower Dir,2873,2822,329,78,79,0,11.7,2.8
+Mansehra,Khyber Pakhtunkhwa,Mansehra; Torghar,142,56,0,36,0,10,0,64.3
+Mardan,Khyber Pakhtunkhwa,Mardan,1897,1535,701,504,55,1,45.7,32.8
+Mohmand,Khyber Pakhtunkhwa,Mohmand,4445,3329,280,3236,0,0,8.4,97.2
+North Waziristan,Khyber Pakhtunkhwa,North Waziristan,808,683,314,417,0,0,46,61.1
+Nowshera,Khyber Pakhtunkhwa,Nowshera,3917,3914,871,1934,1,8,22.3,49.4
+Orakzai,Khyber Pakhtunkhwa,Orakzai,34,16,16,0,0,0,100,0
+Peshawar,Khyber Pakhtunkhwa,Peshawar,2633,2616,51,2287,229,0,1.9,87.4
+Shangla,Khyber Pakhtunkhwa,Shangla,9,9,0,9,0,0,0,100
+South Waziristan,Khyber Pakhtunkhwa,South Waziristan,2534,1706,481,1411,0,3,28.2,82.7
+Swabi,Khyber Pakhtunkhwa,Swabi,4728,4492,1324,503,348,31,29.5,11.2
+Swat,Khyber Pakhtunkhwa,Swat,1103,1026,106,280,37,23,10.3,27.3
+Tank,Khyber Pakhtunkhwa,Tank,34,22,0,22,0,0,0,100
+Upper Dir,Khyber Pakhtunkhwa,Upper Dir,0,0,0,0,0,0,,
+Attock,Punjab,Attock,18979,17809,12753,2333,505,225,71.6,13.1
+Bahawalnagar,Punjab,Bahawalnagar,48465,48167,6556,10403,578,496,13.6,21.6
+Bahawalpur,Punjab,Bahawalpur,23337,21390,4634,7365,147,678,21.7,34.4
+Bhakkar,Punjab,Bhakkar,84134,83181,5148,16921,528,807,6.2,20.3
+Chakwal,Punjab,Chakwal,15257,14669,9254,4289,173,40,63.1,29.2
+Dera Ghazi Khan,Punjab,Dera Ghazi Khan,27019,23060,2808,7132,21,49,12.2,30.9
+Faisalabad,Punjab,Faisalabad,50189,48257,10111,3974,250,577,21,8.2
+Gujranwala,Punjab,Gujranwala,74559,73893,25541,2571,433,334,34.6,3.5
+Gujrat,Punjab,Gujrat,42275,39686,15242,1597,2953,354,38.4,4
+Hafizabad,Punjab,Hafizabad,32033,31927,14465,9988,132,59,45.3,31.3
+Jhang,Punjab,Chiniot; Jhang,137935,136894,39912,67841,328,461,29.2,49.6
+Jhelum,Punjab,Jhelum,9160,8734,1630,137,305,196,18.7,1.6
+Kasur,Punjab,Kasur,32352,30920,16697,7293,747,457,54,23.6
+Khanewal,Punjab,Khanewal,21889,21193,7722,4148,371,494,36.4,19.6
+Khushab,Punjab,Khushab,39954,37008,5179,5594,358,254,14,15.1
+Lahore,Punjab,Lahore,23326,23017,13667,2723,1,429,59.4,11.8
+Layyah,Punjab,Layyah,79160,78122,2042,17672,606,282,2.6,22.6
+Lodhran,Punjab,Lodhran,9278,9253,3869,4543,3,53,41.8,49.1
+Mandi Bahauddin,Punjab,Mandi Bahauddin,59305,59305,10351,9443,167,849,17.5,15.9
+Mianwali,Punjab,Mianwali,21567,21344,3756,4358,659,791,17.6,20.4
+Multan,Punjab,Multan,25708,25360,9087,6619,933,227,35.8,26.1
+Muzaffargarh,Punjab,Muzaffargarh,110189,101331,4086,23756,149,1020,4,23.4
+Narowal,Punjab,Narowal,47826,45748,10257,559,952,222,22.4,1.2
+Okara,Punjab,Okara,35093,33922,15265,5351,489,358,45,15.8
+Pakpattan,Punjab,Pakpattan,19159,19062,14637,4035,77,409,76.8,21.2
+Rahim Yar Khan,Punjab,Rahim Yar Khan,82561,71447,3335,33774,633,3531,4.7,47.3
+Rajanpur,Punjab,Rajanpur,46696,46360,1158,19740,29,272,2.5,42.6
+Rawalpindi,Punjab,Rawalpindi,2765,2751,412,91,422,790,15,3.3
+Sahiwal,Punjab,Sahiwal,18501,17217,8433,2313,143,670,49,13.4
+Sargodha,Punjab,Sargodha,110467,109656,12581,29775,136,1191,11.5,27.2
+Sheikhpura,Punjab,Nankana Sahib; Sheikhupura,68971,67838,19856,3384,517,697,29.3,5
+Sialkot,Punjab,Sialkot,80646,79527,22550,1678,1123,672,28.4,2.1
+Toba Tek Singh,Punjab,Toba Tek Singh,21174,20952,4747,1793,164,393,22.7,8.6
+Vihari,Punjab,Vehari,19886,19749,12400,6899,54,109,62.8,34.9
+Badin,Sindh,Badin,128,80,3,23,2,0,3.8,28.7
+Dadu,Sindh,Dadu,4292,4037,54,1566,41,17,1.3,38.8
+Ghotki,Sindh,Ghotki,8776,8310,55,3317,43,150,0.7,39.9
+Hyderabad,Sindh,Hyderabad,734,636,110,275,3,9,17.3,43.2
+Jacobabad,Sindh,Jacobabad,93,47,0,20,0,0,0,42.6
+Jamshoro,Sindh,Jamshoro,3441,3227,216,1822,2,12,6.7,56.5
+Karachi,Sindh,Karachi Central; Karachi East; Karachi South; Karachi West; Keamari; Korangi; Malir,4703,4681,1793,3597,160,65,38.3,76.8
+Kashmore,Sindh,Kashmore,4790,4705,11,445,101,25,0.2,9.5
+Khairpur,Sindh,Khairpur,13752,11457,498,3278,213,377,4.3,28.6
+Matiari,Sindh,Matiari,3870,3625,469,450,6,96,12.9,12.4
+Mirpurkhas,Sindh,Mirpur Khas,157,88,14,45,2,0,15.9,51.1
+Naushehro Feroze,Sindh,Naushahro Feroze,7812,7679,341,5080,13,52,4.4,66.2
+Nawabshah,Sindh,Shaheed Benazirabad,3570,3537,621,1788,8,59,17.6,50.6
+Qambar Shahdadkot,Sindh,Kambar Shahdad Kot; Larkana,4954,3315,213,1509,28,107,6.4,45.5
+Sanghar,Sindh,Sanghar,526,213,28,24,6,2,13.1,11.3
+Shikarpur,Sindh,Shikarpur,1915,1359,284,228,259,113,20.9,16.8
+Sukkur,Sindh,Sukkur,3606,1676,442,83,0,1,26.4,5
+Tando Allahyar,Sindh,Tando Allahyar,1807,1678,663,803,2,49,39.5,47.9
+Tando Muhammad Khan,Sindh,Tando Muhammad Khan,322,264,73,89,2,13,27.7,33.7
+Tharparkar,Sindh,Tharparkar,479,411,2,232,79,0,0.5,56.4
+Thatta,Sindh,Sujawal; Thatta,6511,2448,1134,330,162,78,46.3,13.5
+Umerkot,Sindh,Umer Kot,147,105,26,14,0,1,24.8,13.3

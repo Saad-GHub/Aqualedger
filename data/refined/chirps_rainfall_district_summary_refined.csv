@@ -1,0 +1,127 @@
+district,province,normal_rain_mm_1991_2020,mean_rain_mm_2021_2025,recent_vs_normal_pct,trend_mm_per_yr_1981_2025,rain_2022_pct_of_normal,driest_year
+Azad Kashmir,Azad Jammu And Kashmir,1162,1247,7.3,10.0,99,1989
+Awaran,Balochistan,184,261,41.4,0.86,251,2002
+Barkhan,Balochistan,401,467,16.4,-1.65,140,2002
+Chagai,Balochistan,113,79,-30.3,-0.87,51,2021
+Dera Bugti,Balochistan,212,313,47.6,-1.0,260,2002
+Gwadar,Balochistan,138,186,34.8,-0.4,237,2000
+Jafarabad,Balochistan,156,265,70.0,1.32,346,2002
+Jhal Magsi,Balochistan,171,305,78.3,1.48,331,2002
+Kachhi,Balochistan,190,272,42.8,0.53,246,2002
+Kalat,Balochistan,190,211,11.1,-1.3,157,2000
+Kech,Balochistan,137,189,37.6,0.07,201,2000
+Kharan,Balochistan,127,122,-3.8,-0.89,114,2018
+Khuzdar,Balochistan,222,311,40.2,1.43,234,2002
+Kohlu,Balochistan,303,388,28.4,-0.26,176,2002
+Lasbela,Balochistan,189,307,62.4,2.37,326,2002
+Loralai,Balochistan,318,365,14.7,-1.56,150,2004
+Mastung,Balochistan,238,203,-14.6,-2.7,111,2000
+Musakhel,Balochistan,393,423,7.5,0.33,121,2002
+Nasirabad,Balochistan,157,268,71.0,1.45,346,2002
+Nushki,Balochistan,174,112,-35.5,-2.21,69,2021
+Panjgur,Balochistan,130,172,33.1,0.36,202,2002
+Pishin,Balochistan,317,248,-21.9,-4.15,105,2021
+Qilla Abdullah,Balochistan,289,201,-30.3,-4.85,80,2021
+Qilla Saifullah,Balochistan,261,247,-5.6,-2.3,128,2000
+Quetta,Balochistan,266,215,-19.2,-3.82,96,2000
+Sibi,Balochistan,303,372,22.6,0.42,182,2000
+Zhob,Balochistan,301,276,-8.2,-3.74,115,2000
+Ziarat,Balochistan,354,340,-3.9,-3.46,131,2000
+Astore,Gilgit Baltistan,677,656,-3.1,5.03,87,1997
+Diamer,Gilgit Baltistan,408,393,-3.7,2.58,99,1983
+Ghanche,Gilgit Baltistan,287,196,-31.5,2.91,46,1995
+Ghizer,Gilgit Baltistan,261,216,-17.5,1.28,82,1995
+Gilgit,Gilgit Baltistan,266,248,-7.1,2.66,90,1991
+Hunza,Gilgit Baltistan,244,208,-14.5,2.64,69,1995
+Kharmang,Gilgit Baltistan,377,307,-18.7,1.31,60,1997
+Nagar,Gilgit Baltistan,250,212,-15.1,3.04,76,1995
+Shigar,Gilgit Baltistan,307,244,-20.3,3.04,60,1997
+Skardu,Gilgit Baltistan,557,505,-9.3,2.94,78,1997
+Islamabad Capital Territory,Islamabad Capital Territory,1136,1194,5.1,9.28,102,1993
+Abbottabad,Khyber Pakhtunkhwa,1285,1358,5.7,11.34,98,1993
+Bajaur,Khyber Pakhtunkhwa,709,603,-14.9,0.8,87,1989
+Bannu,Khyber Pakhtunkhwa,453,400,-11.7,3.75,87,2002
+Battagram,Khyber Pakhtunkhwa,1106,1188,7.4,10.82,101,1993
+Buner,Khyber Pakhtunkhwa,1007,998,-0.9,7.95,94,1993
+Charsadda,Khyber Pakhtunkhwa,555,436,-21.4,1.24,76,1989
+Chitral,Khyber Pakhtunkhwa,422,373,-11.5,1.74,91,1997
+Dera Ismail Khan,Khyber Pakhtunkhwa,314,343,9.2,3.36,139,1985
+Hangu,Khyber Pakhtunkhwa,572,492,-13.9,5.51,85,1993
+Haripur,Khyber Pakhtunkhwa,923,897,-2.8,7.04,94,1993
+Karak,Khyber Pakhtunkhwa,593,535,-9.8,5.91,80,1993
+Khyber,Khyber Pakhtunkhwa,513,424,-17.4,3.55,81,1989
+Kohat,Khyber Pakhtunkhwa,608,544,-10.6,5.37,70,1993
+Kohistan,Khyber Pakhtunkhwa,632,639,1.1,5.17,101,1989
+Kurram,Khyber Pakhtunkhwa,688,595,-13.5,5.54,105,2000
+Lakki Marwat,Khyber Pakhtunkhwa,437,421,-3.6,4.36,100,2002
+Lower Dir,Khyber Pakhtunkhwa,881,816,-7.4,3.13,93,1989
+Malakand,Khyber Pakhtunkhwa,821,693,-15.7,2.56,84,1993
+Mansehra,Khyber Pakhtunkhwa,1123,1170,4.3,8.96,93,1989
+Mardan,Khyber Pakhtunkhwa,728,639,-12.2,3.24,87,1989
+Mohmand,Khyber Pakhtunkhwa,474,362,-23.6,0.17,79,1989
+North Waziristan,Khyber Pakhtunkhwa,498,413,-17.0,-0.0,100,2000
+Nowshera,Khyber Pakhtunkhwa,624,531,-14.9,3.3,77,1989
+Orakzai,Khyber Pakhtunkhwa,627,544,-13.3,5.65,77,1993
+Peshawar,Khyber Pakhtunkhwa,527,423,-19.7,2.47,70,1989
+Shangla,Khyber Pakhtunkhwa,862,921,6.8,7.89,105,1993
+South Waziristan,Khyber Pakhtunkhwa,395,352,-10.8,-1.99,110,2000
+Swabi,Khyber Pakhtunkhwa,813,746,-8.3,5.44,88,1989
+Swat,Khyber Pakhtunkhwa,693,667,-3.8,5.01,97,1989
+Tank,Khyber Pakhtunkhwa,328,338,2.9,2.38,136,1990
+Upper Dir,Khyber Pakhtunkhwa,905,856,-5.4,3.69,93,1989
+Attock,Punjab,665,581,-12.7,4.39,80,1993
+Bahawalnagar,Punjab,249,368,47.4,1.93,166,1991
+Bahawalpur,Punjab,228,340,49.1,1.88,205,2002
+Bhakkar,Punjab,326,337,3.5,3.47,126,1999
+Chakwal,Punjab,585,540,-7.6,5.44,88,1985
+Dera Ghazi Khan,Punjab,288,358,24.4,1.37,159,2002
+Faisalabad,Punjab,383,497,29.8,2.48,113,1991
+Gujranwala,Punjab,560,673,20.2,3.88,99,1991
+Gujrat,Punjab,744,841,13.0,5.32,100,1993
+Hafizabad,Punjab,464,553,19.3,2.98,98,1991
+Jhang,Punjab,340,384,13.2,2.45,112,1991
+Jhelum,Punjab,697,734,5.4,5.76,101,1993
+Kasur,Punjab,443,570,28.8,2.21,115,1991
+Khanewal,Punjab,236,312,32.3,1.48,150,2002
+Khushab,Punjab,425,394,-7.4,3.84,95,1991
+Lahore,Punjab,619,802,29.6,3.72,107,1991
+Layyah,Punjab,270,298,10.3,2.77,141,2002
+Lodhran,Punjab,200,272,35.6,0.68,205,2002
+Mandi Bahauddin,Punjab,562,621,10.4,3.94,99,1985
+Mianwali,Punjab,506,461,-8.8,4.94,86,1985
+Multan,Punjab,191,261,36.6,1.39,183,2002
+Muzaffargarh,Punjab,216,287,32.8,1.82,179,2002
+Narowal,Punjab,928,1037,11.8,6.47,98,1987
+Okara,Punjab,357,445,24.6,1.44,117,1991
+Pakpattan,Punjab,295,389,31.7,1.24,137,1991
+Rahim Yar Khan,Punjab,179,300,67.1,1.45,260,2002
+Rajanpur,Punjab,242,358,48.1,0.7,232,2002
+Rawalpindi,Punjab,1015,1062,4.7,7.91,103,1993
+Sahiwal,Punjab,310,394,26.9,1.43,127,1991
+Sargodha,Punjab,446,471,5.7,3.54,98,1999
+Sheikhpura,Punjab,523,686,31.1,3.55,106,1991
+Sialkot,Punjab,855,983,15.1,6.38,103,1993
+Toba Tek Singh,Punjab,304,368,20.9,1.9,121,1991
+Vihari,Punjab,224,315,41.1,0.81,173,2002
+Badin,Sindh,281,397,41.2,2.77,209,1987
+Dadu,Sindh,186,329,76.9,2.55,388,2002
+Ghotki,Sindh,181,297,64.6,-2.25,365,2002
+Hyderabad,Sindh,206,295,43.0,2.14,256,2002
+Jacobabad,Sindh,150,240,60.0,0.57,380,2002
+Jamshoro,Sindh,188,320,70.2,2.73,344,2002
+Karachi,Sindh,206,354,71.4,3.58,334,1991
+Kashmore,Sindh,163,254,55.6,-2.48,370,2002
+Khairpur,Sindh,207,374,80.4,2.06,393,2002
+Matiari,Sindh,184,299,63.0,2.36,314,2002
+Mirpurkhas,Sindh,283,394,38.9,2.3,225,2002
+Naushehro Feroze,Sindh,173,335,93.6,2.77,475,2002
+Nawabshah,Sindh,180,336,86.4,3.0,417,2002
+Qambar Shahdadkot,Sindh,162,287,77.1,1.76,414,2002
+Sanghar,Sindh,262,401,52.9,2.41,276,2002
+Shikarpur,Sindh,144,234,62.2,0.81,422,2000
+Sukkur,Sindh,173,318,83.4,0.47,445,2002
+Tando Allahyar,Sindh,243,341,40.4,1.93,253,2002
+Tando Muhammad Khan,Sindh,238,328,37.7,2.39,231,1987
+Tharparkar,Sindh,351,498,41.7,4.13,171,2002
+Thatta,Sindh,271,428,57.7,4.04,267,1987
+Umerkot,Sindh,285,396,39.3,2.45,216,2002

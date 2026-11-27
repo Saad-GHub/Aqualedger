@@ -1,0 +1,127 @@
+district,province,trend_cm_per_yr_2002_2026,trend_cm_per_yr_2015_2026,mean_2003_05_cm,mean_2023_25_cm,change_2003_05_to_2023_25_cm,latest_month,latest_anomaly_cm,grace_status
+Azad Kashmir,Azad Jammu And Kashmir,-1.13,-2.84,2.9,-21.1,-24.0,2026-08,-25.6,losing
+Awaran,Balochistan,0.2,0.61,-2.9,4.8,7.6,2026-08,3.4,stable
+Barkhan,Balochistan,0.17,-0.03,-3.9,2.2,6.1,2026-08,4.0,stable
+Chagai,Balochistan,-0.72,-0.73,2.0,-10.4,-12.4,2026-08,-12.3,losing
+Dera Bugti,Balochistan,0.33,0.44,-4.7,5.5,10.2,2026-08,6.6,stable
+Gwadar,Balochistan,-0.01,0.2,-0.8,1.1,1.9,2026-08,-1.1,stable
+Jafarabad,Balochistan,0.36,0.64,-5.2,6.3,11.5,2026-08,6.5,stable
+Jhal Magsi,Balochistan,0.21,0.5,-4.6,3.8,8.4,2026-08,3.2,stable
+Kachhi,Balochistan,0.05,0.15,-4.0,0.5,4.6,2026-08,-0.4,stable
+Kalat,Balochistan,-0.17,0.01,-2.7,-2.4,0.3,2026-08,-4.2,stable
+Kech,Balochistan,-0.14,0.06,-0.2,-0.8,-0.7,2026-08,-3.1,stable
+Kharan,Balochistan,-0.35,-0.11,-0.4,-4.1,-3.7,2026-08,-6.0,stable
+Khuzdar,Balochistan,0.22,0.66,-3.9,4.9,8.7,2026-08,4.2,stable
+Kohlu,Balochistan,0.17,0.11,-4.4,2.1,6.5,2026-08,2.6,stable
+Lasbela,Balochistan,0.33,0.89,-3.6,7.4,11.0,2026-08,6.8,stable
+Loralai,Balochistan,-0.01,-0.35,-3.6,-1.7,1.9,2026-08,-1.2,stable
+Mastung,Balochistan,-0.32,-0.32,-2.2,-5.5,-3.3,2026-08,-7.8,stable
+Musakhel,Balochistan,0.01,-0.53,-3.0,-1.2,1.8,2026-08,1.5,stable
+Nasirabad,Balochistan,0.35,0.59,-5.2,5.9,11.1,2026-08,6.1,stable
+Nushki,Balochistan,-0.55,-0.52,-0.5,-8.6,-8.1,2026-08,-11.3,losing
+Panjgur,Balochistan,-0.11,0.18,-1.0,-0.1,0.9,2026-08,-1.9,stable
+Pishin,Balochistan,-0.39,-0.7,-2.1,-7.9,-5.8,2026-08,-10.2,stable
+Qilla Abdullah,Balochistan,-0.6,-0.88,-0.9,-10.8,-9.9,2026-08,-14.0,losing
+Qilla Saifullah,Balochistan,-0.17,-0.59,-3.1,-4.6,-1.5,2026-08,-5.2,stable
+Quetta,Balochistan,-0.48,-0.65,-1.5,-8.7,-7.2,2026-08,-11.4,stable
+Sibi,Balochistan,-0.12,-0.23,-3.4,-2.9,0.5,2026-08,-4.1,stable
+Zhob,Balochistan,-0.06,-0.73,-3.3,-3.3,-0.1,2026-08,-2.1,stable
+Ziarat,Balochistan,-0.35,-0.61,-2.4,-7.2,-4.8,2026-08,-9.3,stable
+Astore,Gilgit Baltistan,-1.15,-3.02,2.4,-22.5,-24.9,2026-08,-35.0,losing
+Diamer,Gilgit Baltistan,-1.15,-3.03,2.7,-22.3,-25.1,2026-08,-36.0,losing
+Ghanche,Gilgit Baltistan,-0.85,-2.57,0.8,-17.9,-18.7,2026-08,-29.2,losing
+Ghizer,Gilgit Baltistan,-1.28,-3.02,4.4,-23.4,-27.8,2026-08,-39.6,losing
+Gilgit,Gilgit Baltistan,-1.16,-2.99,2.7,-22.5,-25.2,2026-08,-37.6,losing
+Hunza,Gilgit Baltistan,-1.05,-2.72,2.4,-20.4,-22.8,2026-08,-37.2,losing
+Kharmang,Gilgit Baltistan,-1.15,-2.95,2.4,-22.3,-24.7,2026-08,-32.3,losing
+Nagar,Gilgit Baltistan,-1.14,-2.84,3.0,-21.8,-24.8,2026-08,-39.1,losing
+Shigar,Gilgit Baltistan,-1.0,-2.8,1.5,-20.3,-21.8,2026-08,-33.9,losing
+Skardu,Gilgit Baltistan,-1.14,-2.99,2.2,-22.3,-24.6,2026-08,-34.3,losing
+Islamabad Capital Territory,Islamabad Capital Territory,-0.91,-2.51,2.1,-17.3,-19.4,2026-08,-17.8,losing
+Abbottabad,Khyber Pakhtunkhwa,-1.0,-2.81,2.0,-19.6,-21.6,2026-08,-26.1,losing
+Bajaur,Khyber Pakhtunkhwa,-0.57,-2.26,0.8,-12.5,-13.2,2026-08,-17.0,losing
+Bannu,Khyber Pakhtunkhwa,-0.05,-1.2,-2.4,-3.6,-1.2,2026-08,-0.2,stable
+Battagram,Khyber Pakhtunkhwa,-0.93,-2.76,1.8,-18.7,-20.5,2026-08,-25.5,losing
+Buner,Khyber Pakhtunkhwa,-0.78,-2.57,1.3,-16.1,-17.4,2026-08,-21.9,losing
+Charsadda,Khyber Pakhtunkhwa,-0.57,-2.26,0.8,-12.5,-13.2,2026-08,-17.0,losing
+Chitral,Khyber Pakhtunkhwa,-1.21,-2.94,5.0,-21.7,-26.7,2026-08,-35.4,losing
+Dera Ismail Khan,Khyber Pakhtunkhwa,-0.1,-1.01,-2.0,-3.3,-1.4,2026-08,0.9,stable
+Hangu,Khyber Pakhtunkhwa,-0.19,-1.62,-1.6,-6.3,-4.8,2026-08,-5.7,stable
+Haripur,Khyber Pakhtunkhwa,-0.79,-2.49,1.4,-15.9,-17.3,2026-08,-19.1,losing
+Karak,Khyber Pakhtunkhwa,-0.26,-1.66,-1.1,-7.1,-6.0,2026-08,-5.4,stable
+Khyber,Khyber Pakhtunkhwa,-0.29,-1.79,-0.9,-8.0,-7.1,2026-08,-8.2,stable
+Kohat,Khyber Pakhtunkhwa,-0.33,-1.84,-0.8,-8.4,-7.7,2026-08,-7.6,stable
+Kohistan,Khyber Pakhtunkhwa,-1.11,-2.97,3.0,-21.4,-24.4,2026-08,-33.8,losing
+Kurram,Khyber Pakhtunkhwa,-0.16,-1.55,-1.7,-5.9,-4.1,2026-08,-5.5,stable
+Lakki Marwat,Khyber Pakhtunkhwa,-0.11,-1.27,-2.0,-4.3,-2.3,2026-08,-0.7,stable
+Lower Dir,Khyber Pakhtunkhwa,-0.62,-2.34,0.9,-13.3,-14.2,2026-08,-18.2,losing
+Malakand,Khyber Pakhtunkhwa,-0.63,-2.34,0.9,-13.4,-14.3,2026-08,-18.3,losing
+Mansehra,Khyber Pakhtunkhwa,-0.96,-2.8,1.9,-19.2,-21.1,2026-08,-26.6,losing
+Mardan,Khyber Pakhtunkhwa,-0.72,-2.48,1.2,-15.1,-16.3,2026-08,-20.6,losing
+Mohmand,Khyber Pakhtunkhwa,-0.57,-2.26,0.7,-12.4,-13.2,2026-08,-16.9,losing
+North Waziristan,Khyber Pakhtunkhwa,-0.08,-1.28,-2.4,-4.5,-2.1,2026-08,-2.9,stable
+Nowshera,Khyber Pakhtunkhwa,-0.51,-2.1,0.2,-11.4,-11.5,2026-08,-11.9,losing
+Orakzai,Khyber Pakhtunkhwa,-0.26,-1.73,-1.2,-7.4,-6.3,2026-08,-6.7,stable
+Peshawar,Khyber Pakhtunkhwa,-0.4,-1.97,-0.3,-9.6,-9.3,2026-08,-10.4,stable
+Shangla,Khyber Pakhtunkhwa,-0.81,-2.6,1.5,-16.5,-18.0,2026-08,-22.8,losing
+South Waziristan,Khyber Pakhtunkhwa,-0.04,-1.04,-2.8,-3.4,-0.7,2026-08,-0.9,stable
+Swabi,Khyber Pakhtunkhwa,-0.77,-2.53,1.3,-15.8,-17.1,2026-08,-21.0,losing
+Swat,Khyber Pakhtunkhwa,-0.98,-2.8,2.8,-19.0,-21.8,2026-08,-29.0,losing
+Tank,Khyber Pakhtunkhwa,-0.05,-1.19,-2.4,-3.6,-1.2,2026-08,-0.2,stable
+Upper Dir,Khyber Pakhtunkhwa,-0.98,-2.77,3.2,-18.7,-21.9,2026-08,-29.1,losing
+Attock,Punjab,-0.59,-2.15,0.5,-12.4,-12.9,2026-08,-11.9,losing
+Bahawalnagar,Punjab,-2.26,-1.96,14.2,-28.8,-43.0,2026-08,-25.0,severe_loss
+Bahawalpur,Punjab,-1.04,-0.68,6.3,-11.3,-17.6,2026-08,-8.5,losing
+Bhakkar,Punjab,-0.41,-1.28,0.6,-7.1,-7.7,2026-08,-1.6,stable
+Chakwal,Punjab,-0.74,-2.02,2.0,-13.3,-15.2,2026-08,-9.5,losing
+Dera Ghazi Khan,Punjab,0.02,-0.26,-2.3,0.4,2.7,2026-08,3.5,stable
+Faisalabad,Punjab,-1.77,-2.31,9.7,-25.0,-34.7,2026-08,-19.2,severe_loss
+Gujranwala,Punjab,-1.95,-2.94,9.7,-29.4,-39.2,2026-08,-25.8,severe_loss
+Gujrat,Punjab,-1.61,-2.77,7.3,-25.3,-32.5,2026-08,-22.0,severe_loss
+Hafizabad,Punjab,-1.72,-2.57,8.7,-25.4,-34.1,2026-08,-20.5,severe_loss
+Jhang,Punjab,-1.06,-1.71,5.1,-15.3,-20.3,2026-08,-9.3,losing
+Jhelum,Punjab,-1.2,-2.46,4.6,-19.8,-24.4,2026-08,-16.6,losing
+Kasur,Punjab,-2.87,-3.1,17.0,-39.3,-56.3,2026-08,-34.5,severe_loss
+Khanewal,Punjab,-1.05,-1.34,5.5,-13.8,-19.4,2026-08,-8.6,losing
+Khushab,Punjab,-0.62,-1.68,1.6,-10.7,-12.3,2026-08,-5.7,losing
+Lahore,Punjab,-2.79,-3.27,16.0,-39.2,-55.3,2026-08,-34.5,severe_loss
+Layyah,Punjab,-0.43,-1.0,0.9,-6.4,-7.3,2026-08,-1.4,stable
+Lodhran,Punjab,-0.82,-0.74,4.5,-9.3,-13.8,2026-08,-5.7,losing
+Mandi Bahauddin,Punjab,-1.37,-2.55,5.8,-21.9,-27.7,2026-08,-18.0,losing
+Mianwali,Punjab,-0.31,-1.54,-0.6,-7.0,-6.5,2026-08,-2.7,stable
+Multan,Punjab,-0.7,-0.83,3.4,-8.4,-11.8,2026-08,-4.1,losing
+Muzaffargarh,Punjab,-0.32,-0.56,0.5,-3.8,-4.3,2026-08,0.1,stable
+Narowal,Punjab,-2.2,-3.29,11.0,-33.4,-44.4,2026-08,-31.5,severe_loss
+Okara,Punjab,-2.61,-2.62,15.9,-34.9,-50.8,2026-08,-29.8,severe_loss
+Pakpattan,Punjab,-2.43,-2.44,14.7,-32.3,-47.0,2026-08,-27.1,severe_loss
+Rahim Yar Khan,Punjab,0.04,0.35,-1.4,3.4,4.7,2026-08,5.5,stable
+Rajanpur,Punjab,0.06,0.11,-2.1,2.4,4.5,2026-08,4.9,stable
+Rawalpindi,Punjab,-0.91,-2.51,2.1,-17.2,-19.3,2026-08,-17.7,losing
+Sahiwal,Punjab,-1.92,-2.05,11.4,-25.5,-36.9,2026-08,-20.2,severe_loss
+Sargodha,Punjab,-1.03,-2.04,4.2,-16.2,-20.5,2026-08,-11.1,losing
+Sheikhpura,Punjab,-2.24,-2.81,12.5,-31.8,-44.2,2026-08,-26.4,severe_loss
+Sialkot,Punjab,-1.96,-3.1,9.4,-30.2,-39.6,2026-08,-27.6,severe_loss
+Toba Tek Singh,Punjab,-1.4,-1.78,7.8,-19.1,-26.8,2026-08,-13.4,losing
+Vihari,Punjab,-1.58,-1.6,9.4,-20.2,-29.6,2026-08,-15.5,severe_loss
+Badin,Sindh,0.0,0.84,-1.0,4.2,5.2,2026-08,6.8,stable
+Dadu,Sindh,0.46,1.02,-4.8,9.2,14.1,2026-08,9.6,stable
+Ghotki,Sindh,0.46,0.91,-4.4,9.5,13.9,2026-08,11.2,stable
+Hyderabad,Sindh,0.29,1.06,-3.0,8.2,11.2,2026-08,9.9,stable
+Jacobabad,Sindh,0.43,0.71,-5.4,7.4,12.9,2026-08,8.0,stable
+Jamshoro,Sindh,0.33,1.01,-3.4,8.2,11.6,2026-08,8.8,stable
+Karachi,Sindh,0.17,0.86,-2.3,5.8,8.1,2026-08,6.0,stable
+Kashmore,Sindh,0.39,0.62,-4.6,7.3,11.9,2026-08,8.9,stable
+Khairpur,Sindh,0.47,1.1,-4.4,10.3,14.7,2026-08,12.1,stable
+Matiari,Sindh,0.29,1.06,-3.0,8.2,11.2,2026-08,9.9,stable
+Mirpurkhas,Sindh,0.17,1.03,-2.0,7.0,9.0,2026-08,10.1,stable
+Naushehro Feroze,Sindh,0.52,1.14,-4.9,10.8,15.7,2026-08,12.0,gaining
+Nawabshah,Sindh,0.52,1.17,-4.8,11.0,15.8,2026-08,12.4,gaining
+Qambar Shahdadkot,Sindh,0.48,0.95,-5.3,9.1,14.5,2026-08,9.6,stable
+Sanghar,Sindh,0.3,1.09,-2.9,8.6,11.6,2026-08,11.1,stable
+Shikarpur,Sindh,0.53,0.96,-5.6,9.9,15.4,2026-08,10.8,gaining
+Sukkur,Sindh,0.5,0.99,-4.8,10.2,15.0,2026-08,11.8,stable
+Tando Allahyar,Sindh,0.29,1.06,-3.0,8.2,11.2,2026-08,9.9,stable
+Tando Muhammad Khan,Sindh,0.02,0.83,-1.2,4.4,5.6,2026-08,6.4,stable
+Tharparkar,Sindh,-0.06,0.93,-0.5,4.1,4.6,2026-08,8.9,stable
+Thatta,Sindh,0.03,0.77,-1.2,3.9,5.1,2026-08,5.0,stable
+Umerkot,Sindh,0.13,1.03,-1.7,6.7,8.5,2026-08,10.2,stable

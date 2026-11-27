@@ -10,6 +10,7 @@ import { buildReportCodes } from "@/lib/report-display-codes";
 import { formatAxisDepthMetersAndFeet, formatDepthMetersAndFeet, meanDepth } from "@/lib/depth-analytics";
 import { SourceTypeDepthPanel, TopAreasDepthPanel } from "@/components/aqualedger/depth-infographics";
 import waterLevelByYear from "@/data/punjab-water-level-by-year.json";
+import { GRACE_PROVINCE_SERIES } from "@/lib/district-intelligence";
 import { StatValue } from "@/components/aqualedger/animated-number";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import { depthM } from "@/lib/units";
@@ -35,6 +36,7 @@ export default function Home() {
   const [reportLoadError, setReportLoadError] = useState("");
   const [areaRiskSetupError, setAreaRiskSetupError] = useState("");
   const [trendInterval, setTrendInterval] = useState<"day" | "month" | "year">("month");
+  const [graceProvince, setGraceProvince] = useState<string>("Pakistan");
   const [loading, setLoading] = useState(true);
   const reportCodes = useMemo(() => buildReportCodes(communityReports), [communityReports]);
   useEffect(() => {
@@ -177,6 +179,68 @@ export default function Home() {
         </div>
       </Panel>
     </div>
+    {(() => {
+      const graceProvinces = ["Pakistan", "Punjab", "Sindh", "Khyber Pakhtunkhwa", "Balochistan"];
+      const rawSeries = GRACE_PROVINCE_SERIES[graceProvince] ?? [];
+      const chartData = rawSeries.map(([month, cm]) => ({ month, cm }));
+      const latest = chartData.at(-1);
+      const earlySlice = chartData.filter((d) => d.month >= "2003-01" && d.month <= "2005-12");
+      const recentSlice = chartData.filter((d) => d.month >= "2023-01" && d.month <= "2025-12");
+      const earlyAvg = earlySlice.length ? earlySlice.reduce((s, d) => s + d.cm, 0) / earlySlice.length : null;
+      const recentAvg = recentSlice.length ? recentSlice.reduce((s, d) => s + d.cm, 0) / recentSlice.length : null;
+      const netChange = earlyAvg !== null && recentAvg !== null ? recentAvg - earlyAvg : null;
+      return (
+        <Panel
+          title={tr(lang, "Satellite Water Storage Trend (GRACE 2002–2026)", "سیٹلائٹ پانی ذخیرہ رجحان (GRACE 2002–2026)")}
+          description={tr(lang, "Monthly terrestrial water storage anomaly (cm) from GFZ GRACE/GRACE-FO satellites, extending Pakistan's groundwater record up to August 2026.", "GFZ GRACE سیٹلائٹس سے ماہانہ زمینی پانی ذخیرہ کی تبدیلی (سینٹی میٹر)، اگست 2026 تک کا ریکارڈ۔")}
+        >
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="glass inline-flex flex-wrap rounded-2xl p-1" role="group" aria-label="Province selector">
+              {graceProvinces.map((prov) => (
+                <button
+                  key={prov}
+                  type="button"
+                  aria-pressed={graceProvince === prov}
+                  onClick={() => setGraceProvince(prov)}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${graceProvince === prov ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}
+                >
+                  {prov === "Khyber Pakhtunkhwa" ? "KP" : prov}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {netChange !== null && (
+                <span className={`rounded-full px-3 py-1 font-semibold ${netChange < -2 ? "bg-red-50 text-red-700" : netChange > 2 ? "bg-sky-50 text-sky-700" : "bg-teal-50 text-teal-700"}`}>
+                  {netChange >= 0 ? `+${netChange.toFixed(1)}` : netChange.toFixed(1)} cm (2003–05 → 2023–25)
+                </span>
+              )}
+              {latest && (
+                <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700 dark:bg-white/10 dark:text-white/90">
+                  {latest.month}: {latest.cm >= 0 ? `+${latest.cm}` : latest.cm} cm
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 10 }}>
+                <defs>
+                  <linearGradient id="graceFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0d9488" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#0d9488" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="month" minTickGap={48} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
+                <YAxis width={54} tickFormatter={(v) => `${v} cm`} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
+                <Tooltip formatter={(value) => [`${Number(value) >= 0 ? "+" : ""}${Number(value).toFixed(2)} cm`, "Water storage anomaly"]} labelFormatter={(label) => `Month: ${label}`} />
+                <Area type="monotone" dataKey="cm" stroke="#0d9488" strokeWidth={2} fill="url(#graceFill)" dot={false} activeDot={{ r: 5, fill: "#0d9488", stroke: "white", strokeWidth: 2 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Panel>
+      );
+    })()}
     {isAdmin && <Panel title="Latest Community Water Reports" description="Reports loaded from the AquaLedger database."><div className="mb-4 flex justify-end"><Link href="/reports" className="text-sm font-semibold text-teal-700 hover:text-teal-800">Open all reports →</Link></div>{reportLoadError ? <p className="rounded-xl bg-amber-50 p-5 text-sm text-amber-800">{reportLoadError} <Link href="/login" className="font-semibold underline">Admin sign in</Link></p> : recentReports.length ? <div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left text-sm"><thead><tr className="border-b border-slate-100 text-xs text-slate-400"><th className="pb-3 font-medium">Report</th><th className="pb-3 font-medium">Address</th><th className="pb-3 font-medium">Source / depth</th><th className="pb-3 font-medium">Sample date</th></tr></thead><tbody>{recentReports.map((report) => <tr key={report.id} className="border-b border-slate-50 last:border-0"><td className="py-4"><Link href="/reports" className="font-semibold text-teal-700 hover:underline">{reportCodes.get(report.id) ?? report.id}</Link><span className="block text-xs text-slate-400">{report.reporterName}</span></td><td className="py-4 text-slate-600">{report.address}</td><td className="py-4 text-slate-600">{report.sourceType ?? "—"}{report.depth ? ` · ${formatDepthMetersAndFeet(report.depth)}` : ""}</td><td className="py-4 text-slate-500">{report.sampleDate ?? "—"}</td></tr>)}</tbody></table></div> : <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">No community water reports have been submitted yet. <Link href="/reports" className="font-semibold text-teal-700 hover:underline">Submit the first report.</Link></p>}</Panel>}
     {isAdmin && <div className="grid gap-6 xl:grid-cols-3"><Panel title="Recent Reported Sources" description="Source details from submitted Supabase reports" className="xl:col-span-2"><div className="mb-4 flex justify-end"><Link href="/sources" className="text-sm font-semibold text-teal-700 hover:text-teal-800">View all sources →</Link></div>{sources.length ? <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-left text-sm"><thead><tr className="border-b border-slate-100 text-xs text-slate-400"><th className="pb-3 font-medium">Source</th><th className="pb-3 font-medium">Location</th><th className="pb-3 font-medium">Depth</th><th className="pb-3 font-medium">Status</th></tr></thead><tbody>{sources.map((source) => <tr key={source.id} className="border-b border-slate-50 last:border-0"><td className="py-4 font-semibold text-slate-700">{source.name}</td><td className="py-4 text-slate-500">{source.location}</td><td className="py-4 font-medium">{source.level}</td><td className="py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${source.color}`}>{source.status.replaceAll("_", " ")}</span></td></tr>)}</tbody></table></div> : <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">No reported sources yet. <Link href="/reports" className="font-semibold text-teal-700 hover:underline">Submit a water report.</Link></p>}</Panel><Panel title="Pakistan Coverage"><Link href="/map" className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-teal-200 bg-teal-50/70 p-5 text-center transition hover:bg-teal-100/70"><Waves size={38} className="text-teal-600"/><p className="mt-3 font-semibold text-slate-700">Open Groundwater Map</p><p className="mt-1 text-xs leading-5 text-slate-500">Browse reported source locations.</p></Link><div className="mt-4 flex items-center justify-between text-xs text-slate-500"><span>Map interface</span><span className="font-semibold text-teal-700">{communityReports.length} submissions</span></div></Panel></div>}
   </>;
