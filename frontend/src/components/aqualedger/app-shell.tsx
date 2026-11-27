@@ -322,8 +322,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const urTitles: Record<string, string> = {
     "/": "زمینی پانی کا جائزہ",
-    "/my-sources": "میرے ذرائع اور ذاتی پیشگوئی",
-    "/forecast": "عالمی گہرائی کی پیشگوئی",
+    "/my-sources": "میرے ذرائع",
+    "/forecast": "گہرائی کی پیشگوئی",
     "/map": "زمینی پانی کا نقشہ",
     "/sources": "پانی کے ذرائع",
     "/monitoring": "مانیٹرنگ ڈیٹا",
@@ -336,10 +336,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     "/account": "میرا اکاؤنٹ",
     "/reset-password": "پاس ورڈ تبدیل کریں",
   };
+  const mobileEnTitles: Record<string, string> = {
+    "/": "Overview",
+    "/my-sources": "My Sources",
+    "/forecast": "Forecast",
+    "/map": "Map",
+    "/sources": "Sources",
+    "/monitoring": "Monitoring",
+    "/quality": "Quality",
+    "/reports": "Log Reading",
+    "/settings": "Settings",
+    "/data-management": "Data Audit",
+    "/account": "Account",
+  };
   const pageTitle =
     pathname === "/reports" && !role.isAdmin
-      ? tr(lang, "Log Water Reading", "پانی کی ریڈنگ درج کریں")
+      ? tr(lang, "Log Reading", "ریڈنگ درج کریں")
       : (lang === "ur" ? urTitles[pathname] : undefined) ?? titles[pathname] ?? "AquaLedger";
+  const mobilePageTitle =
+    lang === "ur"
+      ? pageTitle
+      : (pathname === "/reports" && !role.isAdmin ? "Log Reading" : mobileEnTitles[pathname] ?? pageTitle);
 
   return (
     <AquaRoleContext.Provider value={role}>
@@ -375,11 +392,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         <div className="relative z-10 min-w-0 flex-1 lg:ml-[17.5rem]">
-          {/* Floating glass header; on iPhones it clears the notch / Dynamic Island. */}
-          <header className="aqua-header sticky top-0 z-20 px-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-4 lg:px-6 lg:pt-3">
+          {/* Solid-backed sticky header so scrolled cards never bleed above or behind it. */}
+          <header className="aqua-header sticky top-0 z-30 bg-[#e8f3f6]/95 px-2.5 pb-1.5 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur-md dark:bg-black/95 sm:px-4 lg:px-6 lg:pt-3">
            <div
             data-scrolled={scrolled || undefined}
-            className="aqua-header-bar glass-strong flex h-14 items-center justify-between gap-3 rounded-[22px] pl-2 pr-2 sm:h-16 sm:pl-3 sm:pr-3"
+            className="aqua-header-bar glass-strong flex h-14 items-center justify-between gap-3 rounded-[22px] bg-white/95 pl-2 pr-2 shadow-sm dark:bg-[#0b1016]/95 sm:h-16 sm:pl-3 sm:pr-3"
            >
             <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
               <Link
@@ -390,21 +407,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <PageIcon size={20} strokeWidth={2.2} />
               </Link>
               <div className="min-w-0 leading-tight">
-                <p className="truncate text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:text-[11px]">
-                  AquaLedger
-                  <span className="hidden sm:inline">
-                    {" "}
-                    ·{" "}
-                    {role.isAdmin
-                      ? tr(lang, "Admin workspace", "ایڈمن ورک اسپیس")
-                      : tr(lang, "Farmer & Community", "کسان اور کمیونٹی")}
-                  </span>
+                <p className="hidden truncate text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:block sm:text-[11px]">
+                  AquaLedger ·{" "}
+                  {role.isAdmin
+                    ? tr(lang, "Admin workspace", "ایڈمن ورک اسپیس")
+                    : tr(lang, "Farmer & Community", "کسان اور کمیونٹی")}
                 </p>
-                <h2 className="truncate text-[16px] font-bold text-slate-900 sm:text-lg">{pageTitle}</h2>
+                <h2 className="truncate text-[15px] font-bold text-slate-900 sm:hidden">{mobilePageTitle}</h2>
+                <h2 className="hidden truncate text-lg font-bold text-slate-900 sm:block">{pageTitle}</h2>
               </div>
             </div>
 
-            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
+            <div className="flex shrink-0 items-center gap-1 sm:gap-2.5">
               <LanguageToggle />
               <div className="hidden sm:block">
                 <ThemeToggle />
@@ -443,7 +457,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
            </div>
           </header>
 
-          <main key={pathname} className="aqua-stagger mx-auto w-full max-w-[1400px] space-y-5 px-3.5 pt-4 pb-28 sm:space-y-6 sm:p-6 sm:pb-28 md:p-8 md:pb-28 lg:pb-8">
+          <main key={pathname} className="aqua-stagger mx-auto w-full max-w-[1400px] space-y-5 px-3.5 pt-4 pb-32 sm:space-y-6 sm:p-6 sm:pb-32 md:p-8 md:pb-32 lg:pb-8">
             {children}
             <footer className="flex items-center justify-center gap-2 pb-2 pt-4 text-xs text-slate-400">
               <img src="/aqualedger-logo.jpg" alt="" className="h-4 w-4 rounded bg-white object-contain p-0.5" />
@@ -470,7 +484,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   }`}
                 >
                   <Icon size={18} strokeWidth={active ? 2.4 : 2} className="shrink-0" />
-                  <span className="w-full truncate text-center">
+                  <span className="w-full truncate text-center text-[10px] sm:text-[11px]">
                     {lang === "ur"
                       ? urShort
                       : label

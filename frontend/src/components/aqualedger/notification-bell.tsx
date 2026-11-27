@@ -11,6 +11,7 @@ import {
 import { formatDepthMetersAndFeet, normalizeAreaName } from "@/lib/depth-analytics";
 import { screenWaterReport } from "@/lib/water-risk-screening";
 import { buildReportCodes } from "@/lib/report-display-codes";
+import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import { depthM } from "@/lib/units";
 
 const notificationsEnabled = () => {
@@ -31,6 +32,7 @@ const riskAlertsEnabled = () => {
 
 /** Admin header bell: AI-detected high-concern readings and recent depth submissions. */
 export function NotificationBell() {
+  const lang = useLanguage();
   const [reports, setReports] = useState<CommunityWaterReport[]>([]);
   const [loadError, setLoadError] = useState("");
   const [open, setOpen] = useState(false);
@@ -135,16 +137,18 @@ export function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="aqua-popover absolute right-0 z-40 mt-3 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-lg">
+        <div className="aqua-popover fixed inset-x-3 top-20 z-50 overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-3 sm:w-80">
 
           <div className="border-b border-slate-100 px-4 py-3">
-            <p className="text-sm font-semibold">Notifications</p>
+            <p className="text-sm font-semibold">{tr(lang, "Notifications", "اطلاعات")}</p>
             <p className="mt-0.5 text-xs text-slate-500">
               {!bellsOn
-                ? "Notifications are turned off in Settings."
-                : `${items.length} AI alert${items.length === 1 ? "" : "s"}${
-                    highCount ? ` · ${highCount} high concern` : ""
-                  }`}
+                ? tr(lang, "Notifications are turned off in Settings.", "سیٹنگز میں اطلاعات بند ہیں۔")
+                : tr(
+                    lang,
+                    `${items.length} AI alert${items.length === 1 ? "" : "s"}${highCount ? ` · ${highCount} high concern` : ""}`,
+                    `${items.length} AI الرٹس${highCount ? ` · ${highCount} شدید تشویشناک` : ""}`
+                  )}
             </p>
           </div>
           {!bellsOn ? (

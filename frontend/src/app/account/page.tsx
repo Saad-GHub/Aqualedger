@@ -20,19 +20,26 @@ export default function AccountPage() {
   const lang = useLanguage();
   const { isAdmin, isSignedIn, currentEmail, emailVerified, authReady } = useAquaRole();
   const [reports, setReports] = useState<CommunityWaterReport[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+  const [tablePage, setTablePage] = useState(1);
+  const PAGE_SIZE = 50;
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [resending, setResending] = useState(false);
 
   useEffect(() => {
-    if (authReady && isSignedIn) {
-      void readMyCommunityWaterReports()
-        .then(setReports)
-        .catch((cause) =>
-          setError(cause instanceof Error ? cause.message : "Could not load your reports.")
-        );
+    if (!authReady) return;
+    if (!isSignedIn) {
+      queueMicrotask(() => setLoadingReports(false));
+      return;
     }
+    void readMyCommunityWaterReports()
+      .then(setReports)
+      .catch((cause) =>
+        setError(cause instanceof Error ? cause.message : "Could not load your reports.")
+      )
+      .finally(() => setLoadingReports(false));
   }, [authReady, isSignedIn]);
 
   async function signOut() {
@@ -146,50 +153,96 @@ export default function AccountPage() {
       </Panel>
 
       <Panel
-        title="My water reports"
-        description="Only reports saved by this account are listed here."
+        title={isAdmin ? tr(lang, "Account Water Reports", "اکاؤنٹ کی پانی کی رپورٹس") : tr(lang, "My water reports", "میری پانی کی رپورٹس")}
+        description={
+          isAdmin
+            ? tr(lang, "Historical and submitted records created under this admin identity (50 per page).", "اس ایڈمن اکاؤنٹ کے تحت محفوظ شدہ ریکارڈز (50 فی صفحہ)۔")
+            : tr(lang, "Only reports saved by this account are listed here.", "یہاں صرف اس اکاؤنٹ سے محفوظ کی گئی رپورٹس دکھائی جا رہی ہیں۔")
+        }
       >
-        {error ? (
+        {loadingReports ? (
+          <div className="space-y-2.5 py-2">
+            {[1, 2, 3, 4].map((r) => (
+              <div key={r} className="h-10 animate-pulse rounded-xl bg-slate-100" />
+            ))}
+          </div>
+        ) : error ? (
           <p role="alert" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
             {error}
           </p>
         ) : reports.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[620px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 text-xs text-slate-400">
-                  <th className="pb-3">Report</th>
-                  <th className="pb-3">Area</th>
-                  <th className="pb-3">Source</th>
-                  <th className="pb-3">Depth</th>
-                  <th className="pb-3">Test date</th>
-                  <th className="pb-3">Review</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reports.map((report) => (
-                  <tr key={report.id} className="border-b border-slate-50">
-                    <td className="py-3 font-semibold text-teal-700">
-                      {codes.get(report.id) ?? report.id.slice(0, 8)}
-                    </td>
-                    <td className="py-3">{report.areaName || report.address}</td>
-                    <td className="py-3">
-                      {report.sourceCode ? `${report.sourceCode} · ` : ""}
-                      {report.sourceLabel || report.sourceType || "Water source"}
-                    </td>
-                    <td className="py-3">{report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}</td>
-                    <td className="py-3">{report.sampleDate || "—"}</td>
-                    <td className="py-3">{report.status.replaceAll("_", " ")}</td>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[620px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 text-xs text-slate-400">
+                    <th className="pb-3">{tr(lang, "Report", "رپورٹ")}</th>
+                    <th className="pb-3">{tr(lang, "Area", "علاقہ")}</th>
+                    <th className="pb-3">{tr(lang, "Source", "ذریعہ")}</th>
+                    <th className="pb-3">{tr(lang, "Depth", "گہرائی")}</th>
+                    <th className="pb-3">{tr(lang, "Test date", "تاریخ")}</th>
+                    <th className="pb-3">{tr(lang, "Review", "حیثیت")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {reports.slice((tablePage - 1) * PAGE_SIZE, tablePage * PAGE_SIZE).map((report) => (
+                    <tr key={report.id} className="border-b border-slate-50">
+                      <td className="py-3 font-semibold text-teal-700">
+                        <Link href={`/reports?report=${encodeURIComponent(report.id)}`} className="hover:underline">
+                          {codes.get(report.id) ?? report.id.slice(0, 8)}
+                        </Link>
+                      </td>
+                      <td className="py-3">{report.areaName || report.address}</td>
+                      <td className="py-3">
+                        {report.sourceCode ? `${report.sourceCode} · ` : ""}
+                        {report.sourceLabel || report.sourceType || "Water source"}
+                      </td>
+                      <td className="py-3">{report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}</td>
+                      <td className="py-3">{report.sampleDate || "—"}</td>
+                      <td className="py-3 capitalize">{report.status.replaceAll("_", " ")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+              <span>
+                {tr(
+                  lang,
+                  `Showing ${(tablePage - 1) * PAGE_SIZE + 1}–${Math.min(tablePage * PAGE_SIZE, reports.length)} of ${reports.length} reports.`,
+                  `${reports.length} میں سے ${(tablePage - 1) * PAGE_SIZE + 1}–${Math.min(tablePage * PAGE_SIZE, reports.length)} رپورٹس دکھائی جا رہی ہیں۔`
+                )}
+              </span>
+              {reports.length > PAGE_SIZE && (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={tablePage <= 1}
+                    onClick={() => setTablePage((p) => Math.max(1, p - 1))}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                  >
+                    {tr(lang, "Previous", "پچھلا")}
+                  </button>
+                  <span className="font-semibold text-slate-600">
+                    {tr(lang, `Page ${tablePage} of ${Math.ceil(reports.length / PAGE_SIZE)}`, `صفحہ ${tablePage} از ${Math.ceil(reports.length / PAGE_SIZE)}`)}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={tablePage >= Math.ceil(reports.length / PAGE_SIZE)}
+                    onClick={() => setTablePage((p) => Math.min(Math.ceil(reports.length / PAGE_SIZE), p + 1))}
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                  >
+                    {tr(lang, "Next", "اگلا")}
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
         ) : (
           <div className="rounded-xl bg-slate-50 p-5 text-sm text-slate-600">
-            No reports saved under this account yet.{" "}
+            {tr(lang, "No reports saved under this account yet.", "ابھی تک اس اکاؤنٹ میں کوئی رپورٹ محفوظ نہیں ہے۔")}{" "}
             <Link href="/reports" className="font-semibold text-teal-700 hover:underline">
-              Submit your first report
+              {tr(lang, "Submit your first report", "پہلی رپورٹ جمع کروائیں")}
             </Link>
             .
           </div>

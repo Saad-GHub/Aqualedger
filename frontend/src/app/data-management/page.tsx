@@ -206,26 +206,32 @@ export default function DataManagementPage() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">{tr(lang, "Total records audited", "کل آڈٹ شدہ ریکارڈز")}</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{reports.length}</p>
-          <p className="mt-1 text-xs text-slate-400">{tr(lang, `Across ${audit.areaList.length} canonical areas`, `${audit.areaList.length} علاقوں میں`)}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">
+            {loading && reports.length === 0 ? <span className="inline-block h-7 w-16 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : reports.length}
+          </p>
+          <p className="mt-1 text-xs text-slate-400">{loading && reports.length === 0 ? tr(lang, "Loading…", "لوڈ ہو رہا ہے…") : tr(lang, `Across ${audit.areaList.length} canonical areas`, `${audit.areaList.length} علاقوں میں`)}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">{tr(lang, "Unmapped / custom areas", "غیر نقشہ شدہ علاقے")}</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{audit.unmappedAreas.length}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">
+            {loading && reports.length === 0 ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : audit.unmappedAreas.length}
+          </p>
           <p className="mt-1 text-xs text-slate-400">{tr(lang, `Outside ${PREDEFINED_PAKISTAN_AREAS.length} predefined districts`, `${PREDEFINED_PAKISTAN_AREAS.length} طے شدہ اضلاع سے باہر`)}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">{tr(lang, "Potential duplicates & outliers", "ممکنہ ڈپلیکیٹ اور غیر معمولی ریڈنگز")}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
-            {audit.duplicates.length + audit.outliers.length}
+            {loading && reports.length === 0 ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : audit.duplicates.length + audit.outliers.length}
           </p>
           <p className="mt-1 text-xs text-slate-400">
-            {audit.duplicates.length} {tr(lang, "duplicate", "ڈپلیکیٹ")} · {audit.outliers.length} {tr(lang, "depth outliers", "غیر معمولی گہرائی")}
+            {loading && reports.length === 0 ? tr(lang, "Scanning…", "اسکین ہو رہا ہے…") : `${audit.duplicates.length} ${tr(lang, "duplicate", "ڈپلیکیٹ")} · ${audit.outliers.length} ${tr(lang, "depth outliers", "غیر معمولی گہرائی")}`}
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">{tr(lang, "Records without GPS", "بغیر GPS ریکارڈز")}</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{audit.missingGps}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">
+            {loading && reports.length === 0 ? <span className="inline-block h-7 w-16 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : audit.missingGps}
+          </p>
           <p className="mt-1 text-xs text-slate-400">{tr(lang, "Address-only submissions", "صرف پتہ والی رپورٹس")}</p>
         </div>
       </div>
@@ -281,7 +287,7 @@ export default function DataManagementPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-xs font-semibold text-teal-800 hover:bg-teal-100 disabled:opacity-50"
             >
               <FileJson size={15} />
-              Export JSON
+              Export JSON ({exportRows.length})
             </button>
           </div>
         </div>
@@ -289,29 +295,30 @@ export default function DataManagementPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel
-          title="Area Normalization Audit"
-          description="Records whose area name is outside the predefined City, Province directory."
+          className="min-w-0 overflow-hidden"
+          title={tr(lang, "Area Normalization Audit", "علاقوں کی نارملائزیشن آڈٹ")}
+          description={tr(lang, "Records whose area name is outside the predefined City, Province directory.", "ایسے ریکارڈز جن کا علاقہ طے شدہ فہرست سے باہر ہے۔")}
         >
           {audit.unmappedAreas.length === 0 ? (
             <div className="flex items-center gap-2 rounded-xl bg-teal-50 p-4 text-sm text-teal-800">
               <CheckCircle2 size={18} />
-              <span>All records map cleanly to predefined City, Province areas.</span>
+              <span>{tr(lang, "All records map cleanly to predefined City, Province areas.", "تمام ریکارڈز طے شدہ علاقوں سے درست طور پر منسلک ہیں۔")}</span>
             </div>
           ) : (
-            <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto">
+            <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto pr-3">
               {audit.unmappedAreas.slice(0, 20).map((item) => (
-                <li key={item.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                <li key={item.id} className="flex flex-col gap-1.5 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-800">
+                    <p className="break-words font-semibold text-slate-800">
                       {item.code} · {item.area}
                     </p>
-                    <p className="truncate text-xs text-slate-500">{item.address}</p>
+                    <p className="break-words text-xs text-slate-500">{item.address}</p>
                   </div>
                   <Link
                     href={`/reports?report=${encodeURIComponent(item.id)}`}
-                    className="shrink-0 text-xs font-semibold text-teal-700 hover:underline"
+                    className="w-fit shrink-0 text-xs font-semibold text-teal-700 hover:underline"
                   >
-                    Inspect
+                    {tr(lang, "Inspect", "معائنہ کریں")} →
                   </Link>
                 </li>
               ))}
@@ -320,8 +327,9 @@ export default function DataManagementPage() {
         </Panel>
 
         <Panel
-          title="AI Anomaly & Duplicate Inspector"
-          description="Detects extreme outliers vs each area's median/MAD, physical limits (<= 0 or > 300 m), and repeated readings."
+          className="min-w-0 overflow-hidden"
+          title={tr(lang, "AI Anomaly & Duplicate Inspector", "AI غیر معمولی اور ڈپلیکیٹ انسپکٹر")}
+          description={tr(lang, "Detects extreme outliers vs each area's median/MAD, physical limits (<= 0 or > 300 m), and repeated readings.", "ہر علاقے کے اوسط سے ہٹ کر غیر معمولی اور ڈپلیکیٹ ریڈنگز کی نشاندہی کرتا ہے۔")}
         >
           {cleanStatus && (
             <p role="status" className="mb-3 rounded-xl border border-teal-200 bg-teal-50 px-3.5 py-2 text-xs font-semibold text-teal-800">
@@ -363,36 +371,36 @@ export default function DataManagementPage() {
               <span>No duplicate submissions or depth outliers detected.</span>
             </div>
           ) : (
-            <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto">
+            <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto pr-3">
               {audit.outliers.slice(0, 10).map((item) => (
-                <li key={`out-${item.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <AlertTriangle size={15} className="shrink-0 text-red-600" />
-                    <span className="truncate">
+                <li key={`out-${item.id}`} className="flex flex-col gap-1.5 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <div className="flex min-w-0 items-start gap-2">
+                    <AlertTriangle size={15} className="mt-0.5 shrink-0 text-red-600" />
+                    <span className="break-words text-xs leading-5 sm:text-sm">
                       <strong>{item.code}</strong> · {item.area} ({formatDepthMetersAndFeet(item.depth)} — {item.reason})
                     </span>
                   </div>
                   <Link
                     href={`/reports?report=${encodeURIComponent(item.id)}`}
-                    className="shrink-0 text-xs font-semibold text-teal-700 hover:underline"
+                    className="w-fit shrink-0 text-xs font-semibold text-teal-700 hover:underline"
                   >
-                    Inspect
+                    {tr(lang, "Inspect", "معائنہ کریں")} →
                   </Link>
                 </li>
               ))}
               {audit.duplicates.slice(0, 10).map((item) => (
-                <li key={`dup-${item.id}`} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <MapPin size={15} className="shrink-0 text-amber-600" />
-                    <span className="truncate">
+                <li key={`dup-${item.id}`} className="flex flex-col gap-1.5 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <div className="flex min-w-0 items-start gap-2">
+                    <MapPin size={15} className="mt-0.5 shrink-0 text-amber-600" />
+                    <span className="break-words text-xs leading-5 sm:text-sm">
                       <strong>{item.code}</strong> · {item.area} ({formatDepthMetersAndFeet(item.depth)} on {item.date})
                     </span>
                   </div>
                   <Link
                     href={`/reports?report=${encodeURIComponent(item.id)}`}
-                    className="shrink-0 text-xs font-semibold text-teal-700 hover:underline"
+                    className="w-fit shrink-0 text-xs font-semibold text-teal-700 hover:underline"
                   >
-                    Inspect
+                    {tr(lang, "Inspect", "معائنہ کریں")} →
                   </Link>
                 </li>
               ))}

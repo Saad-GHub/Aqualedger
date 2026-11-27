@@ -1036,13 +1036,13 @@ export function GroundwaterMap() {
         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
           <div>
             <span className="text-slate-500">{tr(lang, "Reports", "رپورٹس")}: </span>
-            <strong className="tabular text-slate-900 dark:text-slate-100">
+            <strong className="tabular text-slate-900 dark:text-white">
               {loading && !reports.length ? "…" : visibleReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)}
             </strong>
           </div>
           <div>
             <span className="text-slate-500">{tr(lang, "Regions", "علاقے")}: </span>
-            <strong className="tabular text-slate-900 dark:text-slate-100">
+            <strong className="tabular text-slate-900 dark:text-white">
               {loading && !reports.length ? "…" : `${regionsWithData} / ${regionsGeoJson.features.length}`}
             </strong>
           </div>
@@ -1054,7 +1054,7 @@ export function GroundwaterMap() {
           </div>
           <div>
             <span className="text-slate-500">{tr(lang, "Wells", "کنویں")}: </span>
-            <strong className="tabular text-sky-700 dark:text-sky-300">
+            <strong className="tabular text-sky-700 dark:text-sky-400">
               {wellCount ? wellCount.toLocaleString() : "…"}
             </strong>
             {censusRankings.mouzas > 0 && (
@@ -1088,6 +1088,8 @@ export function GroundwaterMap() {
             aria-pressed={activeCity === "All Pakistan"}
             onClick={() => {
               setActiveCity("All Pakistan");
+              setHoverDistrict(null);
+              setHoverWell(null);
               resetView();
             }}
             className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
@@ -1109,6 +1111,9 @@ export function GroundwaterMap() {
                   aria-pressed={isActive}
                   onClick={() => {
                     setActiveCity(city.name);
+                    setHoverDistrict(null);
+                    setHoverWell(null);
+                    setSelection(null);
                     userMovedMapRef.current = true;
                     mapRef.current?.flyTo({ center: city.position, zoom: 9.2 });
                   }}
@@ -1216,15 +1221,6 @@ export function GroundwaterMap() {
             >
               <Maximize2 size={17} />
             </button>
-            <button
-              type="button"
-              onClick={showMyLocation}
-              disabled={locating}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-            >
-              <LocateFixed size={15} className={locating ? "animate-pulse" : ""} />
-              {locating ? "Finding you…" : "My location"}
-            </button>
           </div>
         </div>
 
@@ -1294,7 +1290,7 @@ export function GroundwaterMap() {
 
           {/* Floating legend (bottom-left). Census and well entries are filter buttons. */}
           {(shadeMode !== "off" || wellsOn || heatmapOn) && (
-            <div className={`${legendOpen ? "flex" : "hidden"} glass-strong pointer-events-auto absolute bottom-14 left-3 right-3 z-10 max-h-[calc(100%-4.5rem)] flex-col gap-3 overflow-y-auto rounded-2xl p-3 text-xs sm:right-auto sm:flex-row @min-[820px]:w-[min(22rem,38%)] @min-[820px]:flex-col`}>
+            <div className={`${legendOpen ? "flex" : "hidden"} glass-strong pointer-events-auto absolute bottom-14 left-3 right-3 z-20 max-h-[55%] flex-col gap-3 overflow-y-auto rounded-2xl p-3 text-xs sm:right-auto sm:flex-row @min-[820px]:w-[min(22rem,38%)] @min-[820px]:flex-col`}>
               {shadeMode === "status" && (
                 <div>
                   <p className="mb-1.5 font-semibold text-slate-700">Region status</p>
@@ -1395,12 +1391,12 @@ export function GroundwaterMap() {
           )}
 
           {!hoverWell && hoverDistrict && activeScale && (
-            <div className="pointer-events-none absolute right-3 top-3 z-10 w-64 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur @min-[820px]:left-3! @min-[820px]:right-auto!">
+            <div className="pointer-events-none absolute right-3 top-3 z-30 w-64 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur dark:border-white/15 dark:bg-[#0b1320]/95 @min-[820px]:left-3! @min-[820px]:right-auto!">
               <p className="text-sm font-semibold text-slate-900">{hoverDistrict.name}</p>
               <p className="text-[11px] text-slate-500">{hoverDistrict.province}{hoverDistrict.censusDistricts && hoverDistrict.censusDistricts !== hoverDistrict.name ? ` · includes ${hoverDistrict.censusDistricts}` : ""}</p>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-orange-50 p-2"><dt className="text-orange-700/80">Median depth</dt><dd className="tabular mt-0.5 text-base font-semibold text-orange-800">{hoverDistrict.medianDepthFt != null ? <>{hoverDistrict.medianDepthFt} ft<span className="ml-1 text-[11px] font-medium text-orange-700/70">{asMetres(hoverDistrict.medianDepthFt)}</span></> : "—"}</dd></div>
-                <div className="rounded-lg bg-violet-50 p-2"><dt className="text-violet-700/80">Brackish</dt><dd className="tabular mt-0.5 text-base font-semibold text-violet-800">{hoverDistrict.brackishPct != null ? `${hoverDistrict.brackishPct}%` : "—"}</dd></div>
+                <div className="rounded-lg bg-orange-50 p-2 dark:bg-orange-500/10"><dt className="text-orange-700/80 dark:text-orange-300">Median depth</dt><dd className="tabular mt-0.5 whitespace-nowrap text-sm font-semibold text-orange-800 dark:text-orange-200">{hoverDistrict.medianDepthFt != null ? <>{hoverDistrict.medianDepthFt} ft <span className="text-[11px] font-medium text-orange-700/80 dark:text-orange-300/80">({asMetres(hoverDistrict.medianDepthFt)})</span></> : "—"}</dd></div>
+                <div className="rounded-lg bg-violet-50 p-2 dark:bg-violet-500/10"><dt className="text-violet-700/80 dark:text-purple-300">Brackish</dt><dd className="tabular mt-0.5 whitespace-nowrap text-sm font-semibold text-violet-800 dark:text-purple-200">{hoverDistrict.brackishPct != null ? `${hoverDistrict.brackishPct}%` : "—"}</dd></div>
               </dl>
               <p className="mt-2 text-[11px] text-slate-500">{hoverDistrict.mouzas?.toLocaleString() ?? 0} mouzas surveyed{hoverDistrict.p75DepthFt != null ? ` · 1 in 4 deeper than ${depthFt(hoverDistrict.p75DepthFt)}` : ""}</p>
             </div>
@@ -1424,9 +1420,9 @@ export function GroundwaterMap() {
             <button onClick={clearMyLocation} aria-label="Clear my location" className="ml-auto shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"><X size={15} /></button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-orange-200/70 bg-orange-50 p-4 dark:border-teal-500/30 dark:bg-slate-900"><p className="text-xs font-medium text-orange-800 dark:text-teal-300">Median water table depth</p><p className="tabular mt-1 text-2xl font-semibold text-orange-900 dark:text-slate-100">{myLocation.district?.medianDepthFt != null ? depthFt(myLocation.district.medianDepthFt) : "—"}</p><p className="mt-1 text-[11px] text-orange-800/80 dark:text-slate-300">{myLocation.district ? `Across ${myLocation.district.mouzas?.toLocaleString()} mouzas in the district` : "No census data here"}</p></div>
-            <div className="rounded-xl border border-violet-200/70 bg-violet-50 p-4 dark:border-purple-400/30 dark:bg-slate-900"><p className="text-xs font-medium text-violet-800 dark:text-purple-200">Brackish groundwater</p><p className="tabular mt-1 text-2xl font-semibold text-violet-900 dark:text-purple-100">{myLocation.district?.brackishPct != null ? `${myLocation.district.brackishPct}%` : "—"}</p><p className="mt-1 text-[11px] text-violet-800/80 dark:text-purple-200/80">of mouzas report salty underground water</p></div>
-            <button type="button" disabled={!myLocation.nearestWell} onClick={() => { if (!myLocation.nearestWell) return; setSelectedWell(myLocation.nearestWell.well); mapRef.current?.flyTo({ center: [myLocation.nearestWell.well.lon, myLocation.nearestWell.well.lat], zoom: 12 }); }} className="rounded-xl border border-sky-200/70 bg-sky-50 p-4 text-left transition hover:bg-sky-100 disabled:hover:bg-sky-50 dark:border-sky-400/30 dark:bg-slate-900 dark:hover:bg-slate-800 dark:disabled:hover:bg-slate-900"><p className="text-xs font-medium text-sky-800 dark:text-sky-200">Nearest observation well</p><p className="tabular mt-1 text-2xl font-semibold text-sky-900 dark:text-sky-100">{myLocation.nearestWell ? `${myLocation.nearestWell.km < 10 ? myLocation.nearestWell.km.toFixed(1) : Math.round(myLocation.nearestWell.km)} km` : "—"}</p><p className="mt-1 text-[11px] text-sky-800/80 dark:text-sky-200/80">{myLocation.nearestWell ? `${myLocation.nearestWell.well.id} · ${wellTrendText(myLocation.nearestWell.well.trend).toLowerCase()} · open history` : "No monitoring wells loaded"}</p></button>
+            <div className="rounded-xl border border-orange-200/70 bg-orange-50 p-4 dark:border-teal-500/30 dark:bg-[#0b1320]"><p className="text-xs font-medium text-orange-800 dark:text-teal-300">Median water table depth</p><p className="tabular mt-1 text-2xl font-semibold text-orange-900 dark:text-white">{myLocation.district?.medianDepthFt != null ? depthFt(myLocation.district.medianDepthFt) : "—"}</p><p className="mt-1 text-[11px] text-orange-800/80 dark:text-slate-400">{myLocation.district ? `Across ${myLocation.district.mouzas?.toLocaleString()} mouzas in the district` : "No census data here"}</p></div>
+            <div className="rounded-xl border border-violet-200/70 bg-violet-50 p-4 dark:border-purple-400/30 dark:bg-[#0b1320]"><p className="text-xs font-medium text-violet-800 dark:text-purple-300">Brackish groundwater</p><p className="tabular mt-1 text-2xl font-semibold text-violet-900 dark:text-white">{myLocation.district?.brackishPct != null ? `${myLocation.district.brackishPct}%` : "—"}</p><p className="mt-1 text-[11px] text-violet-800/80 dark:text-purple-200">of mouzas report salty underground water</p></div>
+            <button type="button" disabled={!myLocation.nearestWell} onClick={() => { if (!myLocation.nearestWell) return; setSelectedWell(myLocation.nearestWell.well); mapRef.current?.flyTo({ center: [myLocation.nearestWell.well.lon, myLocation.nearestWell.well.lat], zoom: 12 }); }} className="rounded-xl border border-sky-200/70 bg-sky-50 p-4 text-left transition hover:bg-sky-100 disabled:hover:bg-sky-50 dark:border-sky-400/30 dark:bg-[#0b1320] dark:hover:bg-[#111c2d] dark:disabled:hover:bg-[#0b1320]"><p className="text-xs font-medium text-sky-800 dark:text-sky-300">Nearest observation well</p><p className="tabular mt-1 text-2xl font-semibold text-sky-900 dark:text-white">{myLocation.nearestWell ? `${myLocation.nearestWell.km < 10 ? myLocation.nearestWell.km.toFixed(1) : Math.round(myLocation.nearestWell.km)} km` : "—"}</p><p className="mt-1 text-[11px] text-sky-800/80 dark:text-sky-200">{myLocation.nearestWell ? `${myLocation.nearestWell.well.id} · ${wellTrendText(myLocation.nearestWell.well.trend).toLowerCase()} · open history` : "No monitoring wells loaded"}</p></button>
           </div>
           <Link href="/forecast" className="mt-4 inline-block text-xs font-semibold text-teal-700 hover:underline">Open the depth forecast for your area →</Link>
         </Panel>

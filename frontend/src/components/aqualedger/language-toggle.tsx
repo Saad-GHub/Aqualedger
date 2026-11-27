@@ -133,7 +133,7 @@ export function LanguageToggle() {
           aria-checked={lang === value}
           onClick={() => choose(value)}
           className={`relative z-10 flex h-7 w-9 items-center justify-center rounded-full transition ${
-            lang === value ? "text-white" : "text-slate-600 hover:text-slate-900 dark:text-slate-300"
+            lang === value ? "text-white" : "text-slate-700 hover:text-slate-900 dark:text-white/90 dark:hover:text-white"
           }`}
         >
           {label}

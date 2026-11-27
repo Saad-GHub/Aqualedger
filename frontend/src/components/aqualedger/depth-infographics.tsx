@@ -84,11 +84,13 @@ function WellCrossSectionInfographic({
   );
   const maxDepth = Math.max(20, ...values.map((v) => Math.ceil(v * 1.25 / 10) * 10));
   const pct = (depth: number | null) =>
-    depth === null ? null : Math.min(92, Math.max(10, (depth / maxDepth) * 86 + 6));
+    depth === null ? null : Math.min(88, Math.max(14, (depth / maxDepth) * 78 + 10));
 
   const currentPct = pct(currentDepthM);
   const projectedPct = pct(projectedDepthM);
   const areaPct = pct(areaAverageM);
+  const closeCurrentProjected =
+    currentPct !== null && projectedPct !== null && Math.abs(currentPct - projectedPct) < 13;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-linear-to-b from-emerald-50/40 via-amber-50/30 to-cyan-50/50 p-4">
@@ -136,7 +138,7 @@ function WellCrossSectionInfographic({
             className="absolute inset-x-3 border-t-2 border-dashed border-slate-500 dark:border-slate-400"
             style={{ top: `${areaPct}%` }}
           >
-            <span className="absolute left-0 inline-flex -translate-y-1/2 rounded-md bg-[#0b1f3a] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20">
+            <span className="absolute left-0 z-10 inline-flex -translate-y-1/2 rounded-md bg-[#0b1f3a] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20">
               {tr(lang, "Area Avg", "علاقائی اوسط")}: {depthM(areaAverageM)}
             </span>
           </div>
@@ -148,7 +150,11 @@ function WellCrossSectionInfographic({
             className="absolute inset-x-3 border-t-2 border-teal-600"
             style={{ top: `${currentPct}%` }}
           >
-            <span className="absolute right-0 translate-y-1 rounded-md bg-[#0d9488] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+            <span
+              className={`absolute right-0 z-20 rounded-md bg-[#0d9488] px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ${
+                closeCurrentProjected ? "translate-y-1.5" : "-translate-y-1/2"
+              }`}
+            >
               {tr(lang, "Current", "موجودہ")}: {depthM(currentDepthM)}
             </span>
           </div>
@@ -160,7 +166,11 @@ function WellCrossSectionInfographic({
             className="absolute inset-x-3 border-t-2 border-dotted border-blue-600"
             style={{ top: `${projectedPct}%` }}
           >
-            <span className="absolute right-0 -translate-y-[calc(100%+3px)] rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+            <span
+              className={`absolute right-0 z-30 rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm ${
+                closeCurrentProjected ? "-translate-y-[calc(100%+4px)]" : "-translate-y-1/2"
+              }`}
+            >
               +{formatHorizonLabel(horizonMonths)} {tr(lang, "Forecast", "پیشگوئی")}: {depthM(projectedDepthM)}
             </span>
           </div>
@@ -221,7 +231,7 @@ export function TopAreasDepthPanel({ trends }: { trends: PublicAreaSourceTrend[]
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="4 4" horizontal={false} />
-              <XAxis type="number" tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+              <XAxis type="number" tickCount={5} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <YAxis type="category" dataKey="area" width={105} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <Tooltip
                 formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} · ${item.payload.reports} reports`, "Area average depth"]}
@@ -286,7 +296,7 @@ export function SourceTypeDepthPanel({ trends }: { trends: PublicAreaSourceTrend
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="4 4" horizontal={false} />
-              <XAxis type="number" tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+              <XAxis type="number" tickCount={5} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <YAxis type="category" dataKey="sourceType" width={115} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
               <Tooltip formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} · ${item.payload.reports} reports`, "Average depth"]} />
               <Bar dataKey="averageDepthM" fill="url(#sourceBarFill)" radius={[4, 10, 10, 4]} animationDuration={1200} animationEasing="ease-out" />
@@ -474,7 +484,7 @@ export function AreaDepthInfographicStrip({
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="4 4" horizontal={false} />
-                <XAxis type="number" tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
+                <XAxis type="number" tickCount={5} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="sourceType" width={120} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} · ${item.payload.reports} reports`, "Average depth"]} />
                 <Bar dataKey="averageDepthM" fill="url(#sourceBarFill)" radius={[4, 10, 10, 4]} animationDuration={1300} animationEasing="ease-out" />
@@ -635,11 +645,11 @@ export function FarmerDepthWorkspace({
   return (
     <div className="space-y-6">
       {/* Controls & Selection */}
-      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-cyan-50/60 p-5 shadow-sm">
+      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-cyan-50/60 p-5 shadow-sm dark:border-indigo-500/30 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-800">
-              <Sparkles size={13} /> Personal Well Workspace
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-200">
+              <Sparkles size={13} /> {tr(lang, "Personal Well Workspace", "ذاتی کنویں کا ورک اسپیس")}
             </span>
             <h3 className="mt-2 text-lg font-bold text-slate-900">
               {activeSource
@@ -830,7 +840,7 @@ export function FarmerDepthWorkspace({
                   >
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                     <XAxis dataKey="month" minTickGap={28} tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <YAxis reversed width={78} domain={["auto", "auto"]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tick={{ fontSize: 11, fill: "#64748b" }} />
+                    <YAxis reversed width={78} domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin - 1)), (dataMax: number) => Math.ceil(dataMax + 1)]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tick={{ fontSize: 11, fill: "#64748b" }} />
                     <Tooltip
                       formatter={(value, name) =>
                         value == null
@@ -892,7 +902,7 @@ export function FarmerDepthWorkspace({
             <div className="space-y-4">
               <div className="h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={areaBenchmark.bySource} margin={{ top: 14, right: 16, left: 0, bottom: 4 }}>
+                  <BarChart data={areaBenchmark.bySource} margin={{ top: 24, right: 16, left: 0, bottom: 4 }}>
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                     <XAxis dataKey="sourceType" tick={{ fontSize: 11, fill: "#475569" }} />
                     <YAxis width={78} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} domain={[0, "auto"]} tick={{ fontSize: 11, fill: "#64748b" }} />
@@ -909,8 +919,8 @@ export function FarmerDepthWorkspace({
                         strokeDasharray="4 4"
                         label={{
                           value: `Area Avg ${formatDepthMetersAndFeet(areaBenchmark.averageDepthM)}`,
-                          position: "insideTopRight",
-                          fill: "#4338ca",
+                          position: "top",
+                          fill: "#6366f1",
                           fontSize: 11,
                         }}
                       />
@@ -1186,8 +1196,8 @@ export function UniversalAreaDepthForecast({
 
   return (
     <div className="space-y-6">
-      {/* 1. Top Sticky Control Bar (3-Column Filter Strip) */}
-      <div className="glass-strong sticky top-18 z-10 rounded-2xl p-4 shadow-sm">
+      {/* 1. Top Control Bar (Sticky only on desktop md+ so mobile keeps full reading space) */}
+      <div className="glass-strong rounded-2xl p-3.5 shadow-sm md:sticky md:top-20 md:z-10 sm:p-4">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,220px)_auto] lg:items-end">
           <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
             {tr(lang, "Select Area", "علاقہ منتخب کریں")} ({areaSummaries.length})
@@ -1263,7 +1273,11 @@ export function UniversalAreaDepthForecast({
           <WellCrossSectionInfographic
             currentDepthM={currentDepthM ?? null}
             projectedDepthM={projection?.projectedDepth ?? null}
-            areaAverageM={activeBenchmark.averageDepthM}
+            areaAverageM={
+              selectedSourceType === "All sources"
+                ? activeBenchmark.averageDepthM
+                : (currentDepthM ?? activeBenchmark.averageDepthM)
+            }
             horizonMonths={horizon}
             sourceLabel={`${activeArea || "Area"} · ${selectedSourceType}`}
           />
@@ -1379,7 +1393,7 @@ export function UniversalAreaDepthForecast({
                 <LineChart data={projection.chart} margin={{ top: 10, right: 16, left: 0, bottom: 4 }}>
                   <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                   <XAxis dataKey="month" minTickGap={28} tick={{ fontSize: 11, fill: "#64748b" }} />
-                  <YAxis reversed width={78} domain={["auto", "auto"]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tick={{ fontSize: 11, fill: "#64748b" }} />
+                  <YAxis reversed width={78} domain={[(dataMin: number) => Math.max(0, Math.floor(dataMin - 1)), (dataMax: number) => Math.ceil(dataMax + 1)]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tick={{ fontSize: 11, fill: "#64748b" }} />
                   <Tooltip
                     formatter={(value, name) =>
                       value == null

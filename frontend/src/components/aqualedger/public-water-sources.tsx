@@ -95,15 +95,17 @@ export function PublicWaterSources() {
       monthlyTotals.set(month, series);
     });
     return [...monthlyTotals.entries()]
-      .map(([month, series]) =>
-        Object.fromEntries([
+      .map(([month, series]) => {
+        const ts = new Date(`${month}-01T00:00:00`).getTime();
+        return Object.fromEntries([
           ["month", month],
+          ["ts", Number.isFinite(ts) ? ts : 0],
           ...[...series.entries()].map(([source, total]) => [
             source,
             meanDepth(total.depthTotal, total.readings) ?? 0,
           ]),
-        ]) as Record<string, string | number>
-      )
+        ]) as Record<string, string | number>;
+      })
       .sort((a, b) => String(a.month).localeCompare(String(b.month)));
   }, [trends, activeArea]);
 
@@ -269,7 +271,7 @@ export function PublicWaterSources() {
                   <p className="mt-2 text-2xl font-bold text-slate-900">
                     {item.reportCount}{" "}
                     <span className="text-xs font-normal text-slate-500">
-                      report{item.reportCount === 1 ? "" : "s"}
+                      {item.reportCount === 1 ? tr(lang, "report", "رپورٹ") : tr(lang, "reports", "رپورٹس")}
                     </span>
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
@@ -295,12 +297,12 @@ export function PublicWaterSources() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={activeIntel.sourceBreakdown}
-                    margin={{ top: 8, right: 12, left: 0, bottom: 4 }}
+                    margin={{ top: 8, right: 28, left: 0, bottom: 4 }}
                   >
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                    <XAxis dataKey="sourceType" tick={{ fontSize: 11, fill: "#64748b" }} />
+                    <XAxis dataKey="sourceType" padding={{ left: 10, right: 16 }} tick={{ fontSize: 11, fill: "#64748b" }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <Tooltip formatter={(value) => [`${value} reports`, "Count"]} />
+                    <Tooltip separator=": " formatter={(value) => [`${value} reports`, "Count"]} />
                     <Bar dataKey="reportCount" fill="#0d9488" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -316,12 +318,27 @@ export function PublicWaterSources() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={activeMonthlyChartData}
-                      margin={{ top: 8, right: 16, left: 0, bottom: 4 }}
+                      margin={{ top: 8, right: 20, left: 0, bottom: 4 }}
                     >
                       <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" />
-                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#64748b" }} />
+                      <XAxis
+                        dataKey="ts"
+                        type="number"
+                        scale="time"
+                        domain={["dataMin", "dataMax"]}
+                        minTickGap={36}
+                        tickFormatter={(ts) => {
+                          const d = new Date(Number(ts));
+                          return Number.isNaN(d.getTime()) ? String(ts) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                        }}
+                        tick={{ fontSize: 11, fill: "#64748b" }}
+                      />
                       <YAxis width={78} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tick={{ fontSize: 11, fill: "#64748b" }} />
-                      <Tooltip formatter={(value, name) => [formatDepthMetersAndFeet(Number(value)), name]} />
+                      <Tooltip
+                        separator=": "
+                        labelFormatter={(_lbl, payload) => String(payload?.[0]?.payload?.month ?? "")}
+                        formatter={(value, name) => [formatDepthMetersAndFeet(Number(value)), name]}
+                      />
                       <Legend />
                       {activeIntel.sourceBreakdown.map((s, idx) => (
                         <Line

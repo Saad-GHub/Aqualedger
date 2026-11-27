@@ -512,8 +512,10 @@ function fitLinearDepthTrend(
   const spanMonths = Math.max(1, xs.at(-1)! - xs[0]);
 
   // Empirical-Bayes blending with the regional observation-well prior (+0.055 m/yr)
-  // so sparse histories neither explode (+88 m/yr) nor collapse to a dead-flat 0.00 line.
-  const reliability = Math.min(1, (n - 1) / 6) * Math.min(1, spanMonths / 12);
+  // so sparse histories neither explode nor collapse when R² is low.
+  // When a personal/local series has >= 3 clean points (R² >= 0.9), trust the observed trend more.
+  const baseReliability = Math.min(1, (n - 1) / 6) * Math.min(1, spanMonths / 12);
+  const reliability = n >= 3 && rSquared >= 0.9 ? Math.max(baseReliability, 0.72) : baseReliability;
   const rawBlendedSlope = 0.55 * slopePerMonth + 0.45 * secondHalfSlope;
   const shrunkSlope =
     reliability * rawBlendedSlope + (1 - reliability) * REGIONAL_PRIOR_SLOPE_PER_MONTH;
@@ -553,17 +555,13 @@ function fitLinearDepthTrend(
     monthAnomalies.set(calMonth, arr);
   });
   const hasMultiMonthSeasonality = monthAnomalies.size >= 4;
-  // Additive Time-Series Decomposition: keep seasonal wave natural (scaled by source elasticity)
-  // while keeping the underlying cumulative trend bounded and physically consistent.
-  const elasticity = sourceElasticityFactor(sourceType);
-  const maxSeasonalSwing = Math.max(0.25, Math.min(2.2, currentDepth * 0.26 * elasticity));
+  // Smooth, horizon-monotonic projection:
+  // Keep seasonal cycles subtle and bounded so horizons (3M -> 6M -> 1Y -> 3Y -> 5Y -> 7Y)
+  // remain monotonic in the direction of effectiveSlope and never contradict slope sign.
+  const maxSeasonalSwing = Math.max(0.1, Math.min(0.6, currentDepth * 0.06));
   const seasonalAmplitude = Math.min(
     maxSeasonalSwing,
-    Math.max(0.2, (histStd * 0.4 + currentDepth * 0.035 + Math.abs(recentSlope * reliability) * 0.8) * elasticity)
-  );
-  const multiYearAmplitude = Math.min(
-    Math.max(0.2, currentDepth * 0.22),
-    Math.max(0.18, histStd * 0.4 + currentDepth * 0.035)
+    Math.max(0.08, histStd * 0.15 + currentDepth * 0.015)
   );
 
   const seasonalOffsetForMonth = (mIdx: number) => {
@@ -574,36 +572,40 @@ function fitLinearDepthTrend(
       if (vals && vals.length) {
         const empirical = vals.reduce((s, v) => s + v, 0) / vals.length;
         const clampedEmpirical = Math.max(-maxSeasonalSwing, Math.min(maxSeasonalSwing, empirical));
-        return 0.55 * profileVal + 0.45 * clampedEmpirical;
+        return 0.65 * profileVal + 0.35 * clampedEmpirical;
       }
     }
     return profileVal;
   };
-  const climateWaveForStep = (step: number) =>
-    multiYearAmplitude *
-    (0.65 * Math.sin((2 * Math.PI * (lastX + step)) / 38) +
-      0.35 * Math.cos((2 * Math.PI * (lastX + step)) / 23));
 
   const baseSeason = seasonalOffsetForMonth(latestIndex);
-  const baseClimate = climateWaveForStep(0);
 
   let cumulativeTrend = 0;
+  let prevProjected = currentDepth;
   const predictions = Array.from({ length: horizonMonths }, (_, i) => {
     const step = i + 1;
     const stepSlope = (effectiveSlope + boundedAccel * step) * Math.pow(0.996, i);
     cumulativeTrend += stepSlope;
-    const seasonalDelta = seasonalOffsetForMonth(latestIndex + step) - baseSeason;
-    const climateDelta =
-      horizonMonths > 12 ? climateWaveForStep(step) - baseClimate : 0;
-    const rawProjected = currentDepth + cumulativeTrend + seasonalDelta + climateDelta;
+    const rawSeasonalDelta = seasonalOffsetForMonth(latestIndex + step) - baseSeason;
+    // Dampen seasonal swing so it never reverses the monotonic trend direction
+    const maxAllowedSeasonal = Math.abs(cumulativeTrend) * 0.25;
+    const seasonalDelta = Math.max(-maxAllowedSeasonal, Math.min(maxAllowedSeasonal, rawSeasonalDelta));
+    let rawProjected = currentDepth + cumulativeTrend + seasonalDelta;
+    if (effectiveSlope > 0.001) {
+      rawProjected = Math.max(prevProjected, rawProjected);
+    } else if (effectiveSlope < -0.001) {
+      rawProjected = Math.min(prevProjected, rawProjected);
+    }
     const floorDepth =
       effectiveSlope > 0.005
         ? Math.max(0.2, currentDepth * 0.65)
         : Math.max(0.1, currentDepth * 0.35);
     const ceilingDepth = currentDepth + Math.max(12, currentDepth * 1.5);
-    return Number(
+    const clamped = Number(
       Math.max(floorDepth, Math.min(ceilingDepth, rawProjected)).toFixed(2)
     );
+    prevProjected = clamped;
+    return clamped;
   });
   const projectedDepth = predictions[horizonMonths - 1];
   const projectedChange = projectedDepth - currentDepth;
@@ -630,7 +632,11 @@ function fitLinearDepthTrend(
 
   const span = xs.at(-1)! - xs[0];
   const confidence: "Low" | "Moderate" | "Higher" =
-    n >= 8 && span >= 12 && rSquared >= 0.65 ? "Higher" : n >= 5 && span >= 6 ? "Moderate" : "Low";
+    (n >= 8 && span >= 12 && rSquared >= 0.65) || (n >= 10 && span >= 24)
+      ? "Higher"
+      : n >= 5 && span >= 6
+        ? "Moderate"
+        : "Low";
   const residualScale = Math.max(minResidualScale, Math.sqrt(residualSum / Math.max(1, n - 2)));
 
   const chart: ForecastPoint[] = points.map((point) => ({
@@ -675,25 +681,27 @@ function fitLinearDepthTrend(
       1,
       monthIndex(testPoints.at(-1)!.month) - monthIndex(trainPoints.at(-1)!.month)
     );
-    const btFit = fitLinearDepthTrend(
-      trainPoints,
-      testSpan,
-      minPoints,
-      1,
-      minResidualScale,
-      undefined,
-      sourceType,
-      true
-    );
-    if (btFit) {
-      const errors = testPoints
-        .map((tp) => {
-          const pred = btFit.chart.find((c) => c.month === tp.month && c.projected !== null)?.projected;
-          return pred == null ? null : Math.abs(tp.depth - pred);
-        })
-        .filter((e): e is number => e !== null);
-      if (errors.length) {
-        backtestMaeM = Number((errors.reduce((s, e) => s + e, 0) / errors.length).toFixed(2));
+    if (testSpan <= 24) {
+      const btFit = fitLinearDepthTrend(
+        trainPoints,
+        testSpan,
+        minPoints,
+        1,
+        minResidualScale,
+        trainPoints.at(-1)!.depth,
+        sourceType,
+        true
+      );
+      if (btFit) {
+        const errors = testPoints
+          .map((tp) => {
+            const pred = btFit.chart.find((c) => c.month === tp.month && c.projected !== null)?.projected;
+            return pred == null ? null : Math.abs(tp.depth - pred);
+          })
+          .filter((e): e is number => e !== null);
+        if (errors.length) {
+          backtestMaeM = Number((errors.reduce((s, e) => s + e, 0) / errors.length).toFixed(2));
+        }
       }
     }
   }
