@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { PageIntro, Panel, useAquaRole } from "@/components/aqualedger/app-shell";
 import { FarmerDepthWorkspace } from "@/components/aqualedger/depth-infographics";
+import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import {
   readMyCommunityWaterReports,
   readPublicAreaSourceTrends,
@@ -35,19 +36,46 @@ import { depthM } from "@/lib/units";
 
 export default function MySourcesPage() {
   const { isSignedIn, currentEmail, emailVerified, authReady } = useAquaRole();
+  const lang = useLanguage();
   const [myReports, setMyReports] = useState<CommunityWaterReport[]>([]);
   const [publicTrends, setPublicTrends] = useState<PublicAreaSourceTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
     if (!authReady) return;
-    if (!isSignedIn) {
+    const isDemo = !isSignedIn && new URLSearchParams(window.location.search).get("demo") === "1";
+    if (!isSignedIn && !isDemo) {
       queueMicrotask(() => {
         setMyReports([]);
+        setDemoMode(false);
         setLoading(false);
       });
       return;
+    }
+    if (isDemo) {
+      let active = true;
+      const demoReports: CommunityWaterReport[] = [
+        { id: "demo-1", sourceId: "demo-src-1", sourceCode: "SRC-DEMO1", sourceLabel: "Model Town Tube Well", areaName: "Bahawalpur, Punjab", areaKey: "Bahawalpur, Punjab", address: "Model Town B, Bahawalpur, Punjab", sourceType: "Tube well", depth: "7.8", sampleDate: "2026-09-15", concern: "Seasonal checking", status: "demo", measurements: {}, createdBy: "demo-farmer" },
+        { id: "demo-2", sourceId: "demo-src-1", sourceCode: "SRC-DEMO1", sourceLabel: "Model Town Tube Well", areaName: "Bahawalpur, Punjab", areaKey: "Bahawalpur, Punjab", address: "Model Town B, Bahawalpur, Punjab", sourceType: "Tube well", depth: "7.1", sampleDate: "2026-06-15", concern: "Low water level", status: "demo", measurements: {}, createdBy: "demo-farmer" },
+        { id: "demo-3", sourceId: "demo-src-1", sourceCode: "SRC-DEMO1", sourceLabel: "Model Town Tube Well", areaName: "Bahawalpur, Punjab", areaKey: "Bahawalpur, Punjab", address: "Model Town B, Bahawalpur, Punjab", sourceType: "Tube well", depth: "6.4", sampleDate: "2026-03-15", concern: "Seasonal checking", status: "demo", measurements: {}, createdBy: "demo-farmer" },
+      ];
+      void readPublicAreaSourceTrends()
+        .then((trends) => {
+          if (active) setPublicTrends(trends);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (active) {
+            setDemoMode(true);
+            setMyReports(demoReports);
+            setLoading(false);
+          }
+        });
+      return () => {
+        active = false;
+      };
     }
 
     let active = true;
@@ -132,17 +160,21 @@ export default function MySourcesPage() {
     );
   }
 
-  if (!isSignedIn) {
+  if (!isSignedIn && !demoMode) {
     return (
       <>
         <PageIntro
-          eyebrow="Personal Workspace"
-          title="My Water Sources & Personal Forecast"
-          description="Sign in with your email and password to view only your own water sources, depth history, AI predictions, and tailored precautions."
+          eyebrow={tr(lang, "Personal Workspace", "ذاتی ورک اسپیس")}
+          title={tr(lang, "My Water Sources & Personal Forecast", "میرے پانی کے ذرائع اور ذاتی پیشگوئی")}
+          description={tr(
+            lang,
+            "Sign in with your email and password to view only your own water sources, depth history, AI predictions, and tailored precautions.",
+            "اپنے ذاتی پانی کے ذرائع، گہرائی کی تاریخ، AI پیشگوئی اور حفاظتی تدابیر دیکھنے کے لیے سائن ان کریں۔"
+          )}
         />
         <Panel
-          title="Sign in to access your personal water data"
-          description="Each user sees only their own submitted sources and readings here."
+          title={tr(lang, "Sign in to access your personal water data", "اپنے ذاتی پانی کے ڈیٹا تک رسائی کے لیے سائن ان کریں")}
+          description={tr(lang, "Each user sees only their own submitted sources and readings here.", "ہر صارف یہاں صرف اپنے جمع کردہ ذرائع اور ریڈنگز دیکھ سکتا ہے۔")}
         >
           <div className="flex flex-wrap items-center gap-3">
             <Link
@@ -150,19 +182,25 @@ export default function MySourcesPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
             >
               <UserCheck size={16} />
-              Sign in
+              {tr(lang, "Sign in", "سائن ان کریں")}
+            </Link>
+            <Link
+              href="/my-sources?demo=1"
+              className="rounded-xl border border-teal-300 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-800 hover:bg-teal-100"
+            >
+              {tr(lang, "Continue as Demo Farmer →", "ڈیمو کسان کے طور پر جاری رکھیں ←")}
             </Link>
             <Link
               href="/signup"
               className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
-              Create account
+              {tr(lang, "Create account", "اکاؤنٹ بنائیں")}
             </Link>
             <Link
               href="/forecast"
               className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
-              View Universal Area Forecast
+              {tr(lang, "View Universal Area Forecast", "عالمی علاقائی پیشگوئی دیکھیں")}
             </Link>
           </div>
         </Panel>
@@ -173,21 +211,25 @@ export default function MySourcesPage() {
   return (
     <>
       <PageIntro
-        eyebrow="Personal Water Intelligence"
-        title="My Sources & Depth Predictions"
-        description={`Private workspace for ${currentEmail}. Only your own tracked sources, readings, and predictions are shown here.`}
+        eyebrow={tr(lang, "Personal Water Intelligence", "ذاتی آبی ذہانت")}
+        title={tr(lang, "My Sources & Depth Predictions", "میرے ذرائع اور گہرائی کی پیشگوئی")}
+        description={
+          demoMode
+            ? tr(lang, "Interactive Demo Farmer workspace (Bahawalpur, Punjab sample readings). Sign in with Email OTP to track your own wells.", "انٹرایکٹو ڈیمو کسان ورک اسپیس (بہاولپور کے نمونہ ریکارڈ)۔ اپنے کنوؤں کو ٹریک کرنے کے لیے ای میل سے سائن ان کریں۔")
+            : tr(lang, `Private workspace for ${currentEmail}. Only your own tracked sources, readings, and predictions are shown here.`, `${currentEmail} کے لیے ذاتی ورک اسپیس۔ یہاں صرف آپ کے ذرائع اور پیشگوئیاں دکھائی جا رہی ہیں۔`)
+        }
         action={
           <Link
             href="/reports"
             className="inline-flex items-center gap-2 self-start rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
           >
             <Plus size={16} />
-            Log New Reading
+            {tr(lang, "Log New Reading", "نئی ریڈنگ درج کریں")}
           </Link>
         }
       />
 
-      {!emailVerified && (
+      {!emailVerified && !demoMode && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           Your email is not verified yet.{" "}
           <Link href="/account" className="font-semibold underline">

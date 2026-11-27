@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 import { MailCheck } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/community-water-reports";
 import { PageIntro, Panel } from "@/components/aqualedger/app-shell";
+import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const lang = useLanguage();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -122,13 +124,13 @@ export default function SignUpPage() {
   return (
     <>
       <PageIntro
-        eyebrow="Farmer & Community Registration"
-        title="Create your account"
-        description="Set your email and password, then verify your email once with an OTP. Future sign-ins only need your email and password."
+        eyebrow={tr(lang, "Farmer & Community Registration", "کسان اور کمیونٹی رجسٹریشن")}
+        title={tr(lang, "Create your account", "اپنا اکاؤنٹ بنائیں")}
+        description={tr(lang, "Set your email and password, then verify your email once with an OTP. Future sign-ins only need your email and password.", "اپنا ای میل اور پاس ورڈ سیٹ کریں، پھر OTP کے ذریعے ایک بار تصدیق کریں۔ آئندہ سائن ان کے لیے صرف ای میل اور پاس ورڈ کافی ہوگا۔")}
       />
       <Panel
-        title={otpSent ? "Verify your email with OTP" : "Register with Email, Password & OTP"}
-        description="Email OTP is required only once when creating a new account. Community accounts cannot access administrator review tools."
+        title={otpSent ? tr(lang, "Verify your email with OTP", "OTP سے اپنے ای میل کی تصدیق کریں") : tr(lang, "Register with Email, Password & OTP", "ای میل، پاس ورڈ اور OTP کے ساتھ رجسٹر کریں")}
+        description={tr(lang, "Email OTP is required only once when creating a new account. Community accounts cannot access administrator review tools.", "نیا اکاؤنٹ بناتے وقت ای میل OTP صرف ایک بار درکار ہوتا ہے۔")}
       >
         {otpSent ? (
           <form onSubmit={(event) => void verifyOtp(event)} className="max-w-lg space-y-4">
@@ -193,18 +195,18 @@ export default function SignUpPage() {
         ) : (
           <form onSubmit={(event) => void registerAccount(event)} className="max-w-lg space-y-4">
             <label className="block text-sm font-medium text-slate-700">
-              Your name
+              {tr(lang, "Your name", "آپ کا نام")}
               <input
                 required
                 autoComplete="name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder="e.g. Muhammad Ali"
+                placeholder={tr(lang, "e.g. Muhammad Ali", "مثلاً محمد علی")}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
               />
             </label>
             <label className="block text-sm font-medium text-slate-700">
-              Email
+              {tr(lang, "Email", "ای میل")}
               <input
                 required
                 type="email"
@@ -216,7 +218,7 @@ export default function SignUpPage() {
               />
             </label>
             <label className="block text-sm font-medium text-slate-700">
-              Password <span className="text-xs font-normal text-slate-400">(minimum 8 characters)</span>
+              {tr(lang, "Password", "پاس ورڈ")} <span className="text-xs font-normal text-slate-400">{tr(lang, "(minimum 8 characters)", "(کم از کم 8 حروف)")}</span>
               <input
                 required
                 minLength={8}
@@ -224,12 +226,12 @@ export default function SignUpPage() {
                 autoComplete="new-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Create a confidential password"
+                placeholder={tr(lang, "Create a confidential password", "خفیہ پاس ورڈ بنائیں")}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
               />
             </label>
             <label className="block text-sm font-medium text-slate-700">
-              Confirm password
+              {tr(lang, "Confirm password", "پاس ورڈ کی تصدیق کریں")}
               <input
                 required
                 minLength={8}
@@ -237,7 +239,7 @@ export default function SignUpPage() {
                 autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Re-enter your password"
+                placeholder={tr(lang, "Re-enter your password", "پاس ورڈ دوبارہ درج کریں")}
                 className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-teal-600"
               />
             </label>
@@ -250,12 +252,12 @@ export default function SignUpPage() {
               disabled={busy}
               className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
             >
-              {busy ? "Creating account…" : "Create account & send OTP"}
+              {busy ? tr(lang, "Creating account…", "اکاؤنٹ بن رہا ہے…") : tr(lang, "Create account & send OTP", "اکاؤنٹ بنائیں اور OTP بھیجیں")}
             </button>
             <p className="text-sm text-slate-500">
-              Already have an account?{" "}
+              {tr(lang, "Already have an account?", "پہلے سے اکاؤنٹ موجود ہے؟")}{" "}
               <Link href="/login?role=user" className="font-semibold text-teal-700 hover:underline">
-                Sign in with email & password
+                {tr(lang, "Sign in with email & password", "ای میل اور پاس ورڈ سے سائن ان کریں")}
               </Link>
             </p>
           </form>

@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { normalizeAreaName } from "@/lib/depth-analytics";
+import { checkSubmissionAnomaly, normalizeAreaName } from "@/lib/depth-analytics";
 
 export type CommunityWaterReport = { id: string; reportCode?: string; aggregateCount?: number; labMeasurementCount?: number; awaitingReviewCount?: number; reporterName?: string; address: string; areaName?: string; sourceType?: string; depth?: string; sampleDate?: string; concern?: string; status: string; measurements: Record<string, string>; areaKey?: string; riskLevel?: string; verificationState?: string; latitude?: number | null; longitude?: number | null; locationAccuracyM?: number | null; locationCapturedAt?: string | null; locationConsent?: boolean; sourceId?: string; sourceCode?: string; sourceLabel?: string; createdBy?: string };
 export type TrackedWaterSource = { id: string; code: string; label: string; areaName: string; address: string; sourceType: string };
@@ -418,7 +418,17 @@ export async function submitCommunityWaterReport(report: NewCommunityWaterReport
   const sourceCode = report.sourceCode ?? "SRC-PENDING";
   const sourceLabel = report.sourceLabel?.trim() ?? "";
   if (!sourceLabel) throw new Error("Enter a name for this water source so future monthly readings can be linked to it.");
-  const row: Record<string, string | number | boolean | null> = { id, created_by: authData.user.id, source_id: sourceId, source_code: sourceCode, source_label: sourceLabel, reporter_name: report.reporterName ?? "", address: [streetAddress, areaName].filter(Boolean).join(", "), street_address: streetAddress, area_name: areaName, source_type: report.sourceType ?? "", source_depth_m: Number(report.depth), sample_date: report.sampleDate ?? "", main_concern: report.concern ?? "", review_status: "under_review", location_consent: Boolean(report.locationConsent), latitude: report.latitude ?? null, longitude: report.longitude ?? null, location_accuracy_m: report.locationAccuracyM ?? null, location_captured_at: report.locationCapturedAt ?? null };
+  const parsedDepthM = Number(report.depth);
+  try {
+    const currentTrends = await readPublicAreaSourceTrends();
+    const anomalyReason = checkSubmissionAnomaly(parsedDepthM, currentTrends, areaName);
+    if (anomalyReason) throw new Error(anomalyReason);
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith("AI Anomaly Guard:")) {
+      throw err;
+    }
+  }
+  const row: Record<string, string | number | boolean | null> = { id, created_by: authData.user.id, source_id: sourceId, source_code: sourceCode, source_label: sourceLabel, reporter_name: report.reporterName ?? "", address: [streetAddress, areaName].filter(Boolean).join(", "), street_address: streetAddress, area_name: areaName, source_type: report.sourceType ?? "", source_depth_m: parsedDepthM, sample_date: report.sampleDate ?? "", main_concern: report.concern ?? "", review_status: "under_review", location_consent: Boolean(report.locationConsent), latitude: report.latitude ?? null, longitude: report.longitude ?? null, location_accuracy_m: report.locationAccuracyM ?? null, location_captured_at: report.locationCapturedAt ?? null };
   for (const [name, field] of Object.entries(columns)) {
     const raw = (report.measurements[name] ?? "").trim();
     if (!raw) {
@@ -449,6 +459,20 @@ export async function updateCommunityReportStatus(id: string, status: ReportRevi
   const { error } = await getSupabaseBrowserClient().from("water_reports").update({ review_status: status }).eq("id", id);
   if (error) throw error;
   notifyCommunityWaterReportsUpdated();
+}
+export async function deleteWaterReportsByIds(ids: string[]) {
+  if (!ids.length) return 0;
+  const supabase = getSupabaseBrowserClient();
+  const batchSize = 100;
+  let deleted = 0;
+  for (let i = 0; i < ids.length; i += batchSize) {
+    const chunk = ids.slice(i, i + batchSize);
+    const { error } = await supabase.from("water_reports").delete().in("id", chunk);
+    if (error) throw error;
+    deleted += chunk.length;
+  }
+  notifyCommunityWaterReportsUpdated();
+  return deleted;
 }
 export function notifyCommunityWaterReportsUpdated() {
   invalidateReadCaches();

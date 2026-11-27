@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MailCheck } from "lucide-react";
 import { PageIntro, Panel, useAquaRole } from "@/components/aqualedger/app-shell";
+import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import {
   getSupabaseBrowserClient,
   readMyCommunityWaterReports,
@@ -16,6 +17,7 @@ import { depthM } from "@/lib/units";
 
 export default function AccountPage() {
   const router = useRouter();
+  const lang = useLanguage();
   const { isAdmin, isSignedIn, currentEmail, emailVerified, authReady } = useAquaRole();
   const [reports, setReports] = useState<CommunityWaterReport[]>([]);
   const [error, setError] = useState("");
@@ -64,8 +66,8 @@ export default function AccountPage() {
 
   if (!authReady) {
     return (
-      <Panel title="My account">
-        <p className="text-sm text-slate-500">Checking sign-in…</p>
+      <Panel title={tr(lang, "My account", "میرا اکاؤنٹ")}>
+        <p className="text-sm text-slate-500">{tr(lang, "Checking sign-in…", "سائن ان چیک ہو رہا ہے…")}</p>
       </Panel>
     );
   }
@@ -74,22 +76,22 @@ export default function AccountPage() {
     return (
       <>
         <PageIntro
-          title="My account"
-          description="Sign in or create an account to keep your water reports together."
+          title={tr(lang, "My account", "میرا اکاؤنٹ")}
+          description={tr(lang, "Sign in or create an account to keep your water reports together.", "اپنی تمام پانی کی رپورٹس محفوظ رکھنے کے لیے سائن ان کریں یا اکاؤنٹ بنائیں۔")}
         />
-        <Panel title="Your AquaLedger account">
+        <Panel title={tr(lang, "Your AquaLedger account", "آپ کا AquaLedger اکاؤنٹ")}>
           <div className="flex flex-wrap gap-3">
             <Link
               href="/signup"
               className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
             >
-              Create account
+              {tr(lang, "Create account", "اکاؤنٹ بنائیں")}
             </Link>
             <Link
               href="/login"
               className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             >
-              Sign in
+              {tr(lang, "Sign in", "سائن ان کریں")}
             </Link>
           </div>
         </Panel>
@@ -100,22 +102,22 @@ export default function AccountPage() {
   return (
     <>
       <PageIntro
-        title="My account"
-        description="Your submissions and tracked sources are saved under this account."
+        title={tr(lang, "My account", "میرا اکاؤنٹ")}
+        description={tr(lang, "Your submissions and tracked sources are saved under this account.", "آپ کی تمام رپورٹس اور ذرائع اس اکاؤنٹ کے تحت محفوظ ہیں۔")}
         action={
           <button
             disabled={busy}
             onClick={() => void signOut()}
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            {busy ? "Signing out…" : "Sign out"}
+            {busy ? tr(lang, "Signing out…", "سائن آؤٹ ہو رہا ہے…") : tr(lang, "Sign out", "سائن آؤٹ")}
           </button>
         }
       />
 
       <Panel
-        title={isAdmin ? "Administrator account" : "Community account"}
-        description="Report records are associated with this signed-in identity."
+        title={isAdmin ? tr(lang, "Administrator account", "ایڈمنسٹریٹر اکاؤنٹ") : tr(lang, "Community account", "کمیونٹی اکاؤنٹ")}
+        description={tr(lang, "Report records are associated with this signed-in identity.", "رپورٹ ریکارڈز اس اکاؤنٹ سے منسلک ہیں۔")}
       >
         <p className="text-sm font-semibold text-slate-800">{currentEmail}</p>
         <p className="mt-1 text-xs text-slate-500">

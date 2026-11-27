@@ -1,5 +1,110 @@
 import type { PublicAreaSourceTrend } from "@/lib/community-water-reports";
 import type { WaterRiskFlag } from "@/lib/water-risk-screening";
+import waterLevelByYear from "@/data/punjab-water-level-by-year.json";
+
+const REGIONAL_PRIOR_SLOPE_PER_MONTH =
+  (waterLevelByYear.summary?.medianTrendMPerYear ?? 0.055) / 12;
+
+export type DepthAnomaly = {
+  id: string;
+  area: string;
+  depth: number;
+  areaMedianM: number | null;
+  reason: string;
+};
+
+/**
+ * AI Anomaly Detector: uses per-area Median + MAD (Median Absolute Deviation)
+ * plus physical aquifer bounds (0 < depth <= 300 m) to flag extreme outliers.
+ */
+export function detectAreaDepthAnomalies(
+  reports: DepthForecastInput[] & { id?: string }[]
+): DepthAnomaly[] {
+  const byArea = new Map<string, { id: string; depth: number }[]>();
+  for (const report of reports) {
+    const id = (report as { id?: string }).id ?? "";
+    const depth = Number.parseFloat(report.depth ?? "");
+    if (!id || !Number.isFinite(depth)) continue;
+    const area = reportAreaKey(report);
+    const list = byArea.get(area) ?? [];
+    list.push({ id, depth });
+    byArea.set(area, list);
+  }
+
+  const anomalies: DepthAnomaly[] = [];
+  for (const [area, items] of byArea.entries()) {
+    const valid = items.map((i) => i.depth).filter((d) => d > 0 && d <= 300);
+    const sorted = [...valid].sort((a, b) => a - b);
+    const median =
+      sorted.length >= 5 ? sorted[Math.floor(sorted.length / 2)] : null;
+    const mad =
+      median !== null
+        ? (() => {
+            const devs = sorted.map((d) => Math.abs(d - median)).sort((a, b) => a - b);
+            return devs[Math.floor(devs.length / 2)];
+          })()
+        : 0;
+
+    for (const item of items) {
+      if (item.depth <= 0 || item.depth > 300) {
+        anomalies.push({
+          id: item.id,
+          area,
+          depth: item.depth,
+          areaMedianM: median,
+          reason:
+            item.depth <= 0
+              ? "Non-positive depth"
+              : "Exceeds physical borewell limit (> 300 m)",
+        });
+        continue;
+      }
+      if (median !== null) {
+        const highCutoff = Math.max(median * 3.5, median + Math.max(25, 4.5 * mad));
+        if (item.depth > highCutoff) {
+          anomalies.push({
+            id: item.id,
+            area,
+            depth: item.depth,
+            areaMedianM: median,
+            reason: `Extreme outlier vs ${median.toFixed(1)} m area median`,
+          });
+        } else if (median >= 8 && item.depth < median * 0.15) {
+          anomalies.push({
+            id: item.id,
+            area,
+            depth: item.depth,
+            areaMedianM: median,
+            reason: `Unusually shallow vs ${median.toFixed(1)} m area median`,
+          });
+        }
+      }
+    }
+  }
+  return anomalies;
+}
+
+export function checkSubmissionAnomaly(
+  depthM: number,
+  trends: PublicAreaSourceTrend[],
+  areaName: string
+): string | null {
+  if (!Number.isFinite(depthM) || depthM <= 0 || depthM > 300) {
+    return `AI Anomaly Guard: ${depthM} m is outside valid groundwater depth range (0.1–300 m).`;
+  }
+  const benchmark = computeAreaDepthBenchmark(trends, areaName);
+  if (benchmark.totalReports >= 5 && benchmark.averageDepthM !== null) {
+    const avg = benchmark.averageDepthM;
+    const highCutoff = Math.max(avg * 3.5, avg + 35);
+    if (depthM > highCutoff) {
+      return `AI Anomaly Guard: ${depthM.toFixed(1)} m is far deeper than ${areaName}'s normal range (~${avg.toFixed(1)} m avg). Please check if you entered feet instead of meters.`;
+    }
+    if (avg >= 8 && depthM < avg * 0.15) {
+      return `AI Anomaly Guard: ${depthM.toFixed(1)} m is unusually shallow compared to ${areaName}'s normal range (~${avg.toFixed(1)} m avg).`;
+    }
+  }
+  return null;
+}
 
 export function meanDepth(totalDepth: number, readings: number): number | null {
   if (!Number.isFinite(totalDepth) || !Number.isFinite(readings) || readings <= 0) return null;
@@ -43,6 +148,7 @@ export type DepthForecast = {
   changeInSixMonths: number;
   depthInSixMonths: number;
   rSquared: number;
+  backtestMaeM: number | null;
   confidence: "Low" | "Moderate" | "Higher";
   historyWindows: number;
   normalThreshold: number | null;
@@ -58,6 +164,7 @@ export type SourceDepthProjection = {
   projectedDepth: number;
   horizonMonths: number;
   rSquared: number;
+  backtestMaeM: number | null;
   confidence: "Low" | "Moderate" | "Higher";
   historyWindows: number;
   normalThreshold: number | null;
@@ -238,28 +345,42 @@ export function reportAreaKey(report: DepthForecastInput) {
   return normalizeAreaName(report.areaKey || report.areaName, report.address);
 }
 
+function winsorizedMean(values: number[]): number {
+  if (!values.length) return 0;
+  if (values.length < 3) {
+    return Number((values.reduce((s, v) => s + v, 0) / values.length).toFixed(2));
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const q1 = sorted[Math.floor((sorted.length - 1) * 0.25)];
+  const q3 = sorted[Math.floor((sorted.length - 1) * 0.75)];
+  const iqr = Math.max(0.5, q3 - q1);
+  const low = q1 - 1.5 * iqr;
+  const high = q3 + 1.5 * iqr;
+  const clamped = sorted.map((v) => Math.max(low, Math.min(high, v)));
+  return Number((clamped.reduce((s, v) => s + v, 0) / clamped.length).toFixed(2));
+}
+
 function aggregateIntoMonthlyBuckets(
   reports: DepthForecastInput[],
   predicate: (report: DepthForecastInput) => boolean
 ): MonthlyDepthPoint[] {
-  const buckets = new Map<string, { total: number; readings: number }>();
+  const buckets = new Map<string, number[]>();
   for (const report of reports) {
     if (!predicate(report)) continue;
     const depth = Number.parseFloat(report.depth ?? "");
     const date = report.sampleDate ?? "";
     if (!Number.isFinite(depth) || depth < 0 || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
     const month = date.slice(0, 7);
-    const bucket = buckets.get(month) ?? { total: 0, readings: 0 };
-    bucket.total += depth;
-    bucket.readings += 1;
-    buckets.set(month, bucket);
+    const list = buckets.get(month) ?? [];
+    list.push(depth);
+    buckets.set(month, list);
   }
   return [...buckets.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, bucket]) => ({
+    .map(([month, values]) => ({
       month,
-      depth: meanDepth(bucket.total, bucket.readings) ?? 0,
-      readings: bucket.readings,
+      depth: winsorizedMean(values),
+      readings: values.length,
     }));
 }
 
@@ -304,14 +425,41 @@ const quantile = (values: number[], q: number) => {
   return sorted[lower] + (sorted[Math.min(lower + 1, sorted.length - 1)] - sorted[lower]) * fraction;
 };
 
+function sourceElasticityFactor(sourceType?: string): number {
+  const t = (sourceType ?? "").toLowerCase();
+  if (t.includes("tube")) return 1.25;
+  if (t.includes("bore")) return 1.1;
+  if (t.includes("community")) return 0.95;
+  if (t.includes("spring")) return 0.85;
+  if (t.includes("hand")) return 0.7;
+  return 1.0;
+}
+
+type ForecastFitResult = {
+  chart: ForecastPoint[];
+  slopePerMonth: number;
+  projectedChange: number;
+  projectedDepth: number;
+  rSquared: number;
+  backtestMaeM: number | null;
+  confidence: "Low" | "Moderate" | "Higher";
+  historyWindows: number;
+  normalThreshold: number | null;
+  highThreshold: number | null;
+  status: ForecastStatus;
+  lastMonth: string;
+};
+
 function fitLinearDepthTrend(
   points: MonthlyDepthPoint[],
   horizonMonths: number,
   minPoints: number,
   minSpanMonths: number,
   minResidualScale: number,
-  anchorDepthOverride?: number | null
-) {
+  anchorDepthOverride?: number | null,
+  sourceType?: string,
+  skipBacktest = false
+): ForecastFitResult | null {
   if (
     points.length < minPoints ||
     monthIndex(points.at(-1)!.month) - monthIndex(points[0].month) < minSpanMonths
@@ -363,14 +511,16 @@ function fitLinearDepthTrend(
 
   const spanMonths = Math.max(1, xs.at(-1)! - xs[0]);
 
-  // Empirical-Bayes shrinkage for sparse/short histories so noisy 1–2 month jumps
-  // (e.g. 4 reports over 1 month) never extrapolate into runaway +88 m/yr trajectories.
+  // Empirical-Bayes blending with the regional observation-well prior (+0.055 m/yr)
+  // so sparse histories neither explode (+88 m/yr) nor collapse to a dead-flat 0.00 line.
   const reliability = Math.min(1, (n - 1) / 6) * Math.min(1, spanMonths / 12);
   const rawBlendedSlope = 0.55 * slopePerMonth + 0.45 * secondHalfSlope;
+  const shrunkSlope =
+    reliability * rawBlendedSlope + (1 - reliability) * REGIONAL_PRIOR_SLOPE_PER_MONTH;
   const maxMonthlySlope = n >= 10 && spanMonths >= 24 ? 0.35 : 0.25; // max ±3.0 to ±4.2 m/yr
   const effectiveSlope = Math.max(
     -maxMonthlySlope,
-    Math.min(maxMonthlySlope, rawBlendedSlope * reliability)
+    Math.min(maxMonthlySlope, shrunkSlope)
   );
 
   const rawAccel = ((secondHalfSlope - firstHalfSlope) * reliability) / Math.max(12, spanMonths);
@@ -403,16 +553,17 @@ function fitLinearDepthTrend(
     monthAnomalies.set(calMonth, arr);
   });
   const hasMultiMonthSeasonality = monthAnomalies.size >= 4;
-  // Bound seasonal amplitude proportionally to currentDepth so shallow areas (1–5 m)
-  // never swing negative / clamp to 0.0 m when the underlying trend is deepening.
-  const maxSeasonalSwing = Math.max(0.15, Math.min(1.6, currentDepth * 0.22));
+  // Additive Time-Series Decomposition: keep seasonal wave natural (scaled by source elasticity)
+  // while keeping the underlying cumulative trend bounded and physically consistent.
+  const elasticity = sourceElasticityFactor(sourceType);
+  const maxSeasonalSwing = Math.max(0.25, Math.min(2.2, currentDepth * 0.26 * elasticity));
   const seasonalAmplitude = Math.min(
     maxSeasonalSwing,
-    Math.max(0.12, histStd * 0.3 + currentDepth * 0.03 + Math.abs(recentSlope * reliability) * 0.8)
+    Math.max(0.2, (histStd * 0.4 + currentDepth * 0.035 + Math.abs(recentSlope * reliability) * 0.8) * elasticity)
   );
   const multiYearAmplitude = Math.min(
-    Math.max(0.15, currentDepth * 0.2),
-    Math.max(0.15, histStd * 0.35 + currentDepth * 0.03)
+    Math.max(0.2, currentDepth * 0.22),
+    Math.max(0.18, histStd * 0.4 + currentDepth * 0.035)
   );
 
   const seasonalOffsetForMonth = (mIdx: number) => {
@@ -423,7 +574,7 @@ function fitLinearDepthTrend(
       if (vals && vals.length) {
         const empirical = vals.reduce((s, v) => s + v, 0) / vals.length;
         const clampedEmpirical = Math.max(-maxSeasonalSwing, Math.min(maxSeasonalSwing, empirical));
-        return 0.5 * profileVal + 0.5 * clampedEmpirical;
+        return 0.55 * profileVal + 0.45 * clampedEmpirical;
       }
     }
     return profileVal;
@@ -437,7 +588,6 @@ function fitLinearDepthTrend(
   const baseClimate = climateWaveForStep(0);
 
   let cumulativeTrend = 0;
-  let prevProjected = currentDepth;
   const predictions = Array.from({ length: horizonMonths }, (_, i) => {
     const step = i + 1;
     const stepSlope = (effectiveSlope + boundedAccel * step) * Math.pow(0.996, i);
@@ -445,26 +595,15 @@ function fitLinearDepthTrend(
     const seasonalDelta = seasonalOffsetForMonth(latestIndex + step) - baseSeason;
     const climateDelta =
       horizonMonths > 12 ? climateWaveForStep(step) - baseClimate : 0;
-    // Keep seasonal/climate modulation gentle so horizons (3 mo -> 7 yr) stay monotonic with effectiveSlope
-    const maxWave = Math.max(0.08, Math.abs(cumulativeTrend) * 0.25);
-    const boundedWave = Math.max(-maxWave, Math.min(maxWave, seasonalDelta + climateDelta));
-    let rawProjected = currentDepth + cumulativeTrend + boundedWave;
-    // Enforce sign consistency & monotonic progression across horizons
-    if (effectiveSlope >= 0) {
-      rawProjected = Math.max(prevProjected, rawProjected);
-    } else {
-      rawProjected = Math.min(prevProjected, rawProjected);
-    }
+    const rawProjected = currentDepth + cumulativeTrend + seasonalDelta + climateDelta;
     const floorDepth =
       effectiveSlope > 0.005
-        ? Math.max(0.2, currentDepth * 0.75)
-        : Math.max(0.1, currentDepth * 0.45);
+        ? Math.max(0.2, currentDepth * 0.65)
+        : Math.max(0.1, currentDepth * 0.35);
     const ceilingDepth = currentDepth + Math.max(12, currentDepth * 1.5);
-    const clamped = Number(
+    return Number(
       Math.max(floorDepth, Math.min(ceilingDepth, rawProjected)).toFixed(2)
     );
-    prevProjected = clamped;
-    return clamped;
   });
   const projectedDepth = predictions[horizonMonths - 1];
   const projectedChange = projectedDepth - currentDepth;
@@ -527,12 +666,45 @@ function fitLinearDepthTrend(
     });
   });
 
+  let backtestMaeM: number | null = null;
+  if (!skipBacktest && points.length >= 4) {
+    const holdoutCount = Math.min(2, Math.floor(points.length / 3));
+    const trainPoints = points.slice(0, points.length - holdoutCount);
+    const testPoints = points.slice(points.length - holdoutCount);
+    const testSpan = Math.max(
+      1,
+      monthIndex(testPoints.at(-1)!.month) - monthIndex(trainPoints.at(-1)!.month)
+    );
+    const btFit = fitLinearDepthTrend(
+      trainPoints,
+      testSpan,
+      minPoints,
+      1,
+      minResidualScale,
+      undefined,
+      sourceType,
+      true
+    );
+    if (btFit) {
+      const errors = testPoints
+        .map((tp) => {
+          const pred = btFit.chart.find((c) => c.month === tp.month && c.projected !== null)?.projected;
+          return pred == null ? null : Math.abs(tp.depth - pred);
+        })
+        .filter((e): e is number => e !== null);
+      if (errors.length) {
+        backtestMaeM = Number((errors.reduce((s, e) => s + e, 0) / errors.length).toFixed(2));
+      }
+    }
+  }
+
   return {
     chart,
     slopePerMonth: effectiveSlope,
     projectedChange,
     projectedDepth,
     rSquared,
+    backtestMaeM,
     confidence,
     historyWindows: historicalRates.length,
     normalThreshold,
@@ -552,6 +724,7 @@ export function forecastDepth(points: MonthlyDepthPoint[]): DepthForecast | null
     changeInSixMonths: fit.projectedChange,
     depthInSixMonths: fit.projectedDepth,
     rSquared: fit.rSquared,
+    backtestMaeM: fit.backtestMaeM,
     confidence: fit.confidence,
     historyWindows: fit.historyWindows,
     normalThreshold: fit.normalThreshold,
@@ -564,9 +737,10 @@ export function forecastDepth(points: MonthlyDepthPoint[]): DepthForecast | null
 export function forecastDepthForHorizon(
   points: MonthlyDepthPoint[],
   horizonMonths: number,
-  anchorDepthOverride?: number | null
+  anchorDepthOverride?: number | null,
+  sourceType?: string
 ): SourceDepthProjection | null {
-  const fit = fitLinearDepthTrend(points, horizonMonths, 2, 1, 0.05, anchorDepthOverride);
+  const fit = fitLinearDepthTrend(points, horizonMonths, 2, 1, 0.05, anchorDepthOverride, sourceType);
   if (!fit) return null;
   return {
     ...fit,

@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ShieldCheck, UserCheck } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/community-water-reports";
 import { PageIntro, Panel } from "@/components/aqualedger/app-shell";
+import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 
 type LoginRole = "user" | "admin" | null;
 
 export default function LoginPage() {
   const router = useRouter();
+  const lang = useLanguage();
   const [selectedRole, setSelectedRole] = useState<LoginRole>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -169,9 +171,9 @@ export default function LoginPage() {
     return (
       <>
         <PageIntro
-          eyebrow="AquaLedger Access"
-          title="Select your account type"
-          description="Choose whether you are signing in as a Farmer / Community User or as the single Administrator."
+          eyebrow={tr(lang, "AquaLedger Access", "AquaLedger رسائی")}
+          title={tr(lang, "Select your account type", "اپنے اکاؤنٹ کی قسم منتخب کریں")}
+          description={tr(lang, "Choose whether you are signing in as a Farmer / Community User or as the single Administrator.", "منتخب کریں کہ آپ کسان / کمیونٹی صارف کے طور پر سائن ان کر رہے ہیں یا ایڈمنسٹریٹر کے طور پر۔")}
         />
         <div className="grid gap-5 md:grid-cols-2">
           <button
@@ -187,12 +189,12 @@ export default function LoginPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
               <UserCheck size={24} />
             </div>
-            <h3 className="mt-4 text-lg font-bold text-slate-900">Farmer / Community User</h3>
+            <h3 className="mt-4 text-lg font-bold text-slate-900">{tr(lang, "Farmer / Community User", "کسان / کمیونٹی صارف")}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Sign in directly with your email and password to log water depth every 3 months and get AI depth predictions &amp; precautions. New accounts verify once via OTP on sign-up.
+              {tr(lang, "Sign in directly with your email and password to log water depth every 3 months and get AI depth predictions & precautions. New accounts verify once via OTP on sign-up.", "ہر 3 ماہ بعد پانی کی گہرائی درج کرنے اور AI پیشگوئی و حفاظتی تدابیر حاصل کرنے کے لیے سائن ان کریں۔")}
             </p>
             <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-teal-700">
-              Continue as Farmer / User →
+              {tr(lang, "Continue as Farmer / User →", "کسان / صارف کے طور پر جاری رکھیں ←")}
             </span>
           </button>
 
@@ -209,12 +211,12 @@ export default function LoginPage() {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-teal-300">
               <ShieldCheck size={24} />
             </div>
-            <h3 className="mt-4 text-lg font-bold text-slate-900">Administrator</h3>
+            <h3 className="mt-4 text-lg font-bold text-slate-900">{tr(lang, "Administrator", "ایڈمنسٹریٹر")}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Restricted to the single authorized AquaLedger administrator account for reviewing reports, verifying lab data, and monitoring all areas.
+              {tr(lang, "Restricted to the single authorized AquaLedger administrator account for reviewing reports, verifying lab data, and monitoring all areas.", "رپورٹس کا جائزہ لینے، ڈیٹا کی تصدیق اور تمام علاقوں کی نگرانی کے لیے مجاز ایڈمن اکاؤنٹ۔")}
             </p>
             <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-slate-800">
-              Continue as Administrator →
+              {tr(lang, "Continue as Administrator →", "ایڈمنسٹریٹر کے طور پر جاری رکھیں ←")}
             </span>
           </button>
         </div>
@@ -227,12 +229,12 @@ export default function LoginPage() {
   return (
     <>
       <PageIntro
-        eyebrow={isAdminMode ? "Administrator access" : "Farmer & Community access"}
-        title={isAdminMode ? "Administrator Sign In" : "User Sign In"}
+        eyebrow={isAdminMode ? tr(lang, "Administrator access", "ایڈمنسٹریٹر رسائی") : tr(lang, "Farmer & Community access", "کسان اور کمیونٹی رسائی")}
+        title={isAdminMode ? tr(lang, "Administrator Sign In", "ایڈمنسٹریٹر سائن ان") : tr(lang, "User Sign In", "صارف سائن ان")}
         description={
           isAdminMode
-            ? "Sign in with the single authorized AquaLedger admin credentials."
-            : "Sign in with your email and password. Email OTP verification is only required once when creating a new account."
+            ? tr(lang, "Sign in with the single authorized AquaLedger admin credentials.", "مجاز AquaLedger ایڈمن تفصیلات کے ساتھ سائن ان کریں۔")
+            : tr(lang, "Sign in with your email and password. Email OTP verification is only required once when creating a new account.", "اپنے ای میل اور پاس ورڈ سے سائن ان کریں۔ ای میل OTP تصدیق صرف نیا اکاؤنٹ بناتے وقت درکار ہوتی ہے۔")
         }
         action={
           <button
@@ -246,19 +248,19 @@ export default function LoginPage() {
             className="inline-flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
           >
             <ArrowLeft size={16} />
-            Switch role
+            {tr(lang, "Switch role", "کردار تبدیل کریں")}
           </button>
         }
       />
 
       {isAdminMode ? (
         <Panel
-          title="Admin credentials"
-          description="Only the designated admin account can access this workspace."
+          title={tr(lang, "Admin credentials", "ایڈمن تفصیلات")}
+          description={tr(lang, "Only the designated admin account can access this workspace.", "صرف مجاز ایڈمن اکاؤنٹ اس ورک اسپیس تک رسائی حاصل کر سکتا ہے۔")}
         >
           <form onSubmit={(event) => void handlePasswordLogin(event)} className="max-w-lg space-y-4">
             <label className="block text-sm font-medium text-slate-700">
-              Admin Email
+              {tr(lang, "Admin Email", "ایڈمن ای میل")}
               <input
                 required
                 type="email"
@@ -270,7 +272,7 @@ export default function LoginPage() {
               />
             </label>
             <label className="block text-sm font-medium text-slate-700">
-              Password
+              {tr(lang, "Password", "پاس ورڈ")}
               <input
                 required
                 type="password"
@@ -289,18 +291,18 @@ export default function LoginPage() {
               disabled={busy}
               className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
             >
-              {busy ? "Signing in…" : "Sign in as Admin"}
+              {busy ? tr(lang, "Signing in…", "سائن ان ہو رہا ہے…") : tr(lang, "Sign in as Admin", "ایڈمن کے طور پر سائن ان کریں")}
             </button>
           </form>
         </Panel>
       ) : (
         <Panel
-          title="Password Sign In"
-          description="Sign in with your registered email and password."
+          title={tr(lang, "Password Sign In", "پاس ورڈ سے سائن ان")}
+          description={tr(lang, "Sign in with your registered email and password.", "اپنے رجسٹرڈ ای میل اور پاس ورڈ سے سائن ان کریں۔")}
         >
           <form onSubmit={(event) => void handlePasswordLogin(event)} className="max-w-lg space-y-4">
             <label className="block text-sm font-medium text-slate-700">
-              Email
+              {tr(lang, "Email", "ای میل")}
               <input
                 required
                 type="email"

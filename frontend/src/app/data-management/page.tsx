@@ -12,11 +12,14 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { AdminOnly, PageIntro, Panel } from "@/components/aqualedger/app-shell";
+import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import {
+  deleteWaterReportsByIds,
   readCommunityWaterReports,
   type CommunityWaterReport,
 } from "@/lib/community-water-reports";
 import {
+  detectAreaDepthAnomalies,
   formatDepthMetersAndFeet,
   hasAreaAndProvince,
   normalizeAreaName,
@@ -43,6 +46,8 @@ export default function DataManagementPage() {
   const [reports, setReports] = useState<CommunityWaterReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cleaning, setCleaning] = useState(false);
+  const [cleanStatus, setCleanStatus] = useState("");
   const [selectedArea, setSelectedArea] = useState("All areas");
 
   const loadDataset = () => {
@@ -83,7 +88,6 @@ export default function DataManagementPage() {
   const audit = useMemo(() => {
     const areas = new Map<string, number>();
     const unmappedAreas: { id: string; code: string; area: string; address: string }[] = [];
-    const outliers: { id: string; code: string; area: string; depth: number; reason: string }[] = [];
     const seenKeys = new Map<string, string>();
     const duplicates: { id: string; code: string; area: string; date: string; depth: string }[] = [];
     let missingGps = 0;
@@ -101,17 +105,6 @@ export default function DataManagementPage() {
         missingGps += 1;
       }
 
-      const depthNum = Number(report.depth);
-      if (report.depth && (!Number.isFinite(depthNum) || depthNum <= 0 || depthNum > 300)) {
-        outliers.push({
-          id: report.id,
-          code,
-          area,
-          depth: depthNum,
-          reason: depthNum <= 0 ? "Non-positive depth" : "Extreme depth (> 300 m)",
-        });
-      }
-
       const dedupeKey = `${report.sourceId || area}|${report.sampleDate || ""}|${report.depth || ""}|${report.sourceType || ""}`;
       if (report.sampleDate && report.depth) {
         if (seenKeys.has(dedupeKey)) {
@@ -127,6 +120,11 @@ export default function DataManagementPage() {
         }
       }
     }
+
+    const outliers = detectAreaDepthAnomalies(reports).map((a) => ({
+      ...a,
+      code: reportCodes.get(a.id) ?? a.id,
+    }));
 
     return {
       areaList: [...areas.entries()].sort(([a], [b]) => a.localeCompare(b)),
@@ -192,38 +190,43 @@ export default function DataManagementPage() {
     downloadTextFile(`aqualedger-dataset-${slug}.json`, JSON.stringify(payload, null, 2), "application/json");
   };
 
+  const lang = useLanguage();
   return (
     <AdminOnly>
       <PageIntro
-        eyebrow="Admin Dataset Toolkit"
-        title="Data Management & Quality Audit"
-        description="Inspect area normalization health, detect duplicate or outlier depth readings, and export cleaned datasets in CSV or JSON."
+        eyebrow={tr(lang, "Admin Dataset Toolkit", "ایڈمن ڈیٹا سیٹ ٹول کٹ")}
+        title={tr(lang, "Data Management & Quality Audit", "ڈیٹا مینجمنٹ اور کوالٹی آڈٹ")}
+        description={tr(
+          lang,
+          "Inspect area normalization health, detect duplicate or outlier depth readings, and export cleaned datasets in CSV or JSON.",
+          "علاقوں کے ڈیٹا کی صحت جانچیں، ڈپلیکیٹ یا غیر معمولی گہرائی کی ریڈنگز پکڑیں، اور صاف ڈیٹا CSV یا JSON میں ڈاؤن لوڈ کریں۔"
+        )}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">Total records audited</p>
+          <p className="text-xs font-medium text-slate-500">{tr(lang, "Total records audited", "کل آڈٹ شدہ ریکارڈز")}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{reports.length}</p>
-          <p className="mt-1 text-xs text-slate-400">Across {audit.areaList.length} canonical areas</p>
+          <p className="mt-1 text-xs text-slate-400">{tr(lang, `Across ${audit.areaList.length} canonical areas`, `${audit.areaList.length} علاقوں میں`)}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">Unmapped / custom areas</p>
+          <p className="text-xs font-medium text-slate-500">{tr(lang, "Unmapped / custom areas", "غیر نقشہ شدہ علاقے")}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{audit.unmappedAreas.length}</p>
-          <p className="mt-1 text-xs text-slate-400">Outside {PREDEFINED_PAKISTAN_AREAS.length} predefined districts</p>
+          <p className="mt-1 text-xs text-slate-400">{tr(lang, `Outside ${PREDEFINED_PAKISTAN_AREAS.length} predefined districts`, `${PREDEFINED_PAKISTAN_AREAS.length} طے شدہ اضلاع سے باہر`)}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">Potential duplicates &amp; outliers</p>
+          <p className="text-xs font-medium text-slate-500">{tr(lang, "Potential duplicates & outliers", "ممکنہ ڈپلیکیٹ اور غیر معمولی ریڈنگز")}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
             {audit.duplicates.length + audit.outliers.length}
           </p>
           <p className="mt-1 text-xs text-slate-400">
-            {audit.duplicates.length} duplicate · {audit.outliers.length} depth outliers
+            {audit.duplicates.length} {tr(lang, "duplicate", "ڈپلیکیٹ")} · {audit.outliers.length} {tr(lang, "depth outliers", "غیر معمولی گہرائی")}
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-medium text-slate-500">Records without GPS</p>
+          <p className="text-xs font-medium text-slate-500">{tr(lang, "Records without GPS", "بغیر GPS ریکارڈز")}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">{audit.missingGps}</p>
-          <p className="mt-1 text-xs text-slate-400">Address-only submissions</p>
+          <p className="mt-1 text-xs text-slate-400">{tr(lang, "Address-only submissions", "صرف پتہ والی رپورٹس")}</p>
         </div>
       </div>
 
@@ -232,18 +235,18 @@ export default function DataManagementPage() {
       )}
 
       <Panel
-        title="Export Cleaned Dataset"
-        description="Download normalized records (with canonical City, Province names) for research, backups, or external GIS tools."
+        title={tr(lang, "Export Cleaned Dataset", "صاف شدہ ڈیٹا سیٹ ڈاؤن لوڈ کریں")}
+        description={tr(lang, "Download normalized records (with canonical City, Province names) for research, backups, or external GIS tools.", "تحقیق، بیک اپ یا GIS ٹولز کے لیے صاف شدہ ریکارڈز ڈاؤن لوڈ کریں۔")}
       >
         <div className="flex flex-wrap items-end justify-between gap-4">
           <label className="w-full max-w-sm text-xs font-semibold text-slate-600">
-            Filter export by area
+            {tr(lang, "Filter export by area", "علاقے کے لحاظ سے فلٹر کریں")}
             <select
               value={selectedArea}
               onChange={(event) => setSelectedArea(event.target.value)}
               className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"
             >
-              <option value="All areas">All areas ({reports.length} records)</option>
+              <option value="All areas">{tr(lang, "All areas", "تمام علاقے")} ({reports.length})</option>
               {audit.areaList.map(([area, count]) => (
                 <option key={area} value={area}>
                   {area} ({count})
@@ -260,7 +263,7 @@ export default function DataManagementPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
               <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-              Refresh audit
+              {tr(lang, "Refresh audit", "آڈٹ ریفریش کریں")}
             </button>
             <button
               type="button"
@@ -317,9 +320,43 @@ export default function DataManagementPage() {
         </Panel>
 
         <Panel
-          title="Duplicate & Outlier Inspector"
-          description="Repeated readings on the same date/depth or extreme depth values (> 300 m or <= 0 m)."
+          title="AI Anomaly & Duplicate Inspector"
+          description="Detects extreme outliers vs each area's median/MAD, physical limits (<= 0 or > 300 m), and repeated readings."
         >
+          {cleanStatus && (
+            <p role="status" className="mb-3 rounded-xl border border-teal-200 bg-teal-50 px-3.5 py-2 text-xs font-semibold text-teal-800">
+              {cleanStatus}
+            </p>
+          )}
+          {audit.outliers.length > 0 && (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50/70 px-3.5 py-2.5 text-xs">
+              <span className="font-medium text-red-800">
+                AI detected {audit.outliers.length} extreme outlier{audit.outliers.length === 1 ? "" : "s"} skewing area averages.
+              </span>
+              <button
+                type="button"
+                disabled={cleaning}
+                onClick={async () => {
+                  setCleaning(true);
+                  setCleanStatus("");
+                  setError("");
+                  try {
+                    const ids = audit.outliers.map((o) => o.id);
+                    const count = await deleteWaterReportsByIds(ids);
+                    setReports((prev) => prev.filter((r) => !ids.includes(r.id)));
+                    setCleanStatus(`AI removed ${count} extreme outlier report${count === 1 ? "" : "s"} from Supabase.`);
+                  } catch (err: unknown) {
+                    setError(err instanceof Error ? err.message : "Could not delete outliers. Run supabase/admin-delete-policy.sql in Supabase.");
+                  } finally {
+                    setCleaning(false);
+                  }
+                }}
+                className="rounded-lg bg-red-600 px-3 py-1.5 font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {cleaning ? "Cleaning…" : `AI Auto-Delete Outliers (${audit.outliers.length})`}
+              </button>
+            </div>
+          )}
           {audit.duplicates.length === 0 && audit.outliers.length === 0 ? (
             <div className="flex items-center gap-2 rounded-xl bg-teal-50 p-4 text-sm text-teal-800">
               <Database size={18} />

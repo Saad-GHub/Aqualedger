@@ -22,6 +22,7 @@ import {
   YAxis,
 } from "recharts";
 import { PageIntro, Panel } from "@/components/aqualedger/app-shell";
+import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import {
   readPublicAreaSourceTrends,
   type PublicAreaSourceTrend,
@@ -31,12 +32,14 @@ import { formatAxisDepthMetersAndFeet, formatDepthMetersAndFeet, meanDepth, reco
 const colors = ["#0d9488", "#2563eb", "#f59e0b", "#7c3aed", "#e11d48", "#0891b2"];
 
 export function PublicWaterSources() {
+  const lang = useLanguage();
   const [trends, setTrends] = useState<PublicAreaSourceTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [selectedArea, setSelectedArea] = useState("");
   const [showAllAreas, setShowAllAreas] = useState(false);
+  const [dominantFilter, setDominantFilter] = useState<"all" | "Tube well" | "Borehole">("all");
 
   useEffect(() => {
     void readPublicAreaSourceTrends()
@@ -121,32 +124,36 @@ export function PublicWaterSources() {
   return (
     <>
       <PageIntro
-        eyebrow="Area Water Source Intelligence"
-        title="Water Sources & Smart Recommendations"
-        description="Select any area to see its exact source counts (boreholes, tube wells, hand pumps) and automatic recommendations for Household vs Farmer / Irrigation use."
+        eyebrow={tr(lang, "Area Water Source Intelligence", "علاقائی آبی ذرائع کی ذہانت")}
+        title={tr(lang, "Water Sources & Smart Recommendations", "پانی کے ذرائع اور ذہین سفارشات")}
+        description={tr(
+          lang,
+          "Select any area to see its exact source counts (boreholes, tube wells, hand pumps) and automatic recommendations for Household vs Farmer / Irrigation use.",
+          "کسی بھی علاقے کو منتخب کر کے بورویل، ٹیوب ویل، ہینڈ پمپ کی تعداد اور گھریلو بمقابلہ زرعی استعمال کے لیے خودکار مشورے دیکھیں۔"
+        )}
       />
 
       <div className="aqua-stats grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
-          <p className="text-sm text-slate-500">Areas with reports</p>
-          <p className="mt-2 text-2xl font-bold">{loading && !trends.length ? "…" : areaNames.length}</p>
+          <p className="text-sm text-slate-500">{tr(lang, "Areas with reports", "رپورٹ شدہ علاقے")}</p>
+          <p className="mt-2 text-2xl font-bold">{loading && !trends.length ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : areaNames.length}</p>
         </div>
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
-          <p className="text-sm text-slate-500">Source categories</p>
+          <p className="text-sm text-slate-500">{tr(lang, "Source categories", "ذرائع کی اقسام")}</p>
           <p className="mt-2 text-2xl font-bold">
-            {loading && !trends.length ? "…" : new Set(trends.map((row) => row.sourceType)).size}
+            {loading && !trends.length ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : new Set(trends.map((row) => row.sourceType)).size}
           </p>
         </div>
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
-          <p className="text-sm text-slate-500">Total reports analyzed</p>
+          <p className="text-sm text-slate-500">{tr(lang, "Total reports analyzed", "کل تجزیہ شدہ رپورٹس")}</p>
           <p className="mt-2 text-2xl font-bold">
-            {loading && !trends.length ? "…" : trends.reduce((sum, row) => sum + row.reportCount, 0)}
+            {loading && !trends.length ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : trends.reduce((sum, row) => sum + row.reportCount, 0)}
           </p>
         </div>
       </div>
 
       {loading && !trends.length ? (
-        <Panel title="Loading Water Sources…" description="Fetching area-wise source counts and AI recommendations.">
+        <Panel title={tr(lang, "Loading Water Sources…", "پانی کے ذرائع لوڈ ہو رہے ہیں…")} description={tr(lang, "Fetching area-wise source counts and AI recommendations.", "علاقے کے لحاظ سے ذرائع کی تعداد اور AI سفارشات حاصل کی جا رہی ہیں۔")}>
           <div className="h-48 animate-pulse rounded-2xl bg-slate-100" />
         </Panel>
       ) : error ? (
@@ -155,12 +162,12 @@ export function PublicWaterSources() {
         </p>
       ) : activeIntel && activeArea ? (
         <Panel
-          title={`Area Spotlight: ${activeArea}`}
-          description="Select an area below to inspect its exact water source counts and see which source is most beneficial for residents vs farmers."
+          title={`${tr(lang, "Area Spotlight", "علاقے کی تفصیل")}: ${activeArea}`}
+          description={tr(lang, "Select an area below to inspect its exact water source counts and see which source is most beneficial for residents vs farmers.", "نیچے علاقہ منتخب کریں اور جانیں کہ رہائشیوں اور کسانوں کے لیے کون سا ذریعہ سب سے بہتر ہے۔")}
         >
           <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
             <label className="w-full max-w-sm text-xs font-semibold text-slate-600">
-              Select Area
+              {tr(lang, "Select Area", "علاقہ منتخب کریں")}
               <select
                 value={activeArea}
                 onChange={(e) => setSelectedArea(e.target.value)}
@@ -175,8 +182,63 @@ export function PublicWaterSources() {
             </label>
             <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-800">
               <Sparkles size={14} />
-              {activeIntel.totalReports} total source reports in {activeArea}
+              {activeIntel.totalReports} {tr(lang, `total source reports in ${activeArea}`, `کل رپورٹس (${activeArea})`)}
             </span>
+          </div>
+
+          {/* 50/50 Hero Recommendation Cards right under Select Area */}
+          <div className="mb-6 grid gap-4 md:grid-cols-2">
+            {activeIntel.householdBest && (
+              <div className="rounded-2xl border border-teal-200 bg-teal-50/50 p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-800">
+                    <Home size={16} />
+                    {tr(lang, "Best for Household / Domestic", "گھریلو استعمال کے لیے بہترین")}
+                  </span>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-teal-800 shadow-sm">
+                    {activeIntel.householdBest.riskLabel}
+                  </span>
+                </div>
+                <p className="mt-3 text-xl font-bold text-slate-900">
+                  {activeIntel.householdBest.sourceType}
+                </p>
+                <p className="mt-1.5 text-sm leading-6 text-slate-700">
+                  {activeIntel.householdBest.reason}
+                </p>
+                {activeIntel.householdBest.caution && (
+                  <p className="mt-2 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">
+                    {activeIntel.householdBest.caution}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {activeIntel.irrigationBest && (
+              <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-800">
+                    <Tractor size={16} />
+                    {tr(lang, "Best for Farmer / Irrigation", "کسان / آبپاشی کے لیے بہترین")}
+                  </span>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-sm">
+                    {activeIntel.irrigationBest.averageDepthM !== null
+                      ? `${formatDepthMetersAndFeet(activeIntel.irrigationBest.averageDepthM)} avg`
+                      : "Tracked"}
+                  </span>
+                </div>
+                <p className="mt-3 text-xl font-bold text-slate-900">
+                  {activeIntel.irrigationBest.sourceType}
+                </p>
+                <p className="mt-1.5 text-sm leading-6 text-slate-700">
+                  {activeIntel.irrigationBest.reason}
+                </p>
+                {activeIntel.irrigationBest.caution && (
+                  <p className="mt-2 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">
+                    {activeIntel.irrigationBest.caution}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Exact Source Type Counts for Selected Area */}
@@ -223,66 +285,11 @@ export function PublicWaterSources() {
             })}
           </div>
 
-          {/* Beneficial Source Recommendations: Household vs Farmer */}
-          <div className="mb-6 grid gap-4 md:grid-cols-2">
-            {activeIntel.householdBest && (
-              <div className="rounded-2xl border border-teal-200 bg-teal-50/50 p-5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-800">
-                    <Home size={16} />
-                    Best for Household / Domestic
-                  </span>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-teal-800 shadow-sm">
-                    {activeIntel.householdBest.riskLabel}
-                  </span>
-                </div>
-                <p className="mt-3 text-xl font-bold text-slate-900">
-                  {activeIntel.householdBest.sourceType}
-                </p>
-                <p className="mt-1.5 text-sm leading-6 text-slate-700">
-                  {activeIntel.householdBest.reason}
-                </p>
-                {activeIntel.householdBest.caution && (
-                  <p className="mt-2 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">
-                    {activeIntel.householdBest.caution}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {activeIntel.irrigationBest && (
-              <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-800">
-                    <Tractor size={16} />
-                    Best for Farmer / Irrigation
-                  </span>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-sm">
-                    {activeIntel.irrigationBest.averageDepthM !== null
-                      ? `${formatDepthMetersAndFeet(activeIntel.irrigationBest.averageDepthM)} avg`
-                      : "Tracked"}
-                  </span>
-                </div>
-                <p className="mt-3 text-xl font-bold text-slate-900">
-                  {activeIntel.irrigationBest.sourceType}
-                </p>
-                <p className="mt-1.5 text-sm leading-6 text-slate-700">
-                  {activeIntel.irrigationBest.reason}
-                </p>
-                {activeIntel.irrigationBest.caution && (
-                  <p className="mt-2 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800">
-                    {activeIntel.irrigationBest.caution}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
           {/* Charts for Selected Area */}
           <div className="grid gap-5 lg:grid-cols-2">
             <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
               <h4 className="mb-3 text-sm font-bold text-slate-800">
-                Source Count Comparison in {activeArea}
+                {tr(lang, `Source Count Comparison in ${activeArea}`, `${activeArea} میں ذرائع کی تعداد کا موازنہ`)}
               </h4>
               <div className="h-60 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -302,7 +309,7 @@ export function PublicWaterSources() {
 
             <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-4">
               <h4 className="mb-3 text-sm font-bold text-slate-800">
-                Monthly Depth by Source Type (m / ft)
+                {tr(lang, "Monthly Depth by Source Type (m / ft)", "ذریعہ کی قسم کے لحاظ سے ماہانہ گہرائی (میٹر / فٹ)")}
               </h4>
               <div className="h-60 w-full">
                 {activeMonthlyChartData.length ? (
@@ -343,8 +350,8 @@ export function PublicWaterSources() {
 
       {/* All Areas Directory */}
       <Panel
-        title="All Areas Directory"
-        description="Showing the top 3 areas by report volume by default. Click any area chip, search, or expand all areas to inspect its source breakdown above."
+        title={tr(lang, "All Areas Directory", "تمام علاقوں کی ڈائریکٹری")}
+        description={tr(lang, "Showing the top 3 areas by report volume by default. Click any area chip, search, or expand all areas to inspect its source breakdown above.", "رپورٹس کی تعداد کے لحاظ سے ٹاپ 3 علاقے دکھائے جا رہے ہیں۔ تفصیل دیکھنے کے لیے کسی بھی علاقے پر کلک یا تلاش کریں۔")}
       >
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <label className="flex min-w-[240px] flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -353,24 +360,49 @@ export function PublicWaterSources() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-              placeholder="Search areas or source types (e.g. Chakwal, Tube well, Borehole)…"
+              placeholder={tr(lang, "Search areas or source types (e.g. Chakwal, Tube well, Borehole)…", "علاقہ یا ذریعہ تلاش کریں (مثلاً چکوال، ٹیوب ویل، بورویل)…")}
             />
           </label>
-          {filteredAreas.length > 3 && !query.trim() ? (
+          {filteredAreas.length > 3 && !query.trim() && dominantFilter === "all" ? (
             <button
               type="button"
               onClick={() => setShowAllAreas((prev) => !prev)}
               className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs transition hover:border-teal-500 hover:text-teal-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-teal-400 dark:hover:text-teal-300"
             >
-              {showAllAreas ? "Show top 3 areas" : `Show all ${filteredAreas.length} areas`}
+              {showAllAreas ? tr(lang, "Show top 3 areas", "ٹاپ 3 علاقے دکھائیں") : tr(lang, `Show all ${filteredAreas.length} areas`, `تمام ${filteredAreas.length} علاقے دکھائیں`)}
             </button>
           ) : null}
         </div>
 
-        {filteredAreas.length ? (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {([
+            ["all", tr(lang, "All", "تمام")],
+            ["Tube well", tr(lang, "Tube well dominant", "ٹیوب ویل زیادہ")],
+            ["Borehole", tr(lang, "Borehole dominant", "بورویل زیادہ")],
+          ] as const).map(([val, lbl]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => setDominantFilter(val)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                dominantFilter === val
+                  ? "bg-slate-900 text-white dark:bg-teal-500 dark:text-slate-950"
+                  : "border border-slate-200 bg-white text-slate-600 hover:border-teal-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+              }`}
+            >
+              {lbl}
+            </button>
+          ))}
+        </div>
+
+        {(() => {
+          const domFiltered = dominantFilter === "all"
+            ? filteredAreas
+            : filteredAreas.filter(([area]) => recommendAreaWaterSources(trends, area).sourceBreakdown[0]?.sourceType === dominantFilter);
+          return domFiltered.length ? (
           <>
             <div className="mb-4 flex flex-wrap gap-1.5">
-              {filteredAreas.map(([area]) => {
+              {domFiltered.map(([area]) => {
                 const isSelected = area === activeArea;
                 return (
                   <button
@@ -390,9 +422,9 @@ export function PublicWaterSources() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {(query.trim() || showAllAreas
-                ? filteredAreas
-                : [...filteredAreas]
+              {(query.trim() || showAllAreas || dominantFilter !== "all"
+                ? domFiltered
+                : [...domFiltered]
                     .sort(
                       ([, rowsA], [, rowsB]) =>
                         rowsB.reduce((sum, r) => sum + r.reportCount, 0) -
@@ -453,7 +485,8 @@ export function PublicWaterSources() {
             <AlertTriangle size={16} className="text-amber-500" />
             <span>No area source summaries match your search yet.</span>
           </div>
-        )}
+        );
+        })()}
       </Panel>
     </>
   );

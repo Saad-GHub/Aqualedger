@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Activity, CircleDot, Layers3, LocateFixed, MapPin, Maximize2, Minus, Plus, User, Waves, X } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageIntro, Panel, useAquaRole } from "@/components/aqualedger/app-shell";
+import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import { useTheme } from "@/components/aqualedger/theme-toggle";
 import {
   readCommunityWaterReports,
@@ -386,6 +387,7 @@ function applyHeatmapVisibility(map: import("maplibre-gl").Map, on: boolean) {
 }
 
 export function GroundwaterMap() {
+  const lang = useLanguage();
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("maplibre-gl").Map | null>(null);
   const userMovedMapRef = useRef(false);
@@ -438,6 +440,13 @@ export function GroundwaterMap() {
   useEffect(() => {
     wellsOnRef.current = wellsOn;
   }, [wellsOn]);
+
+  useEffect(() => {
+    const sev = new URLSearchParams(window.location.search).get("severity")?.toLowerCase();
+    if (sev === "critical" || sev === "high") queueMicrotask(() => setRiskFilter("high"));
+    else if (sev === "moderate") queueMicrotask(() => setRiskFilter("moderate"));
+    else if (sev === "normal") queueMicrotask(() => setRiskFilter("normal"));
+  }, []);
 
   useEffect(() => {
     if (!authReady) return;
@@ -1015,43 +1024,62 @@ export function GroundwaterMap() {
   return (
     <>
       <PageIntro
-        title="Groundwater Trend & Risk Map"
-        description="District water table depth and brackish groundwater from the Mouza Census 2020, long-term trends at observation wells, and community reports on top as dots and a live heatmap."
+        title={tr(lang, "Groundwater Trend & Risk Map", "زمینی پانی کے رجحانات اور خطرات کا نقشہ")}
+        description={tr(
+          lang,
+          "District water table depth and brackish groundwater from the Mouza Census 2020, long-term trends at observation wells, and community reports on top as dots and a live heatmap.",
+          "موضع مردم شماری 2020 سے ضلعی پانی کی گہرائی اور کھارا پن، مشاہداتی کنوؤں کے طویل مدتی رجحانات، اور کمیونٹی رپورٹس کا لائیو ہیٹ میپ۔"
+        )}
       />
-      <div className="aqua-stats grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
-          <p className="text-sm text-slate-500">Reports received</p>
-          <p className="tabular mt-2 text-2xl font-semibold text-slate-900">
-            {loading && !reports.length ? "…" : visibleReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            {mySourcesOnly ? "Your personal sources" : "Shown as dots on map"}
-          </p>
+      {/* Compact single-row stat strip so the Map fits immediately above the fold */}
+      <div className="glass flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-2.5 text-xs">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+          <div>
+            <span className="text-slate-500">{tr(lang, "Reports", "رپورٹس")}: </span>
+            <strong className="tabular text-slate-900 dark:text-slate-100">
+              {loading && !reports.length ? "…" : visibleReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)}
+            </strong>
+          </div>
+          <div>
+            <span className="text-slate-500">{tr(lang, "Regions", "علاقے")}: </span>
+            <strong className="tabular text-slate-900 dark:text-slate-100">
+              {loading && !reports.length ? "…" : `${regionsWithData} / ${regionsGeoJson.features.length}`}
+            </strong>
+          </div>
+          <div>
+            <span className="text-slate-500">{tr(lang, "Critical", "تشویشناک")}: </span>
+            <strong className="tabular text-red-600 dark:text-red-400">
+              {loading && !reports.length ? "…" : visibleReports.filter((report) => riskScore(report) >= 1.5).length}
+            </strong>
+          </div>
+          <div>
+            <span className="text-slate-500">{tr(lang, "Wells", "کنویں")}: </span>
+            <strong className="tabular text-sky-700 dark:text-sky-300">
+              {wellCount ? wellCount.toLocaleString() : "…"}
+            </strong>
+            {censusRankings.mouzas > 0 && (
+              <span className="ml-1 hidden text-slate-400 sm:inline">({censusRankings.mouzas.toLocaleString()} {tr(lang, "mouzas", "موضع")})</span>
+            )}
+          </div>
         </div>
-        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
-          <p className="text-sm text-slate-500">Regions with data</p>
-          <p className="tabular mt-2 text-2xl font-semibold text-slate-900">
-            {loading && !reports.length ? "…" : `${regionsWithData} / ${regionsGeoJson.features.length}`}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">From community reports</p>
-        </div>
-        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
-          <p className="text-sm text-slate-500">Critical points</p>
-          <p className="tabular mt-2 text-2xl font-semibold text-red-600">
-            {loading && !reports.length ? "…" : visibleReports.filter((report) => riskScore(report) >= 1.5).length}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">High-concern screening flags</p>
-        </div>
-        <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
-          <p className="text-sm text-slate-500">Observation wells</p>
-          <p className="tabular mt-2 text-2xl font-semibold text-sky-700">{wellCount ? wellCount.toLocaleString() : "…"}</p>
-          <p className="mt-1 text-xs text-slate-400">{censusRankings.mouzas ? `${censusRankings.mouzas.toLocaleString()} census mouzas` : "Loading census…"}</p>
-        </div>
+        <button
+          type="button"
+          onClick={showMyLocation}
+          disabled={locating}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+        >
+          <LocateFixed size={14} />
+          {locating ? tr(lang, "Locating…", "مقام تلاش ہو رہا ہے…") : tr(lang, "My Location", "میرا مقام")}
+        </button>
       </div>
 
       <Panel
-        title="Pakistan Groundwater Heatmap & Regional Status"
-        description="Shade districts by census water table depth, brackish water, or community report status. Dots mark exact areas where reports were received."
+        title={tr(lang, "Pakistan Groundwater Heatmap & Regional Status", "پاکستان گراؤنڈ واٹر ہیٹ میپ اور علاقائی صورتحال")}
+        description={tr(
+          lang,
+          "Shade districts by census water table depth, brackish water, or community report status. Dots mark exact areas where reports were received.",
+          "اضلاع کو پانی کی گہرائی، کھارے پن یا کمیونٹی رپورٹس کی صورتحال کے لحاظ سے دیکھیں۔"
+        )}
       >
         {/* Quick City Jump */}
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
@@ -1068,7 +1096,7 @@ export function GroundwaterMap() {
                 : "border-slate-200 bg-white text-slate-600 hover:border-teal-300 hover:text-teal-800"
             }`}
           >
-            All Pakistan
+            {tr(lang, "All Pakistan", "پورا پاکستان")}
           </button>
           {cityLocations
             .filter((c) => c.quick)
@@ -1101,7 +1129,7 @@ export function GroundwaterMap() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500">
               <Layers3 size={15} />
-              Shade by
+              {tr(lang, "Shade by", "رنگ کی بنیاد")}
             </span>
             <div className="inline-flex flex-wrap rounded-xl border border-slate-200 bg-slate-50 p-1" role="group" aria-label="Area shading">
               {shadeModes.map(([mode, label]) => (
@@ -1153,7 +1181,7 @@ export function GroundwaterMap() {
               }`}
             >
               <Activity size={15} />
-              {heatmapOn ? "Heatmap on" : "Heatmap off"}
+              {heatmapOn ? tr(lang, "Heatmap on", "ہیٹ میپ آن") : tr(lang, "Heatmap off", "ہیٹ میپ آف")}
             </button>
             <button
               type="button"
@@ -1164,7 +1192,7 @@ export function GroundwaterMap() {
               }`}
             >
               <CircleDot size={15} />
-              {wellsOn ? "Wells on" : "Wells off"}
+              {wellsOn ? tr(lang, "Wells on", "کنویں آن") : tr(lang, "Wells off", "کنویں آف")}
             </button>
             <button
               aria-label="Zoom in"
@@ -1204,10 +1232,10 @@ export function GroundwaterMap() {
         <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
           {(
             [
-              { id: "all", label: "All levels", dot: "bg-slate-400", style: "bg-slate-100 text-slate-700" },
-              { id: "high", label: "Critical", dot: "bg-red-500", style: "bg-red-50 text-red-700" },
-              { id: "moderate", label: "Moderate", dot: "bg-amber-500", style: "bg-amber-50 text-amber-800" },
-              { id: "normal", label: "Normal", dot: "bg-teal-600", style: "bg-teal-50 text-teal-700" },
+              { id: "all", label: tr(lang, "All levels", "تمام سطحیں"), dot: "bg-slate-400", style: "bg-slate-100 text-slate-700" },
+              { id: "high", label: tr(lang, "Critical", "تشویشناک"), dot: "bg-red-500", style: "bg-red-50 text-red-700" },
+              { id: "moderate", label: tr(lang, "Moderate", "درمیانہ"), dot: "bg-amber-500", style: "bg-amber-50 text-amber-800" },
+              { id: "normal", label: tr(lang, "Normal", "معمول"), dot: "bg-teal-600", style: "bg-teal-50 text-teal-700" },
             ] as const
           ).map((item) => (
             <button
@@ -1396,9 +1424,9 @@ export function GroundwaterMap() {
             <button onClick={clearMyLocation} aria-label="Clear my location" className="ml-auto shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"><X size={15} /></button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-orange-200/70 bg-orange-50 p-4 dark:border-orange-400/25 dark:bg-orange-950/45"><p className="text-xs font-medium text-orange-800 dark:text-orange-200">Median water table depth</p><p className="tabular mt-1 text-2xl font-semibold text-orange-900 dark:text-orange-100">{myLocation.district?.medianDepthFt != null ? depthFt(myLocation.district.medianDepthFt) : "—"}</p><p className="mt-1 text-[11px] text-orange-800/80 dark:text-orange-200/80">{myLocation.district ? `Across ${myLocation.district.mouzas?.toLocaleString()} mouzas in the district` : "No census data here"}</p></div>
-            <div className="rounded-xl border border-violet-200/70 bg-violet-50 p-4 dark:border-violet-400/25 dark:bg-violet-950/45"><p className="text-xs font-medium text-violet-800 dark:text-violet-200">Brackish groundwater</p><p className="tabular mt-1 text-2xl font-semibold text-violet-900 dark:text-violet-100">{myLocation.district?.brackishPct != null ? `${myLocation.district.brackishPct}%` : "—"}</p><p className="mt-1 text-[11px] text-violet-800/80 dark:text-violet-200/80">of mouzas report salty underground water</p></div>
-            <button type="button" disabled={!myLocation.nearestWell} onClick={() => { if (!myLocation.nearestWell) return; setSelectedWell(myLocation.nearestWell.well); mapRef.current?.flyTo({ center: [myLocation.nearestWell.well.lon, myLocation.nearestWell.well.lat], zoom: 12 }); }} className="rounded-xl border border-sky-200/70 bg-sky-50 p-4 text-left transition hover:bg-sky-100 disabled:hover:bg-sky-50 dark:border-sky-400/25 dark:bg-sky-950/45 dark:hover:bg-sky-900/50 dark:disabled:hover:bg-sky-950/45"><p className="text-xs font-medium text-sky-800 dark:text-sky-200">Nearest observation well</p><p className="tabular mt-1 text-2xl font-semibold text-sky-900 dark:text-sky-100">{myLocation.nearestWell ? `${myLocation.nearestWell.km < 10 ? myLocation.nearestWell.km.toFixed(1) : Math.round(myLocation.nearestWell.km)} km` : "—"}</p><p className="mt-1 text-[11px] text-sky-800/80 dark:text-sky-200/80">{myLocation.nearestWell ? `${myLocation.nearestWell.well.id} · ${wellTrendText(myLocation.nearestWell.well.trend).toLowerCase()} · open history` : "No monitoring wells loaded"}</p></button>
+            <div className="rounded-xl border border-orange-200/70 bg-orange-50 p-4 dark:border-teal-500/30 dark:bg-slate-900"><p className="text-xs font-medium text-orange-800 dark:text-teal-300">Median water table depth</p><p className="tabular mt-1 text-2xl font-semibold text-orange-900 dark:text-slate-100">{myLocation.district?.medianDepthFt != null ? depthFt(myLocation.district.medianDepthFt) : "—"}</p><p className="mt-1 text-[11px] text-orange-800/80 dark:text-slate-300">{myLocation.district ? `Across ${myLocation.district.mouzas?.toLocaleString()} mouzas in the district` : "No census data here"}</p></div>
+            <div className="rounded-xl border border-violet-200/70 bg-violet-50 p-4 dark:border-purple-400/30 dark:bg-slate-900"><p className="text-xs font-medium text-violet-800 dark:text-purple-200">Brackish groundwater</p><p className="tabular mt-1 text-2xl font-semibold text-violet-900 dark:text-purple-100">{myLocation.district?.brackishPct != null ? `${myLocation.district.brackishPct}%` : "—"}</p><p className="mt-1 text-[11px] text-violet-800/80 dark:text-purple-200/80">of mouzas report salty underground water</p></div>
+            <button type="button" disabled={!myLocation.nearestWell} onClick={() => { if (!myLocation.nearestWell) return; setSelectedWell(myLocation.nearestWell.well); mapRef.current?.flyTo({ center: [myLocation.nearestWell.well.lon, myLocation.nearestWell.well.lat], zoom: 12 }); }} className="rounded-xl border border-sky-200/70 bg-sky-50 p-4 text-left transition hover:bg-sky-100 disabled:hover:bg-sky-50 dark:border-sky-400/30 dark:bg-slate-900 dark:hover:bg-slate-800 dark:disabled:hover:bg-slate-900"><p className="text-xs font-medium text-sky-800 dark:text-sky-200">Nearest observation well</p><p className="tabular mt-1 text-2xl font-semibold text-sky-900 dark:text-sky-100">{myLocation.nearestWell ? `${myLocation.nearestWell.km < 10 ? myLocation.nearestWell.km.toFixed(1) : Math.round(myLocation.nearestWell.km)} km` : "—"}</p><p className="mt-1 text-[11px] text-sky-800/80 dark:text-sky-200/80">{myLocation.nearestWell ? `${myLocation.nearestWell.well.id} · ${wellTrendText(myLocation.nearestWell.well.trend).toLowerCase()} · open history` : "No monitoring wells loaded"}</p></button>
           </div>
           <Link href="/forecast" className="mt-4 inline-block text-xs font-semibold text-teal-700 hover:underline">Open the depth forecast for your area →</Link>
         </Panel>
@@ -1492,26 +1520,59 @@ export function GroundwaterMap() {
         </Panel>
       )}
 
-      {censusDistricts.length > 0 && (
+          {censusDistricts.length > 0 && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <Panel title="Deepest water tables" description={`Median reported depth by district · ${censusRankings.mouzas.toLocaleString()} mouzas surveyed`}>
+          <Panel title={tr(lang, "Deepest water tables", "سب سے گہری پانی کی سطح")} description={tr(lang, `Click any district to fly to it on the map · ${censusRankings.mouzas.toLocaleString()} mouzas surveyed`, `نقشے پر دیکھنے کے لیے کسی بھی ضلع پر کلک کریں · ${censusRankings.mouzas.toLocaleString()} مواضعات کا سروے`)}>
             <ol className="space-y-2">
               {censusRankings.deepest.map((district, index) => (
-                <li key={district.name} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
-                  <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-100 text-xs font-bold text-red-700">{index + 1}</span>
-                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{district.name}</span><span className="block text-xs text-slate-500">{district.province} · {district.mouzas} mouzas</span></span>
-                  <span className="tabular text-sm font-semibold text-red-700">{depthFt(district.medianDepthFt)}</span>
+                <li key={district.name}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const feat = censusFeaturesRef.current.find((f) => f.properties.name === district.name);
+                      const ring = feat?.geometry.type === "Polygon" ? feat.geometry.coordinates[0] : feat?.geometry.type === "MultiPolygon" ? feat.geometry.coordinates[0]?.[0] : undefined;
+                      if (ring?.length) {
+                        const center = ring.reduce<[number, number]>(([ax, ay], [x, y]) => [ax + x / ring.length, ay + y / ring.length], [0, 0]);
+                        userMovedMapRef.current = true;
+                        setHoverDistrict(district);
+                        mapRef.current?.flyTo({ center, zoom: 8.5 });
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-red-300 hover:bg-red-50/40 dark:border-slate-800 dark:bg-slate-900/70"
+                  >
+                    <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-100 text-xs font-bold text-red-700">{index + 1}</span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{district.name}</span><span className="block text-xs text-slate-500">{district.province} · {district.mouzas} {tr(lang, "mouzas", "مواضعات")}</span></span>
+                    <span className="tabular text-sm font-semibold text-red-700 dark:text-red-400">{depthFt(district.medianDepthFt)}</span>
+                  </button>
                 </li>
               ))}
             </ol>
           </Panel>
-          <Panel title="Most brackish groundwater" description="Share of mouzas reporting brackish underground water">
+          <Panel title={tr(lang, "Most brackish groundwater", "سب سے زیادہ کھارا زیرِ زمین پانی")} description={tr(lang, "Click any district to fly to it on the map", "نقشے پر دیکھنے کے لیے کسی بھی ضلع پر کلک کریں")}>
             <ol className="space-y-2">
               {censusRankings.brackish.map((district, index) => (
-                <li key={district.name} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5">
-                  <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">{index + 1}</span>
-                  <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800">{district.name}</span><span className="block text-xs text-slate-500">{district.province} · {district.mouzas} mouzas</span></span>
-                  <span className="tabular text-sm font-semibold text-violet-700">{district.brackishPct}%</span>
+                <li key={district.name}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const feat = censusFeaturesRef.current.find((f) => f.properties.name === district.name);
+                      const ring = feat?.geometry.type === "Polygon" ? feat.geometry.coordinates[0] : feat?.geometry.type === "MultiPolygon" ? feat.geometry.coordinates[0]?.[0] : undefined;
+                      if (ring?.length) {
+                        const center = ring.reduce<[number, number]>(([ax, ay], [x, y]) => [ax + x / ring.length, ay + y / ring.length], [0, 0]);
+                        userMovedMapRef.current = true;
+                        setHoverDistrict(district);
+                        setShadeMode("brackish");
+                        mapRef.current?.flyTo({ center, zoom: 8.5 });
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }
+                    }}
+                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-violet-300 hover:bg-violet-50/40 dark:border-slate-800 dark:bg-slate-900/70"
+                  >
+                    <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">{index + 1}</span>
+                    <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{district.name}</span><span className="block text-xs text-slate-500">{district.province} · {district.mouzas} mouzas</span></span>
+                    <span className="tabular text-sm font-semibold text-violet-700 dark:text-purple-300">{district.brackishPct}%</span>
+                  </button>
                 </li>
               ))}
             </ol>
