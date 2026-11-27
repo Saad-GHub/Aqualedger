@@ -192,12 +192,12 @@ export function PublicWaterSources() {
           <div className="mb-6 grid gap-4 md:grid-cols-2">
             {activeIntel.householdBest && (
               <div className="rounded-2xl border border-teal-200 bg-teal-50/50 p-5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-800">
-                    <Home size={16} />
+                <div className="flex items-start justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-teal-800">
+                    <Home size={16} className="shrink-0" />
                     {tr(lang, "Best for Household / Domestic", "گھریلو استعمال کے لیے بہترین")}
                   </span>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-teal-800 shadow-sm">
+                  <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-teal-800 shadow-sm">
                     {activeIntel.householdBest.riskLabel}
                   </span>
                 </div>
@@ -217,12 +217,12 @@ export function PublicWaterSources() {
 
             {activeIntel.irrigationBest && (
               <div className="rounded-2xl border border-blue-200 bg-blue-50/50 p-5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-800">
-                    <Tractor size={16} />
+                <div className="flex items-start justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-800">
+                    <Tractor size={16} className="shrink-0" />
                     {tr(lang, "Best for Farmer / Irrigation", "کسان / آبپاشی کے لیے بہترین")}
                   </span>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-sm">
+                  <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-sm">
                     {activeIntel.irrigationBest.averageDepthM !== null
                       ? `${formatDepthMetersAndFeet(activeIntel.irrigationBest.averageDepthM)} avg`
                       : "Tracked"}
@@ -377,7 +377,7 @@ export function PublicWaterSources() {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
-              placeholder={tr(lang, "Search areas or sources (e.g. Chakwal)…", "علاقہ یا ذریعہ تلاش کریں (مثلاً چکوال)…")}
+              placeholder={tr(lang, "Search area or source…", "علاقہ یا ذریعہ تلاش کریں…")}
             />
           </label>
           {filteredAreas.length > 3 && !query.trim() && dominantFilter === "all" ? (

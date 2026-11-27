@@ -174,34 +174,59 @@ export default function AccountPage() {
           </p>
         ) : reports.length ? (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[620px] text-left text-sm">
+            <div className="space-y-2.5 md:hidden">
+              {reports.slice((tablePage - 1) * PAGE_SIZE, tablePage * PAGE_SIZE).map((report) => (
+                <Link
+                  key={`card-${report.id}`}
+                  href={`/reports?report=${encodeURIComponent(report.id)}`}
+                  className="block rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 text-xs transition hover:border-teal-400"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-teal-700">{codes.get(report.id) ?? report.id.slice(0, 8)}</span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold capitalize text-slate-600">
+                      {report.status.replaceAll("_", " ")}
+                    </span>
+                  </div>
+                  <p className="mt-1 font-semibold text-slate-800">{report.areaName || report.address}</p>
+                  <p className="mt-0.5 text-slate-500">
+                    {report.sourceCode ? `${report.sourceCode} · ` : ""}
+                    {report.sourceLabel || report.sourceType || "Water source"}
+                  </p>
+                  <div className="mt-2 flex items-center justify-between text-slate-600">
+                    <span className="font-semibold">{report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}</span>
+                    <span>{report.sampleDate || "—"}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[660px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 text-xs text-slate-400">
-                    <th className="pb-3">{tr(lang, "Report", "رپورٹ")}</th>
-                    <th className="pb-3">{tr(lang, "Area", "علاقہ")}</th>
-                    <th className="pb-3">{tr(lang, "Source", "ذریعہ")}</th>
-                    <th className="pb-3">{tr(lang, "Depth", "گہرائی")}</th>
-                    <th className="pb-3">{tr(lang, "Test date", "تاریخ")}</th>
+                    <th className="pb-3 pr-4">{tr(lang, "Report", "رپورٹ")}</th>
+                    <th className="pb-3 pr-4">{tr(lang, "Area", "علاقہ")}</th>
+                    <th className="pb-3 pr-4">{tr(lang, "Source", "ذریعہ")}</th>
+                    <th className="pb-3 pr-4">{tr(lang, "Depth", "گہرائی")}</th>
+                    <th className="pb-3 pr-4">{tr(lang, "Test date", "تاریخ")}</th>
                     <th className="pb-3">{tr(lang, "Review", "حیثیت")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {reports.slice((tablePage - 1) * PAGE_SIZE, tablePage * PAGE_SIZE).map((report) => (
                     <tr key={report.id} className="border-b border-slate-50">
-                      <td className="py-3 font-semibold text-teal-700">
+                      <td className="whitespace-nowrap py-3 pr-4 font-semibold text-teal-700">
                         <Link href={`/reports?report=${encodeURIComponent(report.id)}`} className="hover:underline">
                           {codes.get(report.id) ?? report.id.slice(0, 8)}
                         </Link>
                       </td>
-                      <td className="py-3">{report.areaName || report.address}</td>
-                      <td className="py-3">
+                      <td className="py-3 pr-4">{report.areaName || report.address}</td>
+                      <td className="py-3 pr-4">
                         {report.sourceCode ? `${report.sourceCode} · ` : ""}
                         {report.sourceLabel || report.sourceType || "Water source"}
                       </td>
-                      <td className="py-3">{report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}</td>
-                      <td className="py-3">{report.sampleDate || "—"}</td>
-                      <td className="py-3 capitalize">{report.status.replaceAll("_", " ")}</td>
+                      <td className="whitespace-nowrap py-3 pr-4">{report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}</td>
+                      <td className="whitespace-nowrap py-3 pr-4">{report.sampleDate || "—"}</td>
+                      <td className="whitespace-nowrap py-3 capitalize">{report.status.replaceAll("_", " ")}</td>
                     </tr>
                   ))}
                 </tbody>
