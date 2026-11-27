@@ -459,9 +459,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <main key={pathname} className="aqua-stagger mx-auto w-full max-w-[1400px] space-y-5 px-3.5 pt-4 pb-32 sm:space-y-6 sm:p-6 sm:pb-32 md:p-8 md:pb-32 lg:pb-8">
             {children}
-            <footer className="flex items-center justify-center gap-2 pb-2 pt-4 text-xs text-slate-400">
-              <img src="/aqualedger-logo.jpg" alt="" className="h-4 w-4 rounded bg-white object-contain p-0.5" />
-              AquaLedger
+            <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pb-2 pt-4 text-center text-xs text-slate-400">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-slate-500">
+                <img src="/aqualedger-logo.jpg" alt="" className="h-4 w-4 rounded bg-white object-contain p-0.5" />
+                AquaLedger
+              </span>
+              <span>·</span>
+              <span>Copyright © 2026 Team Omni. All rights reserved.</span>
             </footer>
           </main>
         </div>
