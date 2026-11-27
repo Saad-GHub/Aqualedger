@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/community-water-reports";
 import { NotificationBell } from "@/components/aqualedger/notification-bell";
+import { ChatbotLauncher } from "@/components/aqualedger/chatbot-launcher";
 import { ThemeToggle } from "@/components/aqualedger/theme-toggle";
 import { LanguageToggle, tr, useLanguage } from "@/components/aqualedger/language-toggle";
 
@@ -55,6 +56,7 @@ const titles: Record<string, string> = {
   "/reports": "Community Reports",
   "/settings": "Settings",
   "/data-management": "Data Management",
+  "/chatbot": "Aqua Chatbot",
   "/login": "Sign in",
   "/signup": "Create Account",
   "/account": "My Account",
@@ -331,6 +333,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     "/reports": "کمیونٹی رپورٹس",
     "/settings": "سیٹنگز",
     "/data-management": "ڈیٹا مینجمنٹ",
+    "/chatbot": "ایکوا چیٹ بوٹ",
     "/login": "سائن ان",
     "/signup": "اکاؤنٹ بنائیں",
     "/account": "میرا اکاؤنٹ",
@@ -469,6 +472,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </footer>
           </main>
         </div>
+
+        <ChatbotLauncher />
 
         {/* Mobile tab bar (iOS style): the four main pages plus "More" for the full menu. */}
         <nav
