@@ -658,7 +658,16 @@ a[class*="rounded"]:active {
   transform: scale(0.97);
 }
 
-/* Charts follow the theme. */
+/* Charts follow the theme and always lay out axes left-to-right so RTL never overlaps X/Y ticks. */
+.recharts-wrapper,
+.recharts-surface,
+.maplibregl-map {
+  direction: ltr !important;
+}
+html[dir="rtl"] .recharts-tooltip-wrapper,
+html[dir="rtl"] .maplibregl-popup-content {
+  direction: rtl;
+}
 .recharts-cartesian-grid line { stroke: var(--chart-grid); }
 .recharts-cartesian-axis-tick text { fill: var(--chart-tick); }
 .recharts-default-tooltip {
