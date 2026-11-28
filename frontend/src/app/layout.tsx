@@ -47,8 +47,8 @@ export const metadata: Metadata = {
   description: "Pakistan's Underground Water Intelligence System",
   applicationName: "AquaLedger",
   icons: {
-    icon: "/aqualedger-logo.jpg",
-    apple: "/aqualedger-logo.jpg",
+    icon: "/aqualedger-logo.png",
+    apple: "/aqualedger-logo.png",
   },
   // iPhone / iPad: full-screen when added to the Home Screen, status bar over the page.
   appleWebApp: { capable: true, title: "AquaLedger", statusBarStyle: "black-translucent" },

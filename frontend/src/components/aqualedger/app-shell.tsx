@@ -215,9 +215,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <>
       <Link href="/" onClick={() => setMenuOpen(false)} className="mb-9 flex items-center gap-2.5 px-1">
         <img
-          src="/aqualedger-logo.jpg"
+          src="/aqualedger-logo.png"
           alt="AquaLedger logo"
-          className="h-10 w-10 shrink-0 rounded-xl bg-white object-contain p-0.5 shadow-[0_6px_20px_-6px_rgb(45_212_191/0.7)]"
+          className="h-10 w-10 shrink-0 object-contain drop-shadow-[0_4px_12px_rgb(45_212_191/0.45)]"
         />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[17px] font-semibold leading-tight tracking-tight text-white">AquaLedger</p>
@@ -451,7 +451,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {children}
             <footer className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pb-2 pt-4 text-center text-xs text-slate-400">
               <span className="inline-flex items-center gap-1.5 font-semibold text-slate-500">
-                <img src="/aqualedger-logo.jpg" alt="" className="h-4 w-4 rounded bg-white object-contain p-0.5" />
+                <img src="/aqualedger-logo.png" alt="" className="h-4 w-4 object-contain" />
                 AquaLedger
               </span>
               <span>·</span>
