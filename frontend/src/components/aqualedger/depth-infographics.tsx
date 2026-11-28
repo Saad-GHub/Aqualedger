@@ -1497,7 +1497,7 @@ export function UniversalAreaDepthForecast({
 
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
               <p className="text-xs text-slate-500">{tr(lang, "AI Projected", "AI متوقع گہرائی")} ({formatHorizonLabel(horizon)})</p>
-              <p className="mt-1 text-lg font-bold text-blue-700">
+              <p className="mt-1 text-lg font-bold text-blue-700 dark:text-sky-300">
                 {projection ? <StatValue value={formatDepthMetersAndFeet(projection.projectedDepth)} /> : tr(lang, "Need 2+ months", "2+ ماہ درکار")}
               </p>
               <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500">
@@ -1549,12 +1549,12 @@ export function UniversalAreaDepthForecast({
                     formatter={(value, name) =>
                       value == null
                         ? ["—", name]
-                        : [formatDepthMetersAndFeet(Number(value), 2), name === "actual" ? "Area Average" : "AI Projected"]
+                        : [translateDepthUnitsUr(lang, formatDepthMetersAndFeet(Number(value), 2)), name === "Area Average" || name === "actual" ? tr(lang, "Area Average", "علاقائی اوسط") : tr(lang, "AI Projected", "AI پیشگوئی")]
                     }
                   />
                   <ReferenceLine x={projection.lastMonth} stroke="#94a3b8" strokeDasharray="3 3" />
-                  <Area dataKey="lower" stackId="u-band" stroke="none" fill="transparent" isAnimationActive={false} activeDot={false} />
-                  <Area dataKey="band" stackId="u-band" stroke="none" fill="#38bdf8" fillOpacity={0.16} isAnimationActive={false} activeDot={false} />
+                  <Area dataKey="lower" stackId="u-band" stroke="none" fill="transparent" tooltipType="none" isAnimationActive={false} activeDot={false} />
+                  <Area dataKey="band" stackId="u-band" stroke="none" fill="#38bdf8" fillOpacity={0.16} tooltipType="none" isAnimationActive={false} activeDot={false} />
                   <Line type="monotone" dataKey="actual" name="Area Average" stroke="#0d9488" strokeWidth={2.5} dot={projection.monthlyPoints.length <= 24 ? { r: 3.5, fill: "#0d9488" } : false} activeDot={{ r: 5, fill: "#0d9488" }} connectNulls />
                   <Line type="monotone" dataKey="projected" name="AI Projected" stroke="#2563eb" strokeWidth={2.5} strokeDasharray="6 4" dot={horizon <= 12 ? { r: 3.5, fill: "#2563eb" } : false} activeDot={{ r: 5, fill: "#2563eb" }} connectNulls />
                 </LineChart>

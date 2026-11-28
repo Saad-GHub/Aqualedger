@@ -120,24 +120,28 @@ export default function Home() {
     const color = category === "High concern" ? "bg-red-50 text-red-700" : category === "Moderate concern" ? "bg-amber-50 text-amber-700" : category === "Normal" ? "bg-teal-50 text-teal-700" : "bg-slate-100 text-slate-600";
     return { area: summary?.areaKey ?? reports[0].areaKey ?? areaFor(reports[0].address), reports, avgDepth: areaAvgDepth, category, color };
   });
-  const highCount = areaRisks.filter((area) => area.category === "High concern").length;
-  const attentionAreas = areaRisks
-    .filter((area) => area.category === "High concern")
-    .sort((a, b) => (b.avgDepth ?? -1) - (a.avgDepth ?? -1))
-    .slice(0, 4);
-  const moderateCount = areaRisks.filter((area) => area.category === "Moderate concern").length;
-  const normalCount = areaRisks.filter((area) => area.category === "Normal").length;
+  const highCount = areaConditions.size
+    ? [...areaConditions.values()].filter((c) => c === "Critical").length
+    : areaRisks.filter((area) => area.category === "High concern").length;
+  const moderateCount = areaConditions.size
+    ? [...areaConditions.values()].filter((c) => c === "Moderate").length
+    : areaRisks.filter((area) => area.category === "Moderate concern").length;
+  const normalCount = areaConditions.size
+    ? [...areaConditions.values()].filter((c) => c === "Normal").length
+    : areaRisks.filter((area) => area.category === "Normal").length;
+  const totalAreasCount = areaConditions.size || areaRisks.length;
   const isInitialLoading = loading && communityReports.length === 0;
   const dashboardStats = [
     { id: "sources", title: tr(lang, "Reported Sources", "رپورٹ شدہ ذرائع"), value: isInitialLoading ? "" : String(new Set(communityReports.map((report) => `${report.sourceType ?? ""}|${report.areaKey ?? report.address}`)).size), icon: Droplets, note: tr(lang, "Unique source and address pairs", "منفرد ذرائع اور مقامات"), tone: "bg-sky-50 text-sky-600 ring-sky-100" },
     { id: "readings", title: tr(lang, "Depth Readings", "گہرائی کی ریڈنگز"), value: isInitialLoading ? "" : String(communityReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)), icon: ShieldCheck, note: tr(lang, "Saved in Supabase", "ڈیٹا بیس میں محفوظ"), tone: "bg-teal-50 text-teal-600 ring-teal-100" },
     { id: "avg-depth", title: tr(lang, "Average Depth", "اوسط گہرائی"), value: isInitialLoading ? "" : avgDepthStr, icon: Activity, note: tr(lang, "Mean depth below ground", "زمین کے نیچے اوسط سطح"), tone: "bg-violet-50 text-violet-600 ring-violet-100" },
-    { id: "critical", title: tr(lang, "Critical Areas", "تشویشناک علاقے"), value: isInitialLoading ? "" : `${highCount} / ${areaRisks.length}`, icon: AlertTriangle, note: isInitialLoading ? tr(lang, "Loading districts…", "اضلاع لوڈ ہو رہے ہیں…") : tr(lang, `${moderateCount} moderate · Click to view map`, `${moderateCount} درمیانے · نقشہ دیکھنے کے لیے کلک کریں`), tone: "bg-red-50 text-red-600 ring-red-100", href: "/map?severity=critical" },
+    { id: "critical", title: tr(lang, "Critical Areas", "تشویشناک علاقے"), value: isInitialLoading ? "" : `${highCount} / ${totalAreasCount}`, icon: AlertTriangle, note: isInitialLoading ? tr(lang, "Loading districts…", "اضلاع لوڈ ہو رہے ہیں…") : tr(lang, `${moderateCount} moderate · Click to view map`, `${moderateCount} درمیانے · نقشہ دیکھنے کے لیے کلک کریں`), tone: "bg-red-50 text-red-600 ring-red-100", href: "/map?severity=critical" },
   ];
   const trendGroups = communityReports.reduce<Record<string, { total: number; count: number }>>((groups, report) => {
     const depth = numeric(report.depth);
     const date = report.sampleDate ?? "";
-    if (depth === null || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return groups;
+    const year = Number(date.slice(0, 4));
+    if (depth === null || !/^\d{4}-\d{2}-\d{2}$/.test(date) || year < 1970 || year > new Date().getFullYear() + 1) return groups;
     const period = trendInterval === "day" ? date : trendInterval === "month" ? date.slice(0, 7) : date.slice(0, 4);
     const group = groups[period] ??= { total: 0, count: 0 };
     group.total += depth * (report.aggregateCount ?? 1);

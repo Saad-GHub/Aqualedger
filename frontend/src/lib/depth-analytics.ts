@@ -250,6 +250,7 @@ const CANONICAL_AREA_MAP: { canonical: string; aliases: string[] }[] = [
   { canonical: "Peshawar, KP", aliases: ["peshawar"] },
   { canonical: "Quetta, Balochistan", aliases: ["quetta"] },
   { canonical: "Abbottabad, KP", aliases: ["abbottabad"] },
+  { canonical: "Mirpur, Kashmir", aliases: ["mirpur", "mirpur azad kashmir", "mirpur ajk"] },
 ];
 
 export const METERS_TO_FEET = 3.28084;

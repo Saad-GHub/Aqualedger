@@ -301,7 +301,6 @@ function MonitoringDashboard() {
           <ul className="grid gap-2 md:grid-cols-2">
             {[...criticalAreas]
               .sort((a, b) => (b.averageDepthM ?? -1) - (a.averageDepthM ?? -1))
-              .slice(0, 6)
               .map((area) => (
                 <li key={area.areaKey}>
                   <Link
@@ -342,7 +341,13 @@ function MonitoringDashboard() {
               {tr(lang, "View all sources →", "تمام ذرائع دیکھیں ←")}
             </Link>
           </div>
-          {recentSources.length ? (
+          {isInitialLoading ? (
+            <div className="space-y-2.5 py-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-10 animate-pulse rounded-xl bg-slate-100" />
+              ))}
+            </div>
+          ) : recentSources.length ? (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-start text-sm">
                 <thead>
@@ -402,11 +407,11 @@ function MonitoringDashboard() {
           <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
             <div>
               <p className="text-slate-400">{tr(lang, "Areas covered", "شامل علاقے")}</p>
-              <p className="mt-0.5 font-bold text-slate-800">{attentionAreas.length}</p>
+              <p className="mt-0.5 font-bold text-slate-800">{isInitialLoading ? "…" : attentionAreas.length}</p>
             </div>
             <div>
               <p className="text-slate-400">{tr(lang, "Total submissions", "کل رپورٹس")}</p>
-              <p className="mt-0.5 font-bold text-teal-700">{reports.length}</p>
+              <p className="mt-0.5 font-bold text-teal-700">{isInitialLoading ? "…" : reports.length}</p>
             </div>
           </div>
         </Panel>

@@ -73,9 +73,9 @@ export function ChatbotLauncher() {
         }}
         aria-label={open ? tr(lang, "Close chat", "چیٹ بند کریں") : label}
         aria-expanded={open}
-        // Mobile: just above the bottom tab bar (and the iPhone home bar); hidden while the chat covers the screen.
+        // Mobile & Desktop: hide floating launcher while chat panel is open so it never overlaps the panel's mic/send controls.
         className={`group fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] end-4 z-50 items-center transition duration-300 ease-out sm:end-6 lg:bottom-6 lg:end-8 ${
-          open ? "hidden sm:flex" : "flex"
+          open ? "hidden" : "flex"
         } ${tucked && !open ? `pointer-events-none opacity-0 ${lang === "ur" ? "-translate-x-24" : "translate-x-24"}` : "translate-x-0 opacity-100"}`}
       >
         {!open && (
