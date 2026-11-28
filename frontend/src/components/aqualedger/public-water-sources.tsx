@@ -144,18 +144,18 @@ export function PublicWaterSources() {
       <div className="aqua-stats grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">{tr(lang, "Areas with reports", "رپورٹ شدہ علاقے")}</p>
-          <p className="mt-2 text-2xl font-bold">{loading && !trends.length ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : areaNames.length}</p>
+          <p className="mt-2 text-2xl font-bold">{loading && !trends.length ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-200" /> : areaNames.length}</p>
         </div>
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">{tr(lang, "Source categories", "ذرائع کی اقسام")}</p>
           <p className="mt-2 text-2xl font-bold">
-            {loading && !trends.length ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : new Set(trends.map((row) => row.sourceType)).size}
+            {loading && !trends.length ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-200" /> : new Set(trends.map((row) => row.sourceType)).size}
           </p>
         </div>
         <div className="glass glass-lift rounded-3xl p-4 sm:p-5">
           <p className="text-sm text-slate-500">{tr(lang, "Total reports analyzed", "کل تجزیہ شدہ رپورٹس")}</p>
           <p className="mt-2 text-2xl font-bold">
-            {loading && !trends.length ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : trends.reduce((sum, row) => sum + row.reportCount, 0)}
+            {loading && !trends.length ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-200" /> : trends.reduce((sum, row) => sum + row.reportCount, 0)}
           </p>
         </div>
       </div>
@@ -179,7 +179,7 @@ export function PublicWaterSources() {
               <select
                 value={activeArea}
                 onChange={(e) => setSelectedArea(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-teal-500 dark:border-white/20 dark:bg-[#0f172a] dark:text-white"
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-teal-500 dark:border-white/20 dark:bg-[#0c1b1f] dark:text-white"
               >
                 {areaNames.map((name) => (
                   <option key={name} value={name}>
@@ -252,7 +252,7 @@ export function PublicWaterSources() {
           {/* District Baseline Intelligence (PBS, PCRWR, MICS, GRACE, CHIRPS, WRI) */}
           {districtIntel && (
             <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0b1320]">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0c1b1f]">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   {tr(lang, "Stress & Satellite (2002–26)", "آبی دباؤ اور سیٹلائٹ")}
                 </p>
@@ -266,7 +266,7 @@ export function PublicWaterSources() {
                   {districtIntel.aqueductStressLabel ? ` · ${districtIntel.aqueductStressLabel}` : ""}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0b1320]">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0c1b1f]">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   {tr(lang, "Quality (PCRWR / MICS)", "پانی کا معیار")}
                 </p>
@@ -287,7 +287,7 @@ export function PublicWaterSources() {
                       : "Arsenic & E. coli baseline"}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0b1320]">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0c1b1f]">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   {tr(lang, "Extraction Demand (2023–24)", "پانی کی طلب")}
                 </p>
@@ -304,7 +304,7 @@ export function PublicWaterSources() {
                     : "PBS 2023–24 Census"}
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0b1320]">
+              <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-white/15 dark:bg-[#0c1b1f]">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   {tr(lang, "Rainfall (CHIRPS)", "بارش کا ریکارڈ")}
                 </p>
@@ -461,7 +461,7 @@ export function PublicWaterSources() {
             <button
               type="button"
               onClick={() => setShowAllAreas((prev) => !prev)}
-              className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs transition hover:border-teal-500 hover:text-teal-700 dark:border-white/20 dark:bg-[#0f172a] dark:text-white dark:hover:border-teal-400 dark:hover:text-teal-300"
+              className="min-h-10 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs transition hover:border-teal-500 hover:text-teal-700 dark:border-white/20 dark:bg-[#0c1b1f] dark:text-white dark:hover:border-teal-400 dark:hover:text-teal-300"
             >
               {showAllAreas ? tr(lang, "Show top 3 areas", "ٹاپ 3 علاقے دکھائیں") : tr(lang, `Show all ${filteredAreas.length} areas`, `تمام ${filteredAreas.length} علاقے دکھائیں`)}
             </button>
@@ -478,10 +478,11 @@ export function PublicWaterSources() {
               key={val}
               type="button"
               onClick={() => setDominantFilter(val)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+              aria-pressed={dominantFilter === val}
+              className={`inline-flex min-h-9 items-center rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
                 dominantFilter === val
                   ? "bg-teal-600 text-white"
-                  : "border border-slate-200 bg-white text-slate-700 hover:border-teal-300 dark:border-white/20 dark:bg-[#0f172a] dark:text-white/90 dark:hover:border-teal-400"
+                  : "border border-slate-200 bg-white text-slate-700 hover:border-teal-300 dark:border-white/20 dark:bg-[#0c1b1f] dark:text-white/90 dark:hover:border-teal-400"
               }`}
             >
               {lbl}
@@ -495,15 +496,19 @@ export function PublicWaterSources() {
             : filteredAreas.filter(([area]) => recommendAreaWaterSources(trends, area).sourceBreakdown[0]?.sourceType === dominantFilter);
           return domFiltered.length ? (
           <>
-            <div className="mb-4 flex flex-wrap gap-1.5">
+            <div className="-mx-1 mb-4 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
               {domFiltered.map(([area]) => {
                 const isSelected = area === activeArea;
                 return (
                   <button
                     key={`chip-${area}`}
                     type="button"
-                    onClick={() => setSelectedArea(area)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                    onClick={() => {
+                      setSelectedArea(area);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    aria-pressed={isSelected}
+                    className={`inline-flex min-h-9 shrink-0 items-center whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
                       isSelected
                         ? "bg-teal-600 text-white shadow-sm"
                         : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-teal-300 hover:bg-teal-50"
@@ -532,7 +537,10 @@ export function PublicWaterSources() {
                   <button
                     key={area}
                     type="button"
-                    onClick={() => setSelectedArea(area)}
+                    onClick={() => {
+                      setSelectedArea(area);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
                     className={`flex flex-col items-start rounded-xl border p-4 text-left transition ${
                       isSelected
                         ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500"
@@ -541,7 +549,7 @@ export function PublicWaterSources() {
                   >
                   <div className="flex w-full items-center justify-between gap-2">
                     <p className="font-bold text-slate-900">{area}</p>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                    <span className="font-data shrink-0 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
                       {intel.totalReports} reports
                     </span>
                   </div>
@@ -551,7 +559,7 @@ export function PublicWaterSources() {
                         key={s.sourceType}
                         className="rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700"
                       >
-                        {s.sourceType}: <strong>{s.reportCount}</strong>
+                        {s.sourceType}: <strong className="font-data">{s.reportCount}</strong>
                       </span>
                     ))}
                   </div>

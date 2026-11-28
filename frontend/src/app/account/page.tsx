@@ -1,5 +1,7 @@
 "use client";
 
+import { SignedOutCard } from "@/components/aqualedger/signed-out-card";
+import { UserRound } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -86,22 +88,13 @@ export default function AccountPage() {
           title={tr(lang, "My account", "میرا اکاؤنٹ")}
           description={tr(lang, "Sign in or create an account to keep your water reports together.", "اپنی تمام پانی کی رپورٹس محفوظ رکھنے کے لیے سائن ان کریں یا اکاؤنٹ بنائیں۔")}
         />
-        <Panel title={tr(lang, "Your AquaLedger account", "آپ کا AquaLedger اکاؤنٹ")}>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/signup"
-              className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
-            >
-              {tr(lang, "Create account", "اکاؤنٹ بنائیں")}
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              {tr(lang, "Sign in", "سائن ان کریں")}
-            </Link>
-          </div>
-        </Panel>
+        <SignedOutCard
+          icon={UserRound}
+          title={tr(lang, "Your AquaLedger account", "آپ کا AquaLedger اکاؤنٹ")}
+          body={tr(lang, "An account keeps every reading you log in one place, so your well's depth history and forecast build up over time.", "اکاؤنٹ آپ کی ہر ریڈنگ کو ایک جگہ محفوظ رکھتا ہے، تاکہ آپ کے کنویں کی گہرائی کی تاریخ اور پیشگوئی وقت کے ساتھ بنتی رہے۔")}
+          primary={{ href: "/login", label: tr(lang, "Sign in", "سائن ان کریں") }}
+          secondary={{ href: "/signup", label: tr(lang, "Create account", "اکاؤنٹ بنائیں") }}
+        />
       </>
     );
   }
@@ -128,7 +121,7 @@ export default function AccountPage() {
           <button
             disabled={busy}
             onClick={() => void signOut()}
-            className="inline-flex shrink-0 items-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-white/20 dark:bg-[#0f172a] dark:text-white dark:hover:bg-white/10"
+            className="inline-flex shrink-0 items-center rounded-xl border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-white/20 dark:bg-[#0c1b1f] dark:text-white dark:hover:bg-white/10"
           >
             {busy ? tr(lang, "Signing out…", "سائن آؤٹ ہو رہا ہے…") : tr(lang, "Sign out", "سائن آؤٹ")}
           </button>

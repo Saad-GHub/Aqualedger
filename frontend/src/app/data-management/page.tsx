@@ -207,21 +207,21 @@ export default function DataManagementPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">{tr(lang, "Total records audited", "کل آڈٹ شدہ ریکارڈز")}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
-            {loading && reports.length === 0 ? <span className="inline-block h-7 w-16 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : reports.length}
+            {loading && reports.length === 0 ? <span className="inline-block h-7 w-16 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-200" /> : reports.length}
           </p>
           <p className="mt-1 text-xs text-slate-400">{loading && reports.length === 0 ? tr(lang, "Loading…", "لوڈ ہو رہا ہے…") : tr(lang, `Across ${audit.areaList.length} canonical areas`, `${audit.areaList.length} علاقوں میں`)}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">{tr(lang, "Unmapped / custom areas", "غیر نقشہ شدہ علاقے")}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
-            {loading && reports.length === 0 ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : audit.unmappedAreas.length}
+            {loading && reports.length === 0 ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-200" /> : audit.unmappedAreas.length}
           </p>
           <p className="mt-1 text-xs text-slate-400">{tr(lang, `Outside ${PREDEFINED_PAKISTAN_AREAS.length} predefined districts`, `${PREDEFINED_PAKISTAN_AREAS.length} طے شدہ اضلاع سے باہر`)}</p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">{tr(lang, "Potential duplicates & outliers", "ممکنہ ڈپلیکیٹ اور غیر معمولی ریڈنگز")}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
-            {loading && reports.length === 0 ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : audit.duplicates.length + audit.outliers.length}
+            {loading && reports.length === 0 ? <span className="inline-block h-7 w-14 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-200" /> : audit.duplicates.length + audit.outliers.length}
           </p>
           <p className="mt-1 text-xs text-slate-400">
             {loading && reports.length === 0 ? tr(lang, "Scanning…", "اسکین ہو رہا ہے…") : `${audit.duplicates.length} ${tr(lang, "duplicate", "ڈپلیکیٹ")} · ${audit.outliers.length} ${tr(lang, "depth outliers", "غیر معمولی گہرائی")}`}
@@ -230,7 +230,7 @@ export default function DataManagementPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-xs font-medium text-slate-500">{tr(lang, "Records without GPS", "بغیر GPS ریکارڈز")}</p>
           <p className="mt-2 text-2xl font-bold text-slate-900">
-            {loading && reports.length === 0 ? <span className="inline-block h-7 w-16 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : audit.missingGps}
+            {loading && reports.length === 0 ? <span className="inline-block h-7 w-16 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-200" /> : audit.missingGps}
           </p>
           <p className="mt-1 text-xs text-slate-400">{tr(lang, "Address-only submissions", "صرف پتہ والی رپورٹس")}</p>
         </div>
@@ -284,7 +284,7 @@ export default function DataManagementPage() {
               type="button"
               onClick={handleExportJson}
               disabled={!exportRows.length}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50 dark:border-white/20 dark:bg-[#0f172a] dark:text-white dark:hover:bg-white/10"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-50 dark:border-white/20 dark:bg-[#0c1b1f] dark:text-white dark:hover:bg-white/10"
             >
               <FileJson size={15} />
               Export JSON ({exportRows.length})
