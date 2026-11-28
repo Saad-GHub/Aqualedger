@@ -6,11 +6,13 @@ import {
   Activity,
   AlertTriangle,
   ArrowRight,
+  ChevronRight,
   Clock,
   ShieldAlert,
   Waves,
 } from "lucide-react";
 import { AdminOnly, PageIntro, Panel } from "@/components/aqualedger/app-shell";
+import { DepthGauge } from "@/components/aqualedger/depth-gauge";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import {
   readCommunityWaterReports,
@@ -271,6 +273,63 @@ function MonitoringDashboard() {
         </div>
       </div>
 
+      {/* Needs Attention (moved from Overview) */}
+      {!isInitialLoading && criticalAreas.length > 0 && (
+        <section aria-labelledby="attention-title" className="glass rounded-3xl p-4 sm:p-5">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 id="attention-title" className="flex items-center gap-2 text-base font-semibold text-slate-900 sm:text-lg">
+                <AlertTriangle size={17} className="text-red-600" aria-hidden="true" />
+                {tr(lang, "Needs attention", "توجہ طلب علاقے")}
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
+                {tr(
+                  lang,
+                  `${criticalAreas.length} critical areas, deepest water table first`,
+                  `${criticalAreas.length} تشویشناک علاقے، سب سے گہرا پانی پہلے`
+                )}
+              </p>
+            </div>
+            <Link
+              href="/map?severity=critical"
+              className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-teal-700 hover:underline"
+            >
+              {tr(lang, "View on map", "نقشے پر دیکھیں")}
+              <ChevronRight size={15} aria-hidden="true" className="rtl:rotate-180" />
+            </Link>
+          </div>
+          <ul className="grid gap-2 md:grid-cols-2">
+            {[...criticalAreas]
+              .sort((a, b) => (b.averageDepthM ?? -1) - (a.averageDepthM ?? -1))
+              .slice(0, 6)
+              .map((area) => (
+                <li key={area.areaKey}>
+                  <Link
+                    href={`/forecast?area=${encodeURIComponent(area.areaKey)}`}
+                    className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:border-teal-600/40 hover:bg-teal-50"
+                  >
+                    <DepthGauge depthM={area.averageDepthM} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-slate-900">
+                        {translateAreaUr(lang, area.areaKey)}
+                      </span>
+                      <span className="font-data mt-0.5 block whitespace-nowrap text-[13px] text-slate-600">
+                        {area.averageDepthM !== null
+                          ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(area.averageDepthM))
+                          : "—"}
+                      </span>
+                    </span>
+                    <span className="aqua-chip bg-red-50 text-red-700">
+                      <AlertTriangle size={12} aria-hidden="true" />
+                      {tr(lang, "Critical", "تشویشناک")}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
+
       {/* Recent Reported Sources & Pakistan Coverage (moved from Overview) */}
       <div className="grid gap-6 xl:grid-cols-3">
         <Panel
@@ -323,24 +382,32 @@ function MonitoringDashboard() {
           )}
         </Panel>
 
-        <Panel title={tr(lang, "Pakistan Coverage", "پاکستان کوریج")}>
+        <Panel
+          title={tr(lang, "Pakistan Coverage", "پاکستان کوریج")}
+          description={tr(lang, "Geographic view of reported wells and district depth heatmaps.", "رپورٹ شدہ کنوؤں اور اضلاع کا نقشہ۔")}
+          className="flex flex-col"
+        >
           <Link
             href="/map"
-            className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-teal-200 bg-teal-50/70 p-5 text-center transition hover:bg-teal-100/70"
+            className="flex min-h-56 flex-1 flex-col items-center justify-center rounded-2xl border border-dashed border-teal-200 bg-teal-50/70 p-6 text-center transition hover:bg-teal-100/70"
           >
-            <Waves size={38} className="text-teal-600" />
+            <Waves size={42} className="text-teal-600" />
             <p className="mt-3 font-semibold text-slate-700">
               {tr(lang, "Open Groundwater Map", "زمینی پانی کا نقشہ کھولیں")}
             </p>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              {tr(lang, "Browse reported source locations.", "رپورٹ شدہ مقامات نقشے پر دیکھیں۔")}
+            <p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">
+              {tr(lang, "Browse reported source locations, census depth, and observation wells.", "رپورٹ شدہ مقامات، گہرائی اور مشاہداتی کنویں نقشے پر دیکھیں۔")}
             </p>
           </Link>
-          <div className="mt-4 flex items-center justify-between text-xs text-slate-500">
-            <span>{tr(lang, "Map interface", "نقشہ انٹرفیس")}</span>
-            <span className="font-semibold text-teal-700">
-              {reports.length} {tr(lang, "submissions", "رپورٹس")}
-            </span>
+          <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
+            <div>
+              <p className="text-slate-400">{tr(lang, "Areas covered", "شامل علاقے")}</p>
+              <p className="mt-0.5 font-bold text-slate-800">{attentionAreas.length}</p>
+            </div>
+            <div>
+              <p className="text-slate-400">{tr(lang, "Total submissions", "کل رپورٹس")}</p>
+              <p className="mt-0.5 font-bold text-teal-700">{reports.length}</p>
+            </div>
           </div>
         </Panel>
       </div>
