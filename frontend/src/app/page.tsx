@@ -1,19 +1,20 @@
 "use client";
 
 import { Activity, AlertTriangle, ChevronRight, Droplets, Gauge, MapPin, ShieldCheck, Waves, Sparkles, TrendingUp } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Link from "next/link";
 import { Panel, useAquaRole } from "@/components/aqualedger/app-shell";
 import { useEffect, useMemo, useState } from "react";
 import { readCommunityWaterAreaRisks, readCommunityWaterReports, readPublicAreaSourceTrends, subscribeToCommunityWaterReports, type CommunityWaterAreaRisk, type CommunityWaterReport, type PublicAreaSourceTrend } from "@/lib/community-water-reports";
 import { buildReportCodes } from "@/lib/report-display-codes";
-import { computeAreaConditions, formatAxisDepthMetersAndFeet, formatDepthMetersAndFeet, meanDepth } from "@/lib/depth-analytics";
+import { computeAreaConditions, forecastGraceStorage, formatAxisDepthMetersAndFeet, formatDepthMetersAndFeet, meanDepth } from "@/lib/depth-analytics";
 import { SourceTypeDepthPanel, TopAreasDepthPanel } from "@/components/aqualedger/depth-infographics";
 import waterLevelByYear from "@/data/punjab-water-level-by-year.json";
 import { GRACE_PROVINCE_SERIES } from "@/lib/district-intelligence";
 import { StatValue } from "@/components/aqualedger/animated-number";
 import { DepthGauge } from "@/components/aqualedger/depth-gauge";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
+import { translateAreaUr, translateDepthUnitsUr } from "@/lib/urdu-translations";
 import { depthM } from "@/lib/units";
 
 const wellSummary = waterLevelByYear.summary;
@@ -38,6 +39,7 @@ export default function Home() {
   const [areaRiskSetupError, setAreaRiskSetupError] = useState("");
   const [trendInterval, setTrendInterval] = useState<"day" | "month" | "year">("month");
   const [graceProvince, setGraceProvince] = useState<string>("Pakistan");
+  const [graceHorizon, setGraceHorizon] = useState<12 | 36 | 60>(36);
   const [loading, setLoading] = useState(true);
   const reportCodes = useMemo(() => buildReportCodes(communityReports), [communityReports]);
   useEffect(() => {
@@ -99,7 +101,7 @@ export default function Home() {
     { depthWeightedSum: 0, depthWeightedCount: 0 }
   );
   const avgDepthM = depthWeightedCount ? depthWeightedSum / depthWeightedCount : null;
-  const avgDepthStr = avgDepthM !== null ? formatDepthMetersAndFeet(avgDepthM) : "—";
+  const avgDepthStr = avgDepthM !== null ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(avgDepthM)) : "—";
   const areaSummariesByKey = new Map(areaRiskSummaries.map((summary) => [summary.areaKey.toLocaleLowerCase(), summary]));
   const areaConditions = useMemo(() => computeAreaConditions(publicTrends), [publicTrends]);
   const areaConditionsByKey = useMemo(
@@ -171,7 +173,7 @@ export default function Home() {
     {!isInitialLoading && attentionAreas.length > 0 && <section aria-labelledby="attention-title" className="glass rounded-3xl p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div><h2 id="attention-title" className="flex items-center gap-2 text-base font-semibold text-slate-900 sm:text-lg"><AlertTriangle size={17} className="text-red-600" aria-hidden="true"/>{tr(lang, "Needs attention", "توجہ طلب علاقے")}</h2><p className="mt-0.5 text-xs text-slate-500 sm:text-sm">{tr(lang, `${highCount} critical areas, deepest water table first`, `${highCount} تشویشناک علاقے، سب سے گہرا پانی پہلے`)}</p></div>
-        <Link href="/map?severity=critical" className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-teal-700 hover:underline">{tr(lang, "View on map", "نقشے پر دیکھیں")}<ChevronRight size={15} aria-hidden="true"/></Link>
+        <Link href="/map?severity=critical" className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-teal-700 hover:underline">{tr(lang, "View on map", "نقشے پر دیکھیں")}<ChevronRight size={15} aria-hidden="true" className="rtl:rotate-180"/></Link>
       </div>
       <ul className="grid gap-2 md:grid-cols-2">{attentionAreas.map((area) => <li key={area.area}><Link href={`/forecast?area=${encodeURIComponent(area.area)}`} className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:border-teal-600/40 hover:bg-teal-50"><DepthGauge depthM={area.avgDepth} /><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{area.area}</span><span className="font-data mt-0.5 block whitespace-nowrap text-[13px] text-slate-600">{area.avgDepth !== null ? formatDepthMetersAndFeet(area.avgDepth) : "—"}</span></span><span className="aqua-chip bg-red-50 text-red-700"><AlertTriangle size={12} aria-hidden="true"/>{tr(lang, "Critical", "تشویشناک")}</span></Link></li>)}</ul>
     </section>}
@@ -203,31 +205,48 @@ export default function Home() {
     {(() => {
       const graceProvinces = ["Pakistan", "Punjab", "Sindh", "Khyber Pakhtunkhwa", "Balochistan"];
       const rawSeries = GRACE_PROVINCE_SERIES[graceProvince] ?? [];
-      const chartData = rawSeries.map(([month, cm]) => ({ month, cm }));
-      const latest = chartData.at(-1);
-      const earlySlice = chartData.filter((d) => d.month >= "2003-01" && d.month <= "2005-12");
-      const recentSlice = chartData.filter((d) => d.month >= "2023-01" && d.month <= "2025-12");
+      const points = rawSeries.map(([month, cm]) => ({ month, cm }));
+      const forecast = forecastGraceStorage(points, graceHorizon);
+      const latest = points.at(-1);
+      const earlySlice = points.filter((d) => d.month >= "2003-01" && d.month <= "2005-12");
+      const recentSlice = points.filter((d) => d.month >= "2023-01" && d.month <= "2025-12");
       const earlyAvg = earlySlice.length ? earlySlice.reduce((s, d) => s + d.cm, 0) / earlySlice.length : null;
       const recentAvg = recentSlice.length ? recentSlice.reduce((s, d) => s + d.cm, 0) / recentSlice.length : null;
       const netChange = earlyAvg !== null && recentAvg !== null ? recentAvg - earlyAvg : null;
+      const chartData = forecast?.chart ?? points.map((p) => ({ month: p.month, actual: p.cm, projected: null, lower: p.cm, upper: p.cm, band: 0 }));
       return (
         <Panel
-          title={tr(lang, "Satellite Water Storage Trend (GRACE 2002–2026)", "سیٹلائٹ پانی ذخیرہ رجحان (GRACE 2002–2026)")}
-          description={tr(lang, "Monthly terrestrial water storage anomaly (cm) from GFZ GRACE/GRACE-FO satellites, extending Pakistan's groundwater record up to August 2026.", "GFZ GRACE سیٹلائٹس سے ماہانہ زمینی پانی ذخیرہ کی تبدیلی (سینٹی میٹر)، اگست 2026 تک کا ریکارڈ۔")}
+          title={tr(lang, "Satellite Water Storage Trend & Forecast (GRACE 2002–2031)", "سیٹلائٹ پانی ذخیرہ رجحان اور پیشگوئی (GRACE)")}
+          description={tr(lang, "Monthly terrestrial water storage anomaly (cm) from GFZ GRACE/GRACE-FO up to August 2026, with blended trend + seasonal projection for upcoming years.", "GFZ GRACE سیٹلائٹس سے اگست 2026 تک کا ریکارڈ اور آنے والے سالوں کی پیشگوئی۔")}
         >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="glass inline-flex max-w-full flex-nowrap overflow-x-auto rounded-2xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Province selector">
-              {graceProvinces.map((prov) => (
-                <button
-                  key={prov}
-                  type="button"
-                  aria-pressed={graceProvince === prov}
-                  onClick={() => setGraceProvince(prov)}
-                  className={`shrink-0 whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 ${graceProvince === prov ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}
-                >
-                  {prov === "Khyber Pakhtunkhwa" ? "KP" : prov}
-                </button>
-              ))}
+            <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+              <div className="glass inline-flex max-w-full flex-nowrap overflow-x-auto rounded-2xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Province selector">
+                {graceProvinces.map((prov) => (
+                  <button
+                    key={prov}
+                    type="button"
+                    aria-pressed={graceProvince === prov}
+                    onClick={() => setGraceProvince(prov)}
+                    className={`shrink-0 whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 ${graceProvince === prov ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}
+                  >
+                    {lang === "ur" ? translateAreaUr(lang, prov) : prov === "Khyber Pakhtunkhwa" ? "KP" : prov}
+                  </button>
+                ))}
+              </div>
+              <div className="glass inline-flex rounded-2xl p-1" role="group" aria-label="Forecast horizon">
+                {([12, 36, 60] as const).map((h) => (
+                  <button
+                    key={h}
+                    type="button"
+                    aria-pressed={graceHorizon === h}
+                    onClick={() => setGraceHorizon(h)}
+                    className={`font-data whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-semibold transition ${graceHorizon === h ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}
+                  >
+                    +{h / 12} yr
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {netChange !== null && (
@@ -242,23 +261,68 @@ export default function Home() {
               )}
             </div>
           </div>
-          <div className="h-64 w-full">
+
+          {forecast && (
+            <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0c1b1f]">
+                <p className="text-[11px] text-slate-500">Latest ({forecast.latestMonth})</p>
+                <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
+                  {forecast.latestCm >= 0 ? `+${forecast.latestCm}` : forecast.latestCm} cm
+                </p>
+              </div>
+              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-500/30 dark:bg-[#0c1b1f]">
+                <p className="text-[11px] text-blue-700 dark:text-blue-300">Projected ({forecast.projectedMonth})</p>
+                <p className="mt-1 text-lg font-bold text-blue-800 dark:text-blue-200">
+                  {forecast.projectedCm >= 0 ? `+${forecast.projectedCm}` : forecast.projectedCm} cm
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0c1b1f]">
+                <p className="text-[11px] text-slate-500">Trend Rate</p>
+                <p className={`mt-1 text-lg font-bold ${forecast.slopePerYearCm < -0.2 ? "text-red-700 dark:text-red-400" : forecast.slopePerYearCm > 0.2 ? "text-sky-700 dark:text-sky-300" : "text-teal-700"}`}>
+                  {forecast.slopePerYearCm >= 0 ? `+${forecast.slopePerYearCm}` : forecast.slopePerYearCm} cm/yr
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0c1b1f]">
+                <p className="text-[11px] text-slate-500">Model Fit</p>
+                <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
+                  R² {forecast.rSquared.toFixed(2)} <span className="text-xs font-medium text-slate-500">({forecast.confidence})</span>
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="h-68 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 10 }}>
-                <defs>
-                  <linearGradient id="graceFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0d9488" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="#0d9488" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
+              <ComposedChart data={chartData} margin={{ top: 10, right: 16, left: 0, bottom: 10 }}>
                 <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                 <XAxis dataKey="month" minTickGap={48} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
                 <YAxis width={54} tickFormatter={(v) => `${v} cm`} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
-                <Tooltip formatter={(value) => [`${Number(value) >= 0 ? "+" : ""}${Number(value).toFixed(2)} cm`, "Water storage anomaly"]} labelFormatter={(label) => `Month: ${label}`} />
-                <Area type="monotone" dataKey="cm" stroke="#0d9488" strokeWidth={2} fill="url(#graceFill)" dot={false} activeDot={{ r: 5, fill: "#0d9488", stroke: "white", strokeWidth: 2 }} />
-              </AreaChart>
+                <Tooltip
+                  formatter={(value, name) =>
+                    value == null
+                      ? ["—", name]
+                      : [
+                          `${Number(value) >= 0 ? "+" : ""}${Number(value).toFixed(2)} ${tr(lang, "cm", "سینٹی میٹر")}`,
+                          name === "actual"
+                            ? tr(lang, "Observed (GRACE)", "مشاہدہ شدہ (GRACE)")
+                            : name === "projected"
+                              ? tr(lang, "Predicted", "پیشگوئی")
+                              : String(name),
+                        ]
+                  }
+                  labelFormatter={(label) => `${tr(lang, "Month", "مہینہ")}: ${label}`}
+                />
+                {forecast && <ReferenceLine x={forecast.latestMonth} stroke="#94a3b8" strokeDasharray="3 3" />}
+                <Area dataKey="lower" stackId="grace-ci" stroke="none" fill="transparent" isAnimationActive={false} />
+                <Area dataKey="band" stackId="grace-ci" stroke="none" fill="#bfdbfe" fillOpacity={0.45} isAnimationActive={false} />
+                <Line type="monotone" dataKey="actual" name="actual" stroke="#0d9488" strokeWidth={2} dot={false} connectNulls />
+                <Line type="monotone" dataKey="projected" name="projected" stroke="#2563eb" strokeWidth={2.5} strokeDasharray="6 4" dot={false} connectNulls />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
+          <p className="mt-2 text-[11px] leading-5 text-slate-400">
+            {tr(lang, "Solid teal line: observed GRACE satellite storage (2002–2026). Dashed blue line & shaded band: blended trend + seasonal projection with 95% uncertainty interval.", "ٹھوس سبز لائن: 2002–2026 سیٹلائٹ ریکارڈ۔ نیلی ڈیشڈ لائن: آنے والے سالوں کی پیشگوئی۔")}
+          </p>
         </Panel>
       );
     })()}

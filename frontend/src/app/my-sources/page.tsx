@@ -18,6 +18,13 @@ import { PageIntro, Panel, useAquaRole } from "@/components/aqualedger/app-shell
 import { FarmerDepthWorkspace } from "@/components/aqualedger/depth-infographics";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import {
+  translateAreaUr,
+  translateConditionUr,
+  translateDepthUnitsUr,
+  translateSourceTypeUr,
+  translateStatusUr,
+} from "@/lib/urdu-translations";
+import {
   readMyCommunityWaterReports,
   readPublicAreaSourceTrends,
   type CommunityWaterReport,
@@ -155,8 +162,8 @@ export default function MySourcesPage() {
 
   if (!authReady || loading) {
     return (
-      <Panel title="My Sources & Personal Forecast">
-        <p className="text-sm text-slate-500">Loading your personal water records…</p>
+      <Panel title={tr(lang, "My Sources & Personal Forecast", "میرے ذرائع اور ذاتی پیشگوئی")}>
+        <p className="text-sm text-slate-500">{tr(lang, "Loading your personal water records…", "آپ کے ذاتی پانی کے ریکارڈ لوڈ ہو رہے ہیں…")}</p>
       </Panel>
     );
   }
@@ -214,11 +221,11 @@ export default function MySourcesPage() {
 
       {!emailVerified && !demoMode && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Your email is not verified yet.{" "}
+          {tr(lang, "Your email is not verified yet.", "آپ کا ای میل ابھی تصدیق شدہ نہیں ہے۔")}{" "}
           <Link href="/account" className="font-semibold underline">
-            Verify in My Account
+            {tr(lang, "Verify in My Account", "میرے اکاؤنٹ میں تصدیق کریں")}
           </Link>{" "}
-          before logging new readings.
+          {tr(lang, "before logging new readings.", "نئی ریڈنگز درج کرنے سے پہلے۔")}
         </div>
       )}
 
@@ -230,24 +237,24 @@ export default function MySourcesPage() {
 
       {/* Personal Source Cards */}
       <Panel
-        title={`Your Tracked Sources (${mySourceSummaries.length})`}
-        description="Overview of every water source and location you have recorded, with its current condition and 6-month AI outlook."
+        title={tr(lang, `Your Tracked Sources (${mySourceSummaries.length})`, `آپ کے ٹریک شدہ ذرائع (${mySourceSummaries.length})`)}
+        description={tr(lang, "Overview of every water source and location you have recorded, with its current condition and 6-month AI outlook.", "آپ کے درج کردہ ہر پانی کے ذریعے اور مقام کا جائزہ، موجودہ صورتحال اور 6 ماہ کی AI پیشگوئی۔")}
       >
         {mySourceSummaries.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
             <Droplets size={28} className="mx-auto text-teal-600" />
             <p className="mt-3 font-semibold text-slate-800">
-              You haven&apos;t logged any water sources yet
+              {tr(lang, "You haven't logged any water sources yet", "آپ نے ابھی تک کوئی پانی کا ذریعہ درج نہیں کیا")}
             </p>
             <p className="mt-1 text-sm text-slate-500">
-              Add your first tube well, borehole, or hand pump reading to start tracking its depth every 3 months.
+              {tr(lang, "Add your first tube well, borehole, or hand pump reading to start tracking its depth every 3 months.", "ہر 3 ماہ بعد گہرائی ٹریک کرنے کے لیے اپنا پہلا ٹیوب ویل، بورویل یا ہینڈ پمپ درج کریں۔")}
             </p>
             <Link
               href="/reports"
               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
             >
               <Plus size={16} />
-              Add Your First Source
+              {tr(lang, "Add Your First Source", "اپنا پہلا ذریعہ شامل کریں")}
             </Link>
           </div>
         ) : (
@@ -268,10 +275,10 @@ export default function MySourcesPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-teal-700">
-                          {source.code} · {source.sourceType}
+                          {source.code} · {translateSourceTypeUr(lang, source.sourceType)}
                         </span>
                         <h4 className="mt-0.5 text-base font-bold text-slate-900">
-                          {source.label}
+                          {translateSourceTypeUr(lang, source.label)}
                         </h4>
                       </div>
                       <span
@@ -284,28 +291,28 @@ export default function MySourcesPage() {
                         ) : (
                           <CheckCircle2 size={13} />
                         )}
-                        {source.condition.conditionLabel}
+                        {translateConditionUr(lang, source.condition.conditionLabel)}
                       </span>
                     </div>
 
                     <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500">
                       <MapPin size={14} className="mt-0.5 shrink-0 text-slate-400" />
-                      <span>{source.address}</span>
+                      <span>{translateAreaUr(lang, source.address)}</span>
                     </p>
 
                     <div className="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-xs">
                       <div>
-                        <p className="text-slate-400">Latest Depth</p>
+                        <p className="text-slate-400">{tr(lang, "Latest Depth", "حالیہ گہرائی")}</p>
                         <p className="mt-0.5 text-sm font-bold text-slate-900">
-                          {source.currentDepth !== null ? formatDepthMetersAndFeet(source.currentDepth) : "—"}
+                          {source.currentDepth !== null ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(source.currentDepth)) : "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-slate-400">6-Mo AI Forecast</p>
+                        <p className="text-slate-400">{tr(lang, "6-Mo AI Forecast", "6 ماہ کی AI پیشگوئی")}</p>
                         <p className="mt-0.5 text-sm font-bold text-blue-700">
                           {source.projection
-                            ? formatDepthMetersAndFeet(source.projection.projectedDepth)
-                            : "Need 2+ mo"}
+                            ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(source.projection.projectedDepth))
+                            : tr(lang, "Need 2+ mo", "2+ ماہ درکار")}
                         </p>
                       </div>
                     </div>
@@ -313,14 +320,14 @@ export default function MySourcesPage() {
 
                   <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
                     <span>
-                      {source.reports.length} reading{source.reports.length === 1 ? "" : "s"} · Last:{" "}
+                      {source.reports.length} {source.reports.length === 1 ? tr(lang, "reading", "ریڈنگ") : tr(lang, "readings", "ریڈنگز")} · {tr(lang, "Last:", "آخری:")}{" "}
                       {source.latest.sampleDate || "—"}
                     </span>
                     <Link
                       href="/reports"
                       className="font-semibold text-teal-700 hover:underline"
                     >
-                      + Log reading
+                      + {tr(lang, "Log reading", "ریڈنگ درج کریں")}
                     </Link>
                   </div>
                 </div>
@@ -342,20 +349,20 @@ export default function MySourcesPage() {
       {/* Personal Readings History Table */}
       {myReports.length > 0 && (
         <Panel
-          title="My Reading History"
-          description="Complete chronological log of all water depth and quality entries submitted from your account."
+          title={tr(lang, "My Reading History", "میری ریڈنگز کی تاریخ")}
+          description={tr(lang, "Complete chronological log of all water depth and quality entries submitted from your account.", "آپ کے اکاؤنٹ سے جمع کرائی گئی تمام گہرائی اور معیار کی ریڈنگز کا مکمل ریکارڈ۔")}
         >
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left text-sm">
+            <table className="w-full min-w-[680px] text-start text-sm">
               <thead>
                 <tr className="border-b border-slate-100 text-xs text-slate-400">
-                  <th className="pb-3 font-medium">Report</th>
-                  <th className="pb-3 font-medium">Source</th>
-                  <th className="pb-3 font-medium">Area / Location</th>
-                  <th className="pb-3 font-medium">Depth</th>
-                  <th className="pb-3 font-medium">Sample Date</th>
-                  <th className="pb-3 font-medium">Screening</th>
-                  <th className="pb-3 font-medium">Review</th>
+                  <th className="pb-3 font-medium">{tr(lang, "Report", "رپورٹ")}</th>
+                  <th className="pb-3 font-medium">{tr(lang, "Source", "ذریعہ")}</th>
+                  <th className="pb-3 font-medium">{tr(lang, "Area / Location", "علاقہ / مقام")}</th>
+                  <th className="pb-3 font-medium">{tr(lang, "Depth", "گہرائی")}</th>
+                  <th className="pb-3 font-medium">{tr(lang, "Sample Date", "تاریخ")}</th>
+                  <th className="pb-3 font-medium">{tr(lang, "Screening", "جانچ")}</th>
+                  <th className="pb-3 font-medium">{tr(lang, "Review", "جائزہ")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -369,13 +376,13 @@ export default function MySourcesPage() {
                       </td>
                       <td className="py-3.5 text-slate-700">
                         {report.sourceCode ? `${report.sourceCode} · ` : ""}
-                        {report.sourceLabel || report.sourceType || "Water source"}
+                        {translateSourceTypeUr(lang, report.sourceLabel || report.sourceType || "Water source")}
                       </td>
                       <td className="py-3.5 text-slate-500">
-                        {report.areaName || report.address}
+                        {translateAreaUr(lang, report.areaName || report.address)}
                       </td>
                       <td className="py-3.5 font-semibold text-slate-800">
-                        {report.depth ? formatDepthMetersAndFeet(report.depth) : "—"}
+                        {report.depth ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(report.depth)) : "—"}
                       </td>
                       <td className="py-3.5 text-slate-500">{report.sampleDate || "—"}</td>
                       <td className="py-3.5">
@@ -393,11 +400,11 @@ export default function MySourcesPage() {
                           ) : (
                             <TrendingUp size={12} />
                           )}
-                          {risk}
+                          {translateConditionUr(lang, risk)}
                         </span>
                       </td>
                       <td className="py-3.5 text-xs capitalize text-slate-500">
-                        {report.status.replaceAll("_", " ")}
+                        {translateStatusUr(lang, report.status)}
                       </td>
                     </tr>
                   );

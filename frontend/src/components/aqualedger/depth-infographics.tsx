@@ -44,6 +44,13 @@ import { asFeet, depthM, metresToFeet, rateM } from "@/lib/units";
 import { Panel } from "@/components/aqualedger/app-shell";
 import { StatValue } from "@/components/aqualedger/animated-number";
 import { tr, translatePrecaution, useLanguage } from "@/components/aqualedger/language-toggle";
+import {
+  translateAreaUr,
+  translateConditionUr,
+  translateConfidenceUr,
+  translateDepthUnitsUr,
+  translateSourceTypeUr,
+} from "@/lib/urdu-translations";
 import type {
   CommunityWaterReport,
   PublicAreaSourceTrend,
@@ -251,16 +258,17 @@ export function TopAreasDepthPanel({ trends }: { trends: PublicAreaSourceTrend[]
     return [...groups.entries()]
       .map(([area, g]) => ({
         area: (() => {
-          const short = area.split(",")[0].trim();
+          const short = translateAreaUr(lang, area.split(",")[0].trim());
           return short.length > 14 ? `${short.slice(0, 13)}…` : short;
         })(),
-        fullArea: area,
+        fullArea: translateAreaUr(lang, area),
+        rawArea: area,
         averageDepthM: meanDepth(g.total, g.count) ?? 0,
         reports: g.count,
       }))
       .sort((a, b) => b.averageDepthM - a.averageDepthM)
       .slice(0, 10);
-  }, [trends]);
+  }, [trends, lang]);
 
   return (
     <Panel
@@ -290,8 +298,8 @@ export function TopAreasDepthPanel({ trends }: { trends: PublicAreaSourceTrend[]
               <XAxis type="number" ticks={[0, 15, 30, 45, 60]} domain={[0, "dataMax"]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <YAxis type="category" dataKey="area" width={105} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <Tooltip
-                formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} · ${item.payload.reports} reports`, "Area average depth"]}
-                labelFormatter={(_, payload) => payload?.[0]?.payload?.fullArea ?? "Area"}
+                formatter={(value, _name, item) => [`${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(Number(value)))} · ${item.payload.reports} ${tr(lang, "reports", "رپورٹس")}`, tr(lang, "Area average depth", "علاقے کی اوسط گہرائی")]}
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.fullArea ?? tr(lang, "Area", "علاقہ")}
               />
               <Bar
                 dataKey="averageDepthM"
@@ -299,9 +307,9 @@ export function TopAreasDepthPanel({ trends }: { trends: PublicAreaSourceTrend[]
                 radius={[4, 10, 10, 4]}
                 className="cursor-pointer"
                 onClick={(barData) => {
-                  const fullArea = (barData as unknown as { fullArea?: string; payload?: { fullArea?: string } })?.fullArea
-                    ?? (barData as unknown as { payload?: { fullArea?: string } })?.payload?.fullArea;
-                  if (fullArea) router.push(`/forecast?area=${encodeURIComponent(fullArea)}`);
+                  const rawArea = (barData as unknown as { rawArea?: string; payload?: { rawArea?: string } })?.rawArea
+                    ?? (barData as unknown as { payload?: { rawArea?: string } })?.payload?.rawArea;
+                  if (rawArea) router.push(`/forecast?area=${encodeURIComponent(rawArea)}`);
                 }}
               />
             </BarChart>
@@ -328,12 +336,12 @@ export function SourceTypeDepthPanel({ trends }: { trends: PublicAreaSourceTrend
     }
     return [...groups.entries()]
       .map(([sourceType, g]) => ({
-        sourceType,
+        sourceType: translateSourceTypeUr(lang, sourceType),
         averageDepthM: meanDepth(g.total, g.count) ?? 0,
         reports: g.count,
       }))
       .sort((a, b) => b.averageDepthM - a.averageDepthM);
-  }, [trends]);
+  }, [trends, lang]);
 
   return (
     <Panel
@@ -354,7 +362,7 @@ export function SourceTypeDepthPanel({ trends }: { trends: PublicAreaSourceTrend
               <CartesianGrid strokeDasharray="4 4" horizontal={false} />
               <XAxis type="number" ticks={[0, 15, 30, 45, 60]} domain={[0, "dataMax"]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
               <YAxis type="category" dataKey="sourceType" width={115} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} · ${item.payload.reports} reports`, "Average depth"]} />
+              <Tooltip formatter={(value, _name, item) => [`${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(Number(value)))} · ${item.payload.reports} ${tr(lang, "reports", "رپورٹس")}`, tr(lang, "Average depth", "اوسط گہرائی")]} />
               <Bar dataKey="averageDepthM" fill="url(#sourceBarFill)" radius={[4, 10, 10, 4]} animationDuration={1200} animationEasing="ease-out" />
             </BarChart>
           </ResponsiveContainer>
@@ -427,6 +435,7 @@ export function AreaDepthInfographicStrip({
   /** Optional card shown beside the source-type chart (e.g. the risk overview). */
   aside?: React.ReactNode;
 }) {
+  const lang = useLanguage();
   const areaBars = useMemo(() => {
     const groups = new Map<
       string,
@@ -451,16 +460,17 @@ export function AreaDepthInfographicStrip({
     return [...groups.entries()]
       .map(([area, g]) => ({
         area: (() => {
-          const short = area.split(",")[0].trim();
+          const short = translateAreaUr(lang, area.split(",")[0].trim());
           return short.length > 14 ? `${short.slice(0, 13)}…` : short;
         })(),
-        fullArea: area,
+        fullArea: translateAreaUr(lang, area),
+        rawArea: area,
         averageDepthM: meanDepth(g.total, g.count) ?? 0,
         reports: g.count,
       }))
       .sort((a, b) => b.averageDepthM - a.averageDepthM)
       .slice(0, 10);
-  }, [trends]);
+  }, [trends, lang]);
 
   const sourceBars = useMemo(() => {
     const groups = new Map<string, { total: number; count: number }>();
@@ -474,12 +484,12 @@ export function AreaDepthInfographicStrip({
     }
     return [...groups.entries()]
       .map(([sourceType, g]) => ({
-        sourceType,
+        sourceType: translateSourceTypeUr(lang, sourceType),
         averageDepthM: meanDepth(g.total, g.count) ?? 0,
         reports: g.count,
       }))
       .sort((a, b) => b.averageDepthM - a.averageDepthM);
-  }, [trends]);
+  }, [trends, lang]);
 
   if (!areaBars.length && !sourceBars.length) return aside ? <>{aside}</> : null;
 
@@ -542,7 +552,7 @@ export function AreaDepthInfographicStrip({
                 <CartesianGrid strokeDasharray="4 4" horizontal={false} />
                 <XAxis type="number" ticks={[0, 15, 30, 45, 60]} domain={[0, "dataMax"]} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="sourceType" width={120} tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} · ${item.payload.reports} reports`, "Average depth"]} />
+                <Tooltip formatter={(value, _name, item) => [`${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(Number(value)))} · ${item.payload.reports} ${tr(lang, "reports", "رپورٹس")}`, tr(lang, "Average depth", "اوسط گہرائی")]} />
                 <Bar dataKey="averageDepthM" fill="url(#sourceBarFill)" radius={[4, 10, 10, 4]} animationDuration={1300} animationEasing="ease-out" />
               </BarChart>
             </ResponsiveContainer>
@@ -714,20 +724,22 @@ export function FarmerDepthWorkspace({
             </span>
             <h3 className="mt-2 text-lg font-bold text-slate-900">
               {activeSource
-                ? `${activeSource.code} · ${activeSource.label}`
-                : "Area-Based Water Depth Prediction & Benchmark"}
+                ? `${activeSource.code} · ${translateSourceTypeUr(lang, activeSource.label)}`
+                : tr(lang, "Area-Based Water Depth Prediction & Benchmark", "علاقے کی بنیاد پر پانی کی گہرائی کی پیشگوئی اور معیار")}
             </h3>
             <p className="mt-0.5 text-xs text-slate-500">
               {activeSource
-                ? "Personal timeline, AI forecast, neighborhood benchmark comparison, and tailored well precautions."
-                : "Explore live groundwater depth trends by area and source type. Sign in to track your own well every 3 months."}
+                ? tr(lang, "Personal timeline, AI forecast, neighborhood benchmark comparison, and tailored well precautions.", "ذاتی ٹائم لائن، AI پیشگوئی، علاقائی اوسط سے موازنہ اور حفاظتی تدابیر۔")
+                : tr(lang, "Explore live groundwater depth trends by area and source type. Sign in to track your own well every 3 months.", "علاقے اور ذریعے کے لحاظ سے پانی کی گہرائی کے رجحانات دیکھیں۔ اپنے کنویں کو ٹریک کرنے کے لیے سائن ان کریں۔")}
             </p>
           </div>
           {condition.diffFromAreaM !== null && (
-            <div className="rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-right shadow-sm">
-              <p className="text-[11px] font-medium text-slate-500">Vs. Area Average</p>
+            <div className="rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-end shadow-sm">
+              <p className="text-[11px] font-medium text-slate-500">{tr(lang, "Vs. Area Average", "علاقائی اوسط سے موازنہ")}</p>
               <p className={`text-base font-bold ${condition.diffFromAreaM > 0.5 ? "text-red-600" : condition.diffFromAreaM < -0.5 ? "text-emerald-600" : "text-indigo-700"}`}>
-                {condition.diffFromAreaM > 0 ? `+${depthM(condition.diffFromAreaM)} deeper` : `${depthM(Math.abs(condition.diffFromAreaM))} shallower`}
+                {condition.diffFromAreaM > 0
+                  ? `+${translateDepthUnitsUr(lang, depthM(condition.diffFromAreaM))} ${tr(lang, "deeper", "زیادہ گہرا")}`
+                  : `${translateDepthUnitsUr(lang, depthM(Math.abs(condition.diffFromAreaM)))} ${tr(lang, "shallower", "کم گہرا")}`}
               </p>
             </div>
           )}
@@ -735,7 +747,7 @@ export function FarmerDepthWorkspace({
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {trackedSources.length > 0 ? (
             <label className="text-xs font-semibold text-slate-600 lg:col-span-2">
-              Your Tracked Source
+              {tr(lang, "Your Tracked Source", "آپ کا ٹریک شدہ ذریعہ")}
               <select
                 value={activeSource?.key ?? ""}
                 onChange={(e) => setSelectedSourceKey(e.target.value)}
@@ -743,7 +755,7 @@ export function FarmerDepthWorkspace({
               >
                 {trackedSources.map((s) => (
                   <option key={s.key} value={s.key}>
-                    {s.code} · {s.label} ({s.sourceType} · {s.areaKey})
+                    {s.code} · {translateSourceTypeUr(lang, s.label)} ({translateSourceTypeUr(lang, s.sourceType)} · {translateAreaUr(lang, s.areaKey)})
                   </option>
                 ))}
               </select>
@@ -751,31 +763,31 @@ export function FarmerDepthWorkspace({
           ) : (
             <>
               <label className="text-xs font-semibold text-slate-600">
-                Select Area
+                {tr(lang, "Select Area", "علاقہ منتخب کریں")}
                 <select
                   value={activeArea}
                   onChange={(e) => setSelectedAreaKey(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"
                   disabled={!publicAreaNames.length}
                 >
-                  {!publicAreaNames.length && <option value="">No area data yet</option>}
+                  {!publicAreaNames.length && <option value="">{tr(lang, "No area data yet", "ابھی علاقائی ڈیٹا موجود نہیں")}</option>}
                   {publicAreaNames.map((name) => (
                     <option key={name} value={name}>
-                      {name}
+                      {translateAreaUr(lang, name)}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="text-xs font-semibold text-slate-600">
-                Source Type
+                {tr(lang, "Source Type", "ذریعہ کی قسم")}
                 <select
                   value={selectedAreaSource}
                   onChange={(e) => setSelectedAreaSource(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"
                 >
-                  <option>All sources</option>
+                  <option value="All sources">{tr(lang, "All sources", "تمام ذرائع")}</option>
                   {areaBenchmark.bySource.map((s) => (
-                    <option key={s.sourceType}>{s.sourceType}</option>
+                    <option key={s.sourceType} value={s.sourceType}>{translateSourceTypeUr(lang, s.sourceType)}</option>
                   ))}
                 </select>
               </label>
@@ -783,18 +795,18 @@ export function FarmerDepthWorkspace({
           )}
 
           <label className="text-xs font-semibold text-slate-600">
-            Prediction Horizon
+            {tr(lang, "Prediction Horizon", "پیشگوئی کی مدت")}
             <select
               value={horizon}
               onChange={(e) => setHorizon(Number(e.target.value))}
               className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"
             >
-              <option value={3}>Next 3 months</option>
-              <option value={6}>Next 6 months</option>
-              <option value={12}>Next 12 months</option>
-              <option value={36}>Next 3 years (36 mo)</option>
-              <option value={60}>Next 5 years (60 mo)</option>
-              <option value={84}>Next 7 years (84 mo)</option>
+              <option value={3}>{tr(lang, "Next 3 months", "اگلے 3 ماہ")}</option>
+              <option value={6}>{tr(lang, "Next 6 months", "اگلے 6 ماہ")}</option>
+              <option value={12}>{tr(lang, "Next 12 months", "اگلے 12 ماہ")}</option>
+              <option value={36}>{tr(lang, "Next 3 years (36 mo)", "اگلے 3 سال (36 ماہ)")}</option>
+              <option value={60}>{tr(lang, "Next 5 years (60 mo)", "اگلے 5 سال (60 ماہ)")}</option>
+              <option value={84}>{tr(lang, "Next 7 years (84 mo)", "اگلے 7 سال (84 ماہ)")}</option>
             </select>
           </label>
 
@@ -804,7 +816,7 @@ export function FarmerDepthWorkspace({
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
             >
               <Plus size={16} />
-              {isSignedIn ? "Log 3-Month Reading" : "Sign in to Track"}
+              {isSignedIn ? tr(lang, "Log 3-Month Reading", "3 ماہ کی ریڈنگ درج کریں") : tr(lang, "Sign in to Track", "ٹریک کرنے کے لیے سائن ان کریں")}
             </Link>
           </div>
         </div>
@@ -812,19 +824,19 @@ export function FarmerDepthWorkspace({
         {/* Summary KPI Cards */}
         <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-            <p className="text-xs text-slate-500">Current Depth</p>
+            <p className="text-xs text-slate-500">{tr(lang, "Current Depth", "موجودہ گہرائی")}</p>
             <p className="mt-1.5 text-xl font-bold text-slate-900">
-              {currentDepthM !== null ? formatDepthMetersAndFeet(currentDepthM) : "—"}
+              {currentDepthM !== null ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(currentDepthM)) : "—"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              {activeSource ? `${activeSource.sourceType} · ${activeSource.reports.length} readings` : activeArea || "Area"}
+              {activeSource ? `${translateSourceTypeUr(lang, activeSource.sourceType)} · ${activeSource.reports.length} ${tr(lang, "readings", "ریڈنگز")}` : translateAreaUr(lang, activeArea) || tr(lang, "Area", "علاقہ")}
             </p>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-            <p className="text-xs text-slate-500">AI Projected ({formatHorizonLabel(horizon)})</p>
+            <p className="text-xs text-slate-500">{tr(lang, "AI Projected", "AI متوقع گہرائی")} ({formatHorizonLabel(horizon)})</p>
             <p className="mt-1.5 text-xl font-bold text-blue-700">
-              {projection ? formatDepthMetersAndFeet(projection.projectedDepth) : "Need 2+ months"}
+              {projection ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(projection.projectedDepth)) : tr(lang, "Need 2+ months", "2+ ماہ درکار")}
             </p>
             <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
               {projection ? (
@@ -835,31 +847,31 @@ export function FarmerDepthWorkspace({
                     <ArrowUpRight size={14} className="text-emerald-600" />
                   )}
                   {projection.projectedChange >= 0 ? "+" : ""}
-                  {formatDepthMetersAndFeet(projection.projectedChange, 2)} · {projection.confidence} conf.
+                  {translateDepthUnitsUr(lang, formatDepthMetersAndFeet(projection.projectedChange, 2))} · {translateConfidenceUr(lang, projection.confidence)} {tr(lang, "conf.", "اعتماد")}
                 </>
               ) : (
-                "Add readings across 2+ months"
+                tr(lang, "Add readings across 2+ months", "کم از کم 2 مختلف مہینوں کی ریڈنگز درج کریں")
               )}
             </p>
           </div>
 
           <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
-            <p className="text-xs text-slate-500">Area Average Depth</p>
+            <p className="text-xs text-slate-500">{tr(lang, "Area Average Depth", "علاقائی اوسط گہرائی")}</p>
             <p className="mt-1.5 text-xl font-bold text-slate-900">
-              {condition.areaAverageM !== null ? formatDepthMetersAndFeet(condition.areaAverageM) : "—"}
+              {condition.areaAverageM !== null ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(condition.areaAverageM)) : "—"}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              {areaBenchmark.totalReports} reports in {activeArea || "area"}
+              {areaBenchmark.totalReports} {tr(lang, `reports in ${activeArea || "area"}`, `رپورٹس (${translateAreaUr(lang, activeArea) || "علاقہ"})`)}
             </p>
           </div>
 
           <div className={`rounded-xl border p-4 ${toneBadge}`}>
-            <p className="text-xs font-medium opacity-80">Source Condition</p>
-            <p className="mt-1.5 text-2xl font-bold">{condition.conditionLabel}</p>
+            <p className="text-xs font-medium opacity-80">{tr(lang, "Source Condition", "ذریعے کی صورتحال")}</p>
+            <p className="mt-1.5 text-2xl font-bold">{translateConditionUr(lang, condition.conditionLabel)}</p>
             <p className="mt-1 text-xs opacity-90">
               {condition.diffFromAreaM !== null
-                ? `${condition.diffFromAreaM >= 0 ? "+" : ""}${formatDepthMetersAndFeet(condition.diffFromAreaM)} vs area avg`
-                : "Based on available trend"}
+                ? `${condition.diffFromAreaM >= 0 ? "+" : ""}${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(condition.diffFromAreaM))} ${tr(lang, "vs area avg", "بمقابلہ علاقائی اوسط")}`
+                : tr(lang, "Based on available trend", "دستیاب رجحان کی بنیاد پر")}
             </p>
           </div>
         </div>
@@ -867,24 +879,24 @@ export function FarmerDepthWorkspace({
         {districtIntel && (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/90 px-4 py-3 text-xs dark:border-white/15 dark:bg-[#0c1b1f]">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600 dark:text-slate-700">
-              <strong className="text-slate-900 dark:text-white">{districtIntel.district} Baseline:</strong>
+              <strong className="text-slate-900 dark:text-white">{translateAreaUr(lang, districtIntel.district)} {tr(lang, "Baseline:", "بنیادی ڈیٹا:")}</strong>
               {districtIntel.stressScore !== null && (
-                <span>Stress <strong>{Math.round(districtIntel.stressScore)}/100</strong></span>
+                <span>{tr(lang, "Stress", "آبی دباؤ")} <strong>{Math.round(districtIntel.stressScore)}/100</strong></span>
               )}
               {districtIntel.graceTrendCmYr !== null && (
-                <span>GRACE 2002–26 <strong>{districtIntel.graceTrendCmYr > 0 ? "+" : ""}{districtIntel.graceTrendCmYr} cm/yr</strong></span>
+                <span>GRACE 2002–26 <strong>{districtIntel.graceTrendCmYr > 0 ? "+" : ""}{districtIntel.graceTrendCmYr} {tr(lang, "cm/yr", "سینٹی میٹر/سال")}</strong></span>
               )}
               {districtIntel.rainVsNormalPct !== null && (
-                <span>Rainfall <strong>{districtIntel.rainVsNormalPct >= 0 ? "+" : ""}{districtIntel.rainVsNormalPct}% vs normal</strong></span>
+                <span>{tr(lang, "Rainfall", "بارش")} <strong>{districtIntel.rainVsNormalPct >= 0 ? "+" : ""}{districtIntel.rainVsNormalPct}% {tr(lang, "vs normal", "معمول کے مقابلے")}</strong></span>
               )}
               {districtIntel.arsenicPctOver10 !== null && (
                 <span className={districtIntel.arsenicPctOver10 >= 15 ? "font-semibold text-red-700 dark:text-red-400" : ""}>
-                  Arsenic &gt;10 µg/L: <strong>{districtIntel.arsenicPctOver10}%</strong>
+                  {tr(lang, "Arsenic >10 µg/L:", "آرسینک >10 µg/L:")} <strong>{districtIntel.arsenicPctOver10}%</strong>
                 </span>
               )}
               {districtIntel.ecoliPctHousehold !== null && (
                 <span className={districtIntel.ecoliPctHousehold >= 30 ? "font-semibold text-amber-700 dark:text-amber-300" : ""}>
-                  E. coli (HH): <strong>{districtIntel.ecoliPctHousehold}%</strong>
+                  E. coli: <strong>{districtIntel.ecoliPctHousehold}%</strong>
                 </span>
               )}
             </div>
@@ -907,14 +919,14 @@ export function FarmerDepthWorkspace({
           horizonMonths={horizon}
           sourceLabel={
             activeSource
-              ? `${activeSource.label} (${activeSource.sourceType})`
-              : `${activeArea || "Area"} · ${selectedAreaSource}`
+              ? `${translateSourceTypeUr(lang, activeSource.label)} (${translateSourceTypeUr(lang, activeSource.sourceType)})`
+              : `${translateAreaUr(lang, activeArea) || tr(lang, "Area", "علاقہ")} · ${translateSourceTypeUr(lang, selectedAreaSource)}`
           }
         />
 
         <Panel
-          title="AI Trend & Depth Timeline"
-          description="Historical depth readings (e.g., every 3 months) and fitted AI linear projection with uncertainty band."
+          title={tr(lang, "AI Trend & Depth Timeline", "AI رجحان اور گہرائی کی ٹائم لائن")}
+          description={tr(lang, "Historical depth readings (e.g., every 3 months) and fitted AI linear projection with uncertainty band.", "تاریخی گہرائی کی ریڈنگز اور AI پیشگوئی کی لکیر۔")}
           className="xl:col-span-2"
         >
           {projection ? (
@@ -922,12 +934,12 @@ export function FarmerDepthWorkspace({
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 font-semibold text-teal-800">
                   <BrainCircuit size={14} />
-                  {projection.status} · {Math.abs(projection.slopePerMonth * 12).toFixed(2)} m/yr · {metresToFeet(Math.abs(projection.slopePerMonth * 12)).toFixed(1)} ft/yr
+                  {projection.status} · {Math.abs(projection.slopePerMonth * 12).toFixed(2)} {tr(lang, "m/yr", "میٹر/سال")} · {metresToFeet(Math.abs(projection.slopePerMonth * 12)).toFixed(1)} {tr(lang, "ft/yr", "فٹ/سال")}
                 </span>
                 <span>
-                  R² {projection.rSquared.toFixed(2)} · {projection.monthlyPoints.length} readings
+                  R² {projection.rSquared.toFixed(2)} · {projection.monthlyPoints.length} {tr(lang, "readings", "ریڈنگز")}
                   {projection.monthlyPoints.length >= 2
-                    ? ` · ${Math.max(1, (Number(projection.monthlyPoints.at(-1)!.month.slice(0, 4)) - Number(projection.monthlyPoints[0].month.slice(0, 4))) * 12 + (Number(projection.monthlyPoints.at(-1)!.month.slice(5, 7)) - Number(projection.monthlyPoints[0].month.slice(5, 7))))} mo span`
+                    ? ` · ${Math.max(1, (Number(projection.monthlyPoints.at(-1)!.month.slice(0, 4)) - Number(projection.monthlyPoints[0].month.slice(0, 4))) * 12 + (Number(projection.monthlyPoints.at(-1)!.month.slice(5, 7)) - Number(projection.monthlyPoints[0].month.slice(5, 7))))} ${tr(lang, "mo span", "ماہ کا دورانیہ")}`
                     : ""}
                 </span>
               </div>
@@ -944,7 +956,7 @@ export function FarmerDepthWorkspace({
                       formatter={(value, name) =>
                         value == null
                           ? ["—", name]
-                          : [formatDepthMetersAndFeet(Number(value), 2), name === "actual" ? "Recorded" : "AI Projected"]
+                          : [translateDepthUnitsUr(lang, formatDepthMetersAndFeet(Number(value), 2)), name === "actual" ? tr(lang, "Recorded", "درج شدہ") : tr(lang, "AI Projected", "AI پیشگوئی")]
                       }
                     />
                     <ReferenceLine x={projection.lastMonth} stroke="#94a3b8" strokeDasharray="3 3" />
@@ -953,7 +965,7 @@ export function FarmerDepthWorkspace({
                     <Line
                       type="monotone"
                       dataKey="actual"
-                      name="Recorded"
+                      name={tr(lang, "Recorded", "درج شدہ")}
                       stroke="#0d9488"
                       strokeWidth={2.5}
                       dot={projection.monthlyPoints.length <= 24 ? { r: 3.5, fill: "#0d9488" } : false}
@@ -963,7 +975,7 @@ export function FarmerDepthWorkspace({
                     <Line
                       type="monotone"
                       dataKey="projected"
-                      name="AI Projected"
+                      name={tr(lang, "AI Projected", "AI پیشگوئی")}
                       stroke="#2563eb"
                       strokeWidth={2.5}
                       strokeDasharray="6 4"
@@ -979,12 +991,12 @@ export function FarmerDepthWorkspace({
             <div className="flex h-64 flex-col items-center justify-center rounded-xl bg-indigo-50/50 p-6 text-center">
               <AlertTriangle size={24} className="mb-2 text-amber-600" />
               <p className="font-semibold text-slate-800">
-                At least 2 readings from different months are needed for AI prediction
+                {tr(lang, "At least 2 readings from different months are needed for AI prediction", "AI پیشگوئی کے لیے کم از کم 2 مختلف مہینوں کی ریڈنگز درکار ہیں")}
               </p>
               <p className="mt-1 max-w-md text-xs leading-5 text-slate-600">
                 {activeSource
-                  ? `Currently found ${activeSource.reports.length} reading(s) across ${activeMonthly.length} distinct month(s) for ${activeSource.code} (${activeSource.label}). If you logged multiple readings in the same month or under different source IDs, add readings across 2+ different months under the same source ID.`
-                  : "Log your water depth every 3 months under the same source ID. Once 2+ distinct months are recorded, the trend line and future depth prediction will appear here automatically."}
+                  ? tr(lang, `Currently found ${activeSource.reports.length} reading(s) across ${activeMonthly.length} distinct month(s) for ${activeSource.code} (${activeSource.label}). If you logged multiple readings in the same month or under different source IDs, add readings across 2+ different months under the same source ID.`, `فی الحال ${activeSource.code} کے لیے ${activeMonthly.length} مختلف مہینے میں ${activeSource.reports.length} ریڈنگز ملی ہیں۔ AI پیشگوئی کے لیے اسی سورس آئی ڈی میں کم از کم 2 مختلف مہینوں کی ریڈنگز درج کریں۔`)
+                  : tr(lang, "Log your water depth every 3 months under the same source ID. Once 2+ distinct months are recorded, the trend line and future depth prediction will appear here automatically.", "ہر 3 ماہ بعد اسی سورس آئی ڈی کے تحت گہرائی درج کریں۔ 2 مختلف مہینوں کے بعد پیشگوئی خودکار ظاہر ہو جائے گی۔")}
               </p>
             </div>
           )}
@@ -994,21 +1006,21 @@ export function FarmerDepthWorkspace({
       {/* Location-Based Source Comparison & Precautions */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel
-          title={`Area Benchmark by Source Type · ${activeArea || "Area"}`}
-          description="Average depth by water source type compared against the overall area baseline."
+          title={`${tr(lang, "Area Benchmark by Source Type", "ذریعے کی قسم کے لحاظ سے علاقائی معیار")} · ${translateAreaUr(lang, activeArea) || tr(lang, "Area", "علاقہ")}`}
+          description={tr(lang, "Average depth by water source type compared against the overall area baseline.", "مجموعی علاقائی اوسط کے مقابلے میں ہر قسم کے آبی ذریعے کی اوسط گہرائی۔")}
         >
           {areaBenchmark.bySource.length ? (
             <div className="space-y-4">
               <div className="h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={areaBenchmark.bySource} margin={{ top: 24, right: 16, left: 0, bottom: 4 }}>
+                  <BarChart data={areaBenchmark.bySource.map((s) => ({ ...s, displaySourceType: translateSourceTypeUr(lang, s.sourceType) }))} margin={{ top: 24, right: 16, left: 0, bottom: 4 }}>
                     <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
-                    <XAxis dataKey="sourceType" tick={{ fontSize: 11, fill: "#475569" }} />
+                    <XAxis dataKey="displaySourceType" tick={{ fontSize: 11, fill: "#475569" }} />
                     <YAxis width={78} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} domain={[0, "auto"]} tick={{ fontSize: 11, fill: "#64748b" }} />
                     <Tooltip
                       formatter={(value, _name, item) => [
-                        `${formatDepthMetersAndFeet(Number(value), 2)} · ${item.payload.reportCount} reports`,
-                        "Average depth",
+                        `${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(Number(value), 2))} · ${item.payload.reportCount} ${tr(lang, "reports", "رپورٹس")}`,
+                        tr(lang, "Average depth", "اوسط گہرائی"),
                       ]}
                     />
                     {areaBenchmark.averageDepthM !== null && (
@@ -1017,7 +1029,7 @@ export function FarmerDepthWorkspace({
                         stroke="#6366f1"
                         strokeDasharray="4 4"
                         label={{
-                          value: `Area Avg ${formatDepthMetersAndFeet(areaBenchmark.averageDepthM)}`,
+                          value: `${tr(lang, "Area Avg", "علاقائی اوسط")} ${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(areaBenchmark.averageDepthM))}`,
                           position: "top",
                           fill: "#6366f1",
                           fontSize: 11,
@@ -1044,11 +1056,11 @@ export function FarmerDepthWorkspace({
                       <div className="flex items-center gap-2">
                         <span className={`h-2.5 w-2.5 rounded-full ${palette[idx % palette.length]}`} />
                         <div>
-                          <p className="font-semibold text-slate-800">{item.sourceType}</p>
-                          <p className="text-slate-500">{item.reportCount} reports</p>
+                          <p className="font-semibold text-slate-800">{translateSourceTypeUr(lang, item.sourceType)}</p>
+                          <p className="text-slate-500">{item.reportCount} {tr(lang, "reports", "رپورٹس")}</p>
                         </div>
                       </div>
-                      <span className="font-bold text-indigo-700">{depthM(item.averageDepthM)}</span>
+                      <span className="font-bold text-indigo-700">{translateDepthUnitsUr(lang, depthM(item.averageDepthM))}</span>
                     </div>
                   );
                 })}
@@ -1056,7 +1068,7 @@ export function FarmerDepthWorkspace({
             </div>
           ) : (
             <div className="flex h-48 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">
-              No area source depth benchmarks available for this location yet.
+              {tr(lang, "No area source depth benchmarks available for this location yet.", "اس مقام کے لیے ابھی علاقائی ذرائع کا معیار دستیاب نہیں۔")}
             </div>
           )}
         </Panel>
@@ -1328,7 +1340,7 @@ export function UniversalAreaDepthForecast({
               {!loading && !areaSummaries.length && <option value="">{tr(lang, "No area data", "کوئی علاقائی ڈیٹا نہیں")}</option>}
               {areaSummaries.map((a) => (
                 <option key={a.areaKey} value={a.areaKey}>
-                  {a.areaKey} ({a.benchmark.totalReports} {tr(lang, "reports", "رپورٹس")})
+                  {translateAreaUr(lang, a.areaKey)} ({a.benchmark.totalReports} {tr(lang, "reports", "رپورٹس")})
                 </option>
               ))}
             </select>
@@ -1343,7 +1355,7 @@ export function UniversalAreaDepthForecast({
             >
               <option value="All sources">{tr(lang, "All sources", "تمام ذرائع")}</option>
               {activeBenchmark.bySource.map((s) => (
-                <option key={s.sourceType}>{s.sourceType}</option>
+                <option key={s.sourceType} value={s.sourceType}>{translateSourceTypeUr(lang, s.sourceType)}</option>
               ))}
             </select>
           </label>
@@ -1418,15 +1430,15 @@ export function UniversalAreaDepthForecast({
                 : (currentDepthM ?? activeBenchmark.averageDepthM)
             }
             horizonMonths={horizon}
-            sourceLabel={`${activeArea || "Area"} · ${selectedSourceType}`}
+            sourceLabel={`${activeArea ? translateAreaUr(lang, activeArea) : tr(lang, "Area", "علاقہ")} · ${translateSourceTypeUr(lang, selectedSourceType)}`}
           />
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
                 <BrainCircuit size={14} />
-                {tr(lang, "Confidence", "اعتماد")}: {projection?.confidence ?? "Low"} ({filteredReportCount} {tr(lang, "reports", "رپورٹس")})
-                {projection?.backtestMaeM != null ? ` · MAE ±${projection.backtestMaeM.toFixed(2)} m` : ""}
+                {tr(lang, "Confidence", "اعتماد")}: {translateConfidenceUr(lang, projection?.confidence ?? "Low")} ({filteredReportCount} {tr(lang, "reports", "رپورٹس")})
+                {projection?.backtestMaeM != null ? ` · MAE ±${projection.backtestMaeM.toFixed(2)} ${tr(lang, "m", "میٹر")}` : ""}
               </span>
               <button
                 type="button"
@@ -1469,7 +1481,7 @@ export function UniversalAreaDepthForecast({
         </div>
 
         <Panel
-          title={`${tr(lang, "Area-Wide AI Depth Trend", "علاقائی AI گہرائی کا رجحان")} · ${activeArea || tr(lang, "Select an Area", "علاقہ منتخب کریں")}`}
+          title={`${tr(lang, "Area-Wide AI Depth Trend", "علاقائی AI گہرائی کا رجحان")} · ${activeArea ? translateAreaUr(lang, activeArea) : tr(lang, "Select an Area", "علاقہ منتخب کریں")}`}
           description={tr(lang, "Combined monthly average depth from all users in this area and projected trajectory.", "اس علاقے کے تمام صارفین سے حاصل شدہ ماہانہ اوسط گہرائی اور متوقع رجحان۔")}
         >
           <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -1703,7 +1715,7 @@ export function UniversalAreaDepthForecast({
           </div>
         ) : filteredDirectory.length === 0 ? (
           <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">
-            No areas match your search or filter.
+            {tr(lang, "No areas match your search or filter.", "آپ کی تلاش یا فلٹر سے کوئی علاقہ نہیں ملا۔")}
           </p>
         ) : (
           <>
@@ -1726,7 +1738,7 @@ export function UniversalAreaDepthForecast({
                       openSection("forecast");
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    className={`w-full rounded-2xl border p-4 text-left transition ${
+                    className={`w-full rounded-2xl border p-4 text-start transition ${
                       selected
                         ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500 dark:bg-teal-950/35"
                         : "border-slate-200 bg-white hover:border-teal-300 dark:border-slate-200 dark:bg-[#0c1b1f] dark:hover:border-teal-500"
@@ -1734,34 +1746,34 @@ export function UniversalAreaDepthForecast({
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-slate-900 dark:text-slate-700">{item.areaKey}</p>
+                        <p className="font-semibold text-slate-900 dark:text-slate-700">{translateAreaUr(lang, item.areaKey)}</p>
                         <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-700">
-                          {item.benchmark.totalReports} reports
+                          {item.benchmark.totalReports} {tr(lang, "reports", "رپورٹس")}
                         </p>
                       </div>
                       <span className={`aqua-chip shrink-0 ${pillClass}`}>
                         {item.condition.conditionTone === "red" ? <AlertTriangle size={12} aria-hidden="true" /> : item.condition.conditionTone === "amber" ? <CircleAlert size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
-                        {item.condition.conditionLabel}
+                        {translateConditionUr(lang, item.condition.conditionLabel)}
                       </span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-2.5 text-xs dark:border-slate-200">
                       <div>
-                        <p className="font-medium text-slate-600 dark:text-slate-700">Area Avg Depth</p>
+                        <p className="font-medium text-slate-600 dark:text-slate-700">{tr(lang, "Area Avg Depth", "علاقائی اوسط گہرائی")}</p>
                         <p className="mt-0.5 font-semibold text-slate-900 dark:text-white">
-                          {item.latestDepth !== null ? formatDepthMetersAndFeet(item.latestDepth) : "—"}
+                          {item.latestDepth !== null ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.latestDepth)) : "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="font-medium text-slate-600 dark:text-slate-700">+{formatHorizonLabel(horizon)} Forecast</p>
+                        <p className="font-medium text-slate-600 dark:text-slate-700">+{formatHorizonLabel(horizon)} {tr(lang, "Forecast", "پیشگوئی")}</p>
                         <p className="mt-0.5 font-semibold text-blue-700 dark:text-sky-300">
-                          {item.projection ? formatDepthMetersAndFeet(item.projection.projectedDepth) : "Need 2+ mo"}
+                          {item.projection ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.projection.projectedDepth)) : tr(lang, "Need 2+ mo", "2+ ماہ درکار")}
                         </p>
                       </div>
                     </div>
                     <p className="mt-2 text-[11px] font-medium text-slate-600 dark:text-slate-700">
-                      Trend rate:{" "}
+                      {tr(lang, "Trend rate:", "رجحان کی شرح:")}{" "}
                       {item.projection
-                        ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2)}/yr`
+                        ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2))}/${tr(lang, "yr", "سال")}`
                         : "—"}
                     </p>
                   </button>
@@ -1770,15 +1782,15 @@ export function UniversalAreaDepthForecast({
             </div>
 
             <div className="hidden overflow-x-auto md:block">
-              <table className="w-full min-w-160 text-left text-sm">
+              <table className="w-full min-w-160 text-start text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 text-xs text-slate-500">
-                    <th className="px-3 pb-3 font-medium">Area / Location</th>
-                    <th className="px-3 pb-3 font-medium">Total Reports</th>
-                    <th className="px-3 pb-3 font-medium">Area Avg Depth</th>
-                    <th className="px-3 pb-3 font-medium">+{formatHorizonLabel(horizon)} Forecast</th>
-                    <th className="px-3 pb-3 font-medium">Trend Rate</th>
-                    <th className="px-3 pb-3 font-medium">Area Condition</th>
+                    <th className="px-3 pb-3 font-medium">{tr(lang, "Area / Location", "علاقہ / مقام")}</th>
+                    <th className="px-3 pb-3 font-medium">{tr(lang, "Total Reports", "کل رپورٹس")}</th>
+                    <th className="px-3 pb-3 font-medium">{tr(lang, "Area Avg Depth", "علاقائی اوسط گہرائی")}</th>
+                    <th className="px-3 pb-3 font-medium">+{formatHorizonLabel(horizon)} {tr(lang, "Forecast", "پیشگوئی")}</th>
+                    <th className="px-3 pb-3 font-medium">{tr(lang, "Trend Rate", "رجحان کی شرح")}</th>
+                    <th className="px-3 pb-3 font-medium">{tr(lang, "Area Condition", "علاقے کی صورتحال")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1802,23 +1814,23 @@ export function UniversalAreaDepthForecast({
                         data-selected={selected || undefined}
                         className="aqua-row cursor-pointer border-b border-slate-200/60 last:border-0"
                       >
-                        <td className="px-3 py-3.5 font-semibold text-slate-800">{item.areaKey}</td>
+                        <td className="px-3 py-3.5 font-semibold text-slate-800">{translateAreaUr(lang, item.areaKey)}</td>
                         <td className="font-data px-3 py-3.5 text-slate-600">{item.benchmark.totalReports}</td>
                         <td className="font-data whitespace-nowrap px-3 py-3.5 font-semibold text-slate-800">
-                          {item.latestDepth !== null ? formatDepthMetersAndFeet(item.latestDepth) : "—"}
+                          {item.latestDepth !== null ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.latestDepth)) : "—"}
                         </td>
                         <td className="font-data whitespace-nowrap px-3 py-3.5 font-semibold text-blue-700">
-                          {item.projection ? formatDepthMetersAndFeet(item.projection.projectedDepth) : "Need 2+ mo"}
+                          {item.projection ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.projection.projectedDepth)) : tr(lang, "Need 2+ mo", "2+ ماہ درکار")}
                         </td>
                         <td className="font-data whitespace-nowrap px-3 py-3.5 text-xs text-slate-500">
                           {item.projection
-                            ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2)}/yr`
+                            ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2))}/${tr(lang, "yr", "سال")}`
                             : "—"}
                         </td>
                         <td className="px-3 py-3.5">
                           <span className={`aqua-chip ${pillClass}`}>
                             {item.condition.conditionTone === "red" ? <AlertTriangle size={12} aria-hidden="true" /> : item.condition.conditionTone === "amber" ? <CircleAlert size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
-                            {item.condition.conditionLabel}
+                            {translateConditionUr(lang, item.condition.conditionLabel)}
                           </span>
                         </td>
                       </tr>

@@ -34,6 +34,7 @@ export function useLanguage(): AquaLang {
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ur" ? "rtl" : "ltr";
     }
   }, [lang]);
   return lang;
@@ -110,13 +111,14 @@ export function LanguageToggle() {
 
   return (
     <div
+      dir="ltr"
       role="radiogroup"
       aria-label="Language"
       className="glass relative inline-flex items-center rounded-full p-0.5 text-[10.5px] font-bold sm:p-1 sm:text-[11px]"
     >
       <span
         aria-hidden="true"
-        className={`absolute top-0.5 bottom-0.5 w-8 rounded-full bg-teal-500 shadow-[0_4px_14px_-4px_rgb(20_184_166/0.8)] transition-transform duration-200 sm:top-1 sm:bottom-1 sm:w-9 ${
+        className={`absolute left-0.5 top-0.5 bottom-0.5 w-8 rounded-full bg-teal-500 shadow-[0_4px_14px_-4px_rgb(20_184_166/0.8)] transition-transform duration-200 sm:left-1 sm:top-1 sm:bottom-1 sm:w-9 ${
           lang === "ur" ? "translate-x-8 sm:translate-x-9" : "translate-x-0"
         }`}
       />

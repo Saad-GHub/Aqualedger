@@ -723,6 +723,135 @@ function fitLinearDepthTrend(
   };
 }
 
+export type GraceForecastPoint = {
+  month: string;
+  actual: number | null;
+  projected: number | null;
+  lower: number | null;
+  upper: number | null;
+  band: number | null;
+};
+
+export type GraceStorageForecast = {
+  chart: GraceForecastPoint[];
+  slopePerYearCm: number;
+  latestMonth: string;
+  latestCm: number;
+  projectedMonth: string;
+  projectedCm: number;
+  projectedChangeCm: number;
+  rSquared: number;
+  confidence: "Low" | "Moderate" | "Higher";
+};
+
+/**
+ * Forecast GRACE satellite terrestrial water storage anomaly (cm) using the same
+ * blended OLS trend + seasonal residual profile + 1.96*sigma leverage bands as depth forecasting,
+ * without positive-only depth clamping since anomalies can be negative or positive.
+ */
+export function forecastGraceStorage(
+  points: { month: string; cm: number }[],
+  horizonMonths = 36
+): GraceStorageForecast | null {
+  if (points.length < 12) return null;
+  const x0 = monthIndex(points[0].month);
+  const xs = points.map((p) => monthIndex(p.month) - x0);
+  const ys = points.map((p) => p.cm);
+  const n = points.length;
+  const meanX = xs.reduce((s, v) => s + v, 0) / n;
+  const meanY = ys.reduce((s, v) => s + v, 0) / n;
+  const sxx = xs.reduce((s, v) => s + (v - meanX) ** 2, 0);
+  if (!sxx) return null;
+
+  const slopePerMonth = xs.reduce((s, x, i) => s + (x - meanX) * (ys[i] - meanY), 0) / sxx;
+  const intercept = meanY - slopePerMonth * meanX;
+  const residuals = ys.map((y, i) => y - (intercept + slopePerMonth * xs[i]));
+  const residualSum = residuals.reduce((s, r) => s + r ** 2, 0);
+  const totalSum = ys.reduce((s, y) => s + (y - meanY) ** 2, 0);
+  const rSquared = totalSum === 0 ? 1 : Math.max(0, Math.min(1, 1 - residualSum / totalSum));
+
+  const midIdx = Math.floor(n / 2);
+  const seg = points.slice(Math.max(0, midIdx - 1));
+  const sx0 = monthIndex(seg[0].month);
+  const sxs = seg.map((p) => monthIndex(p.month) - sx0);
+  const sys = seg.map((p) => p.cm);
+  const smx = sxs.reduce((s, v) => s + v, 0) / sxs.length;
+  const smy = sys.reduce((s, v) => s + v, 0) / sys.length;
+  const ssxx = sxs.reduce((s, v) => s + (v - smx) ** 2, 0);
+  const secondHalfSlope =
+    ssxx > 0 ? sxs.reduce((s, v, idx) => s + (v - smx) * (sys[idx] - smy), 0) / ssxx : slopePerMonth;
+
+  const effectiveSlope = 0.55 * slopePerMonth + 0.45 * secondHalfSlope;
+
+  // Empirical seasonal anomaly per calendar month (monsoon vs dry season)
+  const monthBuckets = new Map<number, number[]>();
+  points.forEach((p, idx) => {
+    const cal = monthIndex(p.month) % 12;
+    const arr = monthBuckets.get(cal) ?? [];
+    arr.push(residuals[idx]);
+    monthBuckets.set(cal, arr);
+  });
+  const seasonalMean = (cal: number) => {
+    const arr = monthBuckets.get(((cal % 12) + 12) % 12);
+    if (!arr || !arr.length) return 0;
+    return arr.reduce((s, v) => s + v, 0) / arr.length;
+  };
+
+  const latestIndex = monthIndex(points[n - 1].month);
+  const latestCm = points[n - 1].cm;
+  const baseSeason = seasonalMean(latestIndex);
+  const residualScale = Math.sqrt(residualSum / Math.max(1, n - 2));
+  const lastX = xs[n - 1];
+
+  const chart: GraceForecastPoint[] = points.map((p) => ({
+    month: p.month,
+    actual: p.cm,
+    projected: null,
+    lower: p.cm,
+    upper: p.cm,
+    band: 0,
+  }));
+  chart[chart.length - 1] = {
+    ...chart[chart.length - 1],
+    projected: latestCm,
+  };
+
+  let lastProjected = latestCm;
+  for (let i = 1; i <= horizonMonths; i++) {
+    const seasonalDelta = (seasonalMean(latestIndex + i) - baseSeason) * 0.5;
+    const projected = Number((latestCm + effectiveSlope * i + seasonalDelta).toFixed(2));
+    const x = lastX + i;
+    const leverage = Math.min(3.0, Math.sqrt(1 + 1 / n + (x - meanX) ** 2 / sxx));
+    const uncertainty = 1.96 * residualScale * leverage;
+    const lower = Number((projected - uncertainty).toFixed(2));
+    const upper = Number((projected + uncertainty).toFixed(2));
+    lastProjected = projected;
+    chart.push({
+      month: monthLabel(latestIndex + i),
+      actual: null,
+      projected,
+      lower,
+      upper,
+      band: Number((upper - lower).toFixed(2)),
+    });
+  }
+
+  const confidence: "Low" | "Moderate" | "Higher" =
+    rSquared >= 0.45 ? "Higher" : rSquared >= 0.2 ? "Moderate" : "Low";
+
+  return {
+    chart,
+    slopePerYearCm: Number((effectiveSlope * 12).toFixed(2)),
+    latestMonth: points[n - 1].month,
+    latestCm,
+    projectedMonth: chart[chart.length - 1].month,
+    projectedCm: lastProjected,
+    projectedChangeCm: Number((lastProjected - latestCm).toFixed(2)),
+    rSquared: Number(rSquared.toFixed(2)),
+    confidence,
+  };
+}
+
 export function forecastDepth(points: MonthlyDepthPoint[]): DepthForecast | null {
   const fit = fitLinearDepthTrend(points, 6, 3, 3, 0);
   if (!fit) return null;

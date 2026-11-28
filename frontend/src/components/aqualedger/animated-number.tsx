@@ -8,7 +8,8 @@ import { useEffect, useRef, useState } from "react";
  */
 export function StatValue({ value }: { value: string }) {
   // Metres + feet ("8.5 m / 28.0 ft"): metres lead, feet sit smaller beside them so the stat stays on one line.
-  const dual = /^(.+?\sm)\s*\/\s*(.+\sft)$/.exec(value);
+  // Also matches the Urdu units from translateDepthUnitsUr ("8.5 میٹر / 28.0 فٹ").
+  const dual = /^(.+?\s(?:m|میٹر))\s*\/\s*(.+\s(?:ft|فٹ))$/.exec(value);
   if (dual) {
     return (
       <span className="whitespace-nowrap">
