@@ -361,6 +361,7 @@ export async function readPublicAreaSourceTrends(): Promise<PublicAreaSourceTren
     const reports = await readCommunityWaterReports();
     const groups = new Map<string, { areaKey: string; cityName: string; sourceType: string; sampleMonth: string | null; sampleDay: string | null; reportCount: number; depthSum: number; depthCount: number; normalCount: number; moderateCount: number; highCount: number; incompleteCount: number; labMeasurementCount: number; awaitingReviewCount: number }>();
     for (const r of reports) {
+      if (r.status === "rejected") continue;
       const areaKey = normalizeAreaName(r.areaName || r.areaKey, r.address);
       const cityName = areaKey.split(",")[0]?.trim() || "Pakistan";
       const sourceType = r.sourceType?.trim() || "Unspecified source";

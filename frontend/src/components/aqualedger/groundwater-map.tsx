@@ -534,7 +534,9 @@ export function GroundwaterMap() {
   // dots and region status all follow the same Normal / Moderate / Critical as the forecast page.
   const areaConditions = useMemo(() => computeAreaConditions(publicTrends), [publicTrends]);
   const activeBaseReports = useMemo(() => {
-    const base = mySourcesOnly && isSignedIn && !isAdmin ? myReports : reports;
+    const base = (mySourcesOnly && isSignedIn && !isAdmin ? myReports : reports).filter(
+      (r) => r.status !== "rejected"
+    );
     if (!areaConditions.size) return base;
     return base.map((report) => {
       const condition =

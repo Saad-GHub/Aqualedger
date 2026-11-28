@@ -62,7 +62,7 @@ function MonitoringDashboard() {
       ])
         .then(([reportsRes, trendsRes]) => {
           if (reportsRes.status === "fulfilled") {
-            setReports(reportsRes.value);
+            setReports(reportsRes.value.filter((r) => r.status !== "rejected"));
             setError("");
           } else {
             setError("Could not load monitoring reports.");

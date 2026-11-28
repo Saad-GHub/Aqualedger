@@ -78,7 +78,7 @@ export default function Home() {
     const refresh = () => {
       void readPublicAreaSourceTrends().then(setPublicTrends).catch(() => {});
       void Promise.allSettled([readCommunityWaterReports(), readCommunityWaterAreaRisks()]).then(([reportsResult, summaryResult]) => {
-        if (reportsResult.status === "fulfilled") { setCommunityReports(reportsResult.value); setReportLoadError(""); }
+        if (reportsResult.status === "fulfilled") { setCommunityReports(reportsResult.value.filter((r) => r.status !== "rejected")); setReportLoadError(""); }
         else setReportLoadError("Sign in as the admin to view saved reports.");
         if (summaryResult.status === "fulfilled") { setAreaRiskSummaries(summaryResult.value); setAreaRiskSetupError(""); }
         else { setAreaRiskSummaries([]); setAreaRiskSetupError("Run supabase/area-risk-aggregation.sql in Supabase to enable weighted area tags. Your reports remain saved."); }

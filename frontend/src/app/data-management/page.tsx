@@ -148,7 +148,18 @@ export default function DataManagementPage() {
     const duplicates: { id: string; code: string; area: string; date: string; depth: string }[] = [];
     let missingGps = 0;
 
-    for (const report of reports) {
+    const activeReports = reports.filter((r) => r.status !== "rejected");
+    const excludedReports = reports
+      .filter((r) => r.status === "rejected")
+      .map((r) => ({
+        id: r.id,
+        code: reportCodes.get(r.id) ?? r.id,
+        area: normalizeAreaName(r.areaName || r.areaKey, r.address),
+        depth: r.depth ?? "",
+        date: r.sampleDate ?? "",
+      }));
+
+    for (const report of activeReports) {
       const area = normalizeAreaName(report.areaName || report.areaKey, report.address);
       const code = reportCodes.get(report.id) ?? report.id;
       areas.set(area, (areas.get(area) ?? 0) + 1);
@@ -177,7 +188,7 @@ export default function DataManagementPage() {
       }
     }
 
-    const outliers = detectAreaDepthAnomalies(reports).map((a) => ({
+    const outliers = detectAreaDepthAnomalies(activeReports).map((a) => ({
       ...a,
       code: reportCodes.get(a.id) ?? a.id,
     }));
@@ -187,6 +198,7 @@ export default function DataManagementPage() {
       unmappedAreas,
       outliers,
       duplicates,
+      excludedReports,
       missingGps,
     };
   }, [predefinedSet, reportCodes, reports]);
@@ -496,10 +508,14 @@ export default function DataManagementPage() {
               {cleanStatus}
             </p>
           )}
-          {audit.outliers.length > 0 && (
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-red-200 bg-red-50/70 px-3.5 py-2.5 text-xs">
-              <span className="font-medium text-red-800">
-                AI detected {audit.outliers.length} extreme outlier{audit.outliers.length === 1 ? "" : "s"} skewing area averages.
+          {(audit.outliers.length > 0 || audit.duplicates.length > 0) && (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2.5 text-xs">
+              <span className="font-medium text-amber-900">
+                {tr(
+                  lang,
+                  `AI detected ${audit.outliers.length} outlier(s) and ${audit.duplicates.length} duplicate(s). Exclude them from public data (reversible via Inspect / Approve).`,
+                  `AI نے ${audit.outliers.length} غیر معمولی اور ${audit.duplicates.length} ڈپلیکیٹ رپورٹس پکڑی ہیں۔ انہیں عوامی ڈیٹا سے خارج کریں (منظور کر کے واپس لایا جا سکتا ہے)۔`
+                )}
               </span>
               <button
                 type="button"
@@ -509,26 +525,41 @@ export default function DataManagementPage() {
                   setCleanStatus("");
                   setError("");
                   try {
-                    const ids = audit.outliers.map((o) => o.id);
-                    const count = await deleteWaterReportsByIds(ids);
-                    setReports((prev) => prev.filter((r) => !ids.includes(r.id)));
-                    setCleanStatus(`AI removed ${count} extreme outlier report${count === 1 ? "" : "s"} from Supabase.`);
+                    const ids = [...new Set([...audit.outliers.map((o) => o.id), ...audit.duplicates.map((d) => d.id)])];
+                    await Promise.all(ids.map((id) => updateCommunityReportStatus(id, "rejected")));
+                    setReports((prev) =>
+                      prev.map((r) => (ids.includes(r.id) ? { ...r, status: "rejected" } : r))
+                    );
+                    notifyCommunityWaterReportsUpdated();
+                    setCleanStatus(
+                      tr(
+                        lang,
+                        `Excluded ${ids.length} flagged report(s) from dashboards and averages. Use Inspect or Approve to restore any report.`,
+                        `${ids.length} رپورٹس کو عوامی ڈیٹا سے خارج کر دیا گیا۔ واپس لانے کے لیے معائنہ یا منظور کریں۔`
+                      )
+                    );
                   } catch (err: unknown) {
-                    setError(err instanceof Error ? err.message : "Could not delete outliers. Run supabase/admin-delete-policy.sql in Supabase.");
+                    setError(err instanceof Error ? err.message : "Could not exclude flagged reports.");
                   } finally {
                     setCleaning(false);
                   }
                 }}
-                className="rounded-lg bg-red-600 px-3 py-1.5 font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                className="rounded-lg bg-amber-600 px-3 py-1.5 font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
               >
-                {cleaning ? "Cleaning…" : `AI Auto-Delete Outliers (${audit.outliers.length})`}
+                {cleaning
+                  ? tr(lang, "Excluding…", "خارج ہو رہا ہے…")
+                  : tr(
+                      lang,
+                      `Exclude Flagged (${new Set([...audit.outliers.map((o) => o.id), ...audit.duplicates.map((d) => d.id)]).size})`,
+                      `نشان زدہ خارج کریں (${new Set([...audit.outliers.map((o) => o.id), ...audit.duplicates.map((d) => d.id)]).size})`
+                    )}
               </button>
             </div>
           )}
-          {audit.duplicates.length === 0 && audit.outliers.length === 0 ? (
+          {audit.duplicates.length === 0 && audit.outliers.length === 0 && audit.excludedReports.length === 0 ? (
             <div className="flex items-center gap-2 rounded-xl bg-teal-50 p-4 text-sm text-teal-800">
               <Database size={18} />
-              <span>No duplicate submissions or depth outliers detected.</span>
+              <span>{tr(lang, "No duplicate submissions or depth outliers detected.", "کوئی ڈپلیکیٹ یا غیر معمولی گہرائی کی رپورٹ نہیں ملی۔")}</span>
             </div>
           ) : (
             <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto pr-3">
@@ -537,15 +568,28 @@ export default function DataManagementPage() {
                   <div className="flex min-w-0 items-start gap-2">
                     <AlertTriangle size={15} className="mt-0.5 shrink-0 text-red-600" />
                     <span className="break-words text-xs leading-5 sm:text-sm">
-                      <strong>{item.code}</strong> · {item.area} ({formatDepthMetersAndFeet(item.depth)} — {item.reason})
+                      <strong>{item.code}</strong> · {translateAreaUr(lang, item.area)} ({translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.depth))} — {item.reason})
                     </span>
                   </div>
-                  <Link
-                    href={`/reports?report=${encodeURIComponent(item.id)}`}
-                    className="w-fit shrink-0 text-xs font-semibold text-teal-700 hover:underline"
-                  >
-                    {tr(lang, "Inspect", "معائنہ کریں")} →
-                  </Link>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={moderatingId === item.id}
+                      onClick={() => {
+                        const target = reports.find((r) => r.id === item.id);
+                        if (target) void handlePendingStatus(target, "rejected");
+                      }}
+                      className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+                    >
+                      {tr(lang, "Exclude", "خارج کریں")}
+                    </button>
+                    <Link
+                      href={`/reports?report=${encodeURIComponent(item.id)}`}
+                      className="w-fit shrink-0 text-xs font-semibold text-teal-700 hover:underline"
+                    >
+                      {tr(lang, "Inspect", "معائنہ کریں")} →
+                    </Link>
+                  </div>
                 </li>
               ))}
               {audit.duplicates.slice(0, 10).map((item) => (
@@ -553,15 +597,62 @@ export default function DataManagementPage() {
                   <div className="flex min-w-0 items-start gap-2">
                     <MapPin size={15} className="mt-0.5 shrink-0 text-amber-600" />
                     <span className="break-words text-xs leading-5 sm:text-sm">
-                      <strong>{item.code}</strong> · {item.area} ({formatDepthMetersAndFeet(item.depth)} on {item.date})
+                      <strong>{item.code}</strong> · {translateAreaUr(lang, item.area)} ({translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.depth))} on {item.date})
                     </span>
                   </div>
-                  <Link
-                    href={`/reports?report=${encodeURIComponent(item.id)}`}
-                    className="w-fit shrink-0 text-xs font-semibold text-teal-700 hover:underline"
-                  >
-                    {tr(lang, "Inspect", "معائنہ کریں")} →
-                  </Link>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={moderatingId === item.id}
+                      onClick={() => {
+                        const target = reports.find((r) => r.id === item.id);
+                        if (target) void handlePendingStatus(target, "rejected");
+                      }}
+                      className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+                    >
+                      {tr(lang, "Exclude", "خارج کریں")}
+                    </button>
+                    <Link
+                      href={`/reports?report=${encodeURIComponent(item.id)}`}
+                      className="w-fit shrink-0 text-xs font-semibold text-teal-700 hover:underline"
+                    >
+                      {tr(lang, "Inspect", "معائنہ کریں")} →
+                    </Link>
+                  </div>
+                </li>
+              ))}
+              {audit.excludedReports.slice(0, 15).map((item) => (
+                <li key={`exc-${item.id}`} className="flex flex-col gap-1.5 bg-slate-50/70 py-2.5 px-2 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <div className="flex min-w-0 items-start gap-2">
+                    <XCircle size={15} className="mt-0.5 shrink-0 text-slate-400" />
+                    <span className="break-words text-xs leading-5 text-slate-600 sm:text-sm">
+                      <strong className="text-slate-800">{item.code}</strong> · {translateAreaUr(lang, item.area)}
+                      {item.depth ? ` (${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.depth))})` : ""}
+                      {" · "}
+                      <span className="rounded bg-slate-200/70 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
+                        {tr(lang, "Excluded", "خارج شدہ")}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={moderatingId === item.id}
+                      onClick={() => {
+                        const target = reports.find((r) => r.id === item.id);
+                        if (target) void handlePendingStatus(target, "verified");
+                      }}
+                      className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+                    >
+                      {tr(lang, "Approve & Restore", "منظور کر کے بحال کریں")}
+                    </button>
+                    <Link
+                      href={`/reports?report=${encodeURIComponent(item.id)}`}
+                      className="w-fit shrink-0 text-xs font-semibold text-teal-700 hover:underline"
+                    >
+                      {tr(lang, "Inspect", "معائنہ کریں")} →
+                    </Link>
+                  </div>
                 </li>
               ))}
             </ul>
