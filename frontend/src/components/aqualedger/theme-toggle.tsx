@@ -60,13 +60,14 @@ export function ThemeToggle({ compact = false, className = "" }: { compact?: boo
 
   return (
     <div
+      dir="ltr"
       role="radiogroup"
       aria-label="Colour theme"
       className={`glass relative inline-flex items-center rounded-full p-1 ${className}`}
     >
       <span
         aria-hidden="true"
-        className={`absolute top-1 bottom-1 w-8 rounded-full bg-teal-500 shadow-[0_4px_14px_-4px_rgb(20_184_166/0.8)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`absolute left-1 top-1 bottom-1 w-8 rounded-full bg-teal-500 shadow-[0_4px_14px_-4px_rgb(20_184_166/0.8)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           theme === null ? "opacity-0" : "opacity-100"
         } ${theme === "dark" ? "translate-x-8" : "translate-x-0"}`}
       />
