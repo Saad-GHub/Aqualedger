@@ -7,10 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-urdu: var(--font-urdu), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-data), ui-monospace, monospace;
+  --font-heading: var(--font-display), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-urdu: var(--font-urdu), var(--font-body), ui-sans-serif, system-ui, sans-serif;
   /* Softer, layered elevation used by every card (shadow-sm) and popover (shadow-lg). */
   --shadow-sm: 0 1px 2px rgb(15 40 55 / 0.04), 0 4px 16px -6px rgb(15 40 55 / 0.08);
   --shadow-lg: 0 12px 40px -12px rgb(15 40 55 / 0.25), 0 2px 6px rgb(15 40 55 / 0.06);
@@ -136,9 +136,9 @@
   html {
     @apply font-sans;
   }
-  /* Typography: Plus Jakarta Sans for headings, Geist for reading text. */
+  /* Typography: Bricolage Grotesque for headings, Instrument Sans for reading text, IBM Plex Mono for figures. */
   h1, h2, h3, h4 {
-    font-family: var(--font-display), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-display), var(--font-body), ui-sans-serif, system-ui, sans-serif;
     text-wrap: balance;
   }
   h1 { letter-spacing: -0.035em; line-height: 1.08; font-weight: 700; }
@@ -146,15 +146,15 @@
   h3, h4 { letter-spacing: -0.018em; line-height: 1.3; }
   html[lang="ur"],
   html[lang="ur"] body {
-    /* Geist first for Latin letters and digits; Noto Sans Arabic for Urdu script. */
-    font-family: var(--font-geist-sans), var(--font-urdu), ui-sans-serif, system-ui, sans-serif;
+    /* Instrument Sans first for Latin letters and digits; Noto Sans Arabic for Urdu script. */
+    font-family: var(--font-body), var(--font-urdu), ui-sans-serif, system-ui, sans-serif;
     line-height: 1.65;
   }
   html[lang="ur"] h1,
   html[lang="ur"] h2,
   html[lang="ur"] h3,
   html[lang="ur"] h4 {
-    font-family: var(--font-display), var(--font-geist-sans), var(--font-urdu), sans-serif;
+    font-family: var(--font-display), var(--font-body), var(--font-urdu), sans-serif;
     letter-spacing: 0 !important;
     line-height: 1.48 !important;
   }
@@ -166,9 +166,19 @@
     letter-spacing: 0 !important;
   }
   p { text-wrap: pretty; }
+  button:not(:disabled),
+  [role="button"],
+  [role="radio"],
+  [role="tab"],
+  [role="switch"],
+  summary,
+  select,
+  label[for] {
+    cursor: pointer;
+  }
   /* Urdu inside an English page (chatbot replies, buttons): clean Naskh with comfortable line-height. */
   .urdu-text {
-    font-family: var(--font-geist-sans), var(--font-urdu), sans-serif !important;
+    font-family: var(--font-body), var(--font-urdu), sans-serif !important;
     line-height: 1.75 !important;
     letter-spacing: 0 !important;
   }
@@ -184,7 +194,7 @@
     background: oklch(0.86 0.08 190);
   }
   :focus-visible {
-    outline: 2px solid oklch(0.6 0.12 190);
+    outline: 2px solid var(--indus);
     outline-offset: 2px;
   }
   /* Card surfaces lift slightly when they are links or buttons. */
@@ -227,9 +237,28 @@
    ========================================================================== */
 
 :root {
-  --aqua-turquoise: #14b8a6;
-  --aqua-turquoise-bright: #2dd4bf;
-  --aqua-navy: #0b1f3a;
+  --aqua-turquoise: #0a7d74;
+  --aqua-turquoise-bright: #0e978c;
+  --aqua-navy: #0b1f26;
+  /* "Borewell gauge" design tokens. Content sits on solid logbook surfaces;
+     glass is kept for the floating chrome (header, sidebar, tab bar, popovers). */
+  --surface: #ffffff;
+  --surface-2: #f1f6f5;
+  --line: #d9e5e4;
+  --ink: #0b1f26;
+  --ink-muted: #4a626b;
+  --indus: #0a7d74;
+  --indus-strong: #086a62;
+  --indus-soft: #e3f4f1;
+  --card-shadow: 0 1px 2px rgb(11 31 38 / 0.04), 0 10px 28px -18px rgb(11 31 38 / 0.22);
+  --card-shadow-hover: 0 2px 4px rgb(11 31 38 / 0.05), 0 18px 40px -20px rgb(10 125 116 / 0.35);
+  /* One depth scale for gauges, charts and the map: shallow (light cyan) to deep (indigo). */
+  --depth-1: #8adbe2;
+  --depth-2: #3aa7be;
+  --depth-3: #1f6aa0;
+  --depth-4: #283a86;
+  --depth-5: #2a2563;
+  --strata: #c9b48a;
   /* "Aqua Glass" White theme: see-through panes with a white-to-turquoise rim,
      floating over an aurora of mint, sky and periwinkle with faint contour lines. */
   --glass-bg: rgb(255 255 255 / 0.42);
@@ -246,32 +275,58 @@
   --glass-shadow-hover: 0 2px 4px rgb(11 31 58 / 0.06), 0 32px 60px -26px rgb(13 148 136 / 0.5), 0 10px 24px -14px rgb(56 189 248 / 0.35);
   --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 1), inset 0 -1px 0 rgb(255 255 255 / 0.3);
   --glass-blur: blur(26px) saturate(190%);
-  --chart-grid: rgb(14 74 110 / 0.09);
-  --chart-tick: #6b7f99;
+  --chart-grid: rgb(11 31 38 / 0.08);
+  --chart-tick: #5e7680;
   --orb-1: rgb(45 212 191 / 0.55);
   --orb-2: rgb(56 189 248 / 0.45);
   --orb-3: rgb(129 140 248 / 0.35);
-  --page-base: #e8f3f6;
-  --contour: rgb(14 74 110 / 0.075);
-  /* Navy-tinted ink instead of grey/black, and frosted (translucent) light neutrals. */
-  --color-slate-50: rgb(240 249 252 / 0.55);
-  --color-slate-100: rgb(224 240 246 / 0.65);
-  --color-slate-200: rgb(14 74 110 / 0.12);
-  --color-slate-400: #7a8da6;
-  --color-slate-500: #5a6e88;
-  --color-slate-600: #45597a;
-  --color-slate-700: #33476a;
-  --color-slate-800: #1d3155;
-  --color-slate-900: #0b1f3a;
+  --page-base: #f4f8f7;
+  --contour: rgb(10 125 116 / 0.07);
+  /* "Silt" neutrals: grey with a slight blue-green bias. slate-400 and up pass 4.5:1 on white. */
+  --color-slate-50: #eef4f3;
+  --color-slate-100: #e4edec;
+  --color-slate-200: #d3e0df;
+  --color-slate-300: #b5c7c6;
+  --color-slate-400: #5e7680;
+  --color-slate-500: #4a626b;
+  --color-slate-600: #3a525b;
+  --color-slate-700: #2a4049;
+  --color-slate-800: #182e36;
+  --color-slate-900: #0b1f26;
+  /* Indus teal: deep enough for white text on buttons (5:1). */
+  --color-teal-50: #e3f4f1;
+  --color-teal-100: #cdebe6;
+  --color-teal-500: #0e978c;
+  --color-teal-600: #0a7d74;
+  --color-teal-700: #086a62;
+  --color-teal-800: #065650;
   color-scheme: light;
 }
 
 .dark {
   color-scheme: dark;
-  --background: #000000;
-  --foreground: #f4f7fa;
-  --card: #0a0d10;
-  --border: rgb(255 255 255 / 0.09);
+  --background: #061114;
+  --foreground: #e6f0f0;
+  --card: #0c1b1f;
+  --border: rgb(255 255 255 / 0.08);
+  --aqua-turquoise: #34c6b7;
+  --aqua-turquoise-bright: #5fd8cb;
+  --surface: #0c1b1f;
+  --surface-2: #102328;
+  --line: rgb(255 255 255 / 0.08);
+  --ink: #e6f0f0;
+  --ink-muted: #9db3b7;
+  --indus: #34c6b7;
+  --indus-strong: #5fd8cb;
+  --indus-soft: #0f2f2e;
+  --card-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03), 0 20px 40px -28px rgb(0 0 0 / 0.9);
+  --card-shadow-hover: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 24px 48px -26px rgb(52 198 183 / 0.28);
+  --depth-1: #9be6ec;
+  --depth-2: #4fbfd6;
+  --depth-3: #3d8bd0;
+  --depth-4: #5a6bd6;
+  --depth-5: #8a7fe0;
+  --strata: #5b4c33;
   --glass-bg: rgb(255 255 255 / 0.035);
   --glass-fill: linear-gradient(145deg, rgb(255 255 255 / 0.08) 0%, rgb(255 255 255 / 0.025) 45%, rgb(20 184 166 / 0.05) 100%);
   --glass-ring: linear-gradient(145deg, rgb(255 255 255 / 0.22) 0%, rgb(255 255 255 / 0.05) 40%, rgb(45 212 191 / 0.3) 100%);
@@ -286,30 +341,30 @@
   --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.1), inset 0 0 0 1px rgb(255 255 255 / 0.02);
   --glass-blur: blur(28px) saturate(170%);
   --chart-grid: rgb(255 255 255 / 0.07);
-  --chart-tick: #7b8794;
+  --chart-tick: #8fa6ab;
   --orb-1: rgb(20 184 166 / 0.28);
   --orb-2: rgb(37 99 235 / 0.22);
   --orb-3: rgb(45 212 191 / 0.12);
-  --page-base: #000000;
+  --page-base: #061114;
 
-  /* Neutral scale inverted: light text on black, dark surfaces for slate-50/100. */
-  --color-slate-50: #0b0e11;
-  --color-slate-100: #12171c;
-  --color-slate-200: #1f262d;
-  --color-slate-300: #3a444f;
-  --color-slate-400: #7b8794;
-  --color-slate-500: #9aa6b2;
-  --color-slate-600: #b9c3cd;
-  --color-slate-700: #d5dce3;
-  --color-slate-800: #e7ecf1;
-  --color-slate-900: #f4f7fa;
+  /* Neutral scale inverted: light text on deep aquifer blue-black, dark surfaces for slate-50/100. */
+  --color-slate-50: #0f1f23;
+  --color-slate-100: #132529;
+  --color-slate-200: #1d3337;
+  --color-slate-300: #2f474c;
+  --color-slate-400: #8fa6ab;
+  --color-slate-500: #a3b8bc;
+  --color-slate-600: #bccdd0;
+  --color-slate-700: #d3e0e2;
+  --color-slate-800: #e2eced;
+  --color-slate-900: #eef5f5;
 
   /* Turquoise: tints become deep glows, text shades become bright. */
   --color-teal-50: rgb(20 184 166 / 0.1);
   --color-teal-100: rgb(20 184 166 / 0.16);
   --color-teal-200: rgb(45 212 191 / 0.28);
-  --color-teal-700: #2dd4bf;
-  --color-teal-800: #5eead4;
+  --color-teal-700: #34c6b7;
+  --color-teal-800: #5fd8cb;
   --color-teal-900: #99f6e4;
   --color-cyan-50: rgb(6 182 212 / 0.1);
   --color-sky-50: rgb(14 165 233 / 0.1);
@@ -356,24 +411,21 @@
   --color-teal-200: oklch(91% 0.096 180.426);
 }
 
-/* Solid white surfaces become glass on black. */
+/* Solid white surfaces become the dark logbook surface on black. */
 .dark .bg-white,
-.dark .bg-white\/95,
 .dark .bg-white\/90,
 .dark .bg-white\/80,
 .dark .bg-white\/70 {
-  background-color: var(--glass-bg);
+  background-color: var(--surface);
 }
 .dark .bg-white\/95 { background-color: var(--glass-bg-strong); }
 
-/* Every white card in the app (on any page) becomes the same glass pane in both themes:
-   a translucent fill plus a gradient rim (white fading to turquoise). */
+/* Every white card in the app is the same solid logbook surface in both themes:
+   a hairline border and a soft shadow, no blur, so content reads crisply. */
 :is(.rounded-xl, .rounded-2xl, .rounded-3xl):is(.bg-white, .bg-white\/90, .bg-white\/80, .bg-white\/70) {
-  border: 1px solid transparent;
-  background: var(--glass-fill) padding-box, var(--glass-ring) border-box;
-  box-shadow: var(--glass-highlight), var(--glass-shadow);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--card-shadow);
 }
 /* Hover cards, popovers and floating legends (bg-white/95): a clearer, lighter glass. */
 :is(.rounded-xl, .rounded-2xl, .rounded-3xl).bg-white\/95 {
@@ -396,21 +448,22 @@ input:is(.bg-white), select:is(.bg-white), textarea:is(.bg-white) {
 }
 
 /* Solid accent buttons: consistent crisp white text on #0d9488 in both themes. */
+.dark .bg-teal-600,
 .dark .bg-teal-700,
-.dark .bg-teal-800 { background-color: #0d9488; color: #ffffff; }
-.dark .hover\:bg-teal-800:hover { background-color: #0f766e; }
+.dark .bg-teal-800 { background-color: #0a7d74; color: #ffffff; }
+.dark .hover\:bg-teal-500:hover,
+.dark .hover\:bg-teal-800:hover { background-color: #0e978c; }
 .dark .bg-slate-900 { background-color: var(--aqua-turquoise); color: #031513; }
 .dark .hover\:bg-slate-700:hover { background-color: var(--aqua-turquoise-bright); }
 
 @layer utilities {
-  /* Apple-style frosted glass. */
+  /* Content surface (panels, cards, segmented controls): solid, hairline border, no blur. */
   .glass {
-    border: 1px solid transparent;
-    background: var(--glass-fill) padding-box, var(--glass-ring) border-box;
-    box-shadow: var(--glass-highlight), var(--glass-shadow);
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: var(--card-shadow);
   }
+  /* Frosted glass is reserved for floating chrome: header, sidebar, tab bar, popovers. */
   .glass-strong {
     border: 1px solid transparent;
     background: var(--glass-fill-strong) padding-box, var(--glass-ring) border-box;
@@ -423,12 +476,18 @@ input:is(.bg-white), select:is(.bg-white), textarea:is(.bg-white) {
     transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   .glass-lift:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--glass-highlight), var(--glass-shadow-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: color-mix(in oklab, var(--indus) 35%, var(--line));
+  }
+  /* Figures (depths, counts, dates in tables) use the mono data face. */
+  .font-data {
+    font-family: var(--font-data), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
   }
   /* Display headings. */
   .font-display {
-    font-family: var(--font-display), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-display), var(--font-body), ui-sans-serif, system-ui, sans-serif;
   }
   /* Room for the mobile tab bar and the iPhone home indicator. */
   .pb-safe {
@@ -470,6 +529,7 @@ input:is(.bg-white), select:is(.bg-white), textarea:is(.bg-white) {
   pointer-events: none;
 }
 .aqua-orbs span {
+  display: none; /* drifting light orbs retired; the contour lines stay */
   position: absolute;
   border-radius: 9999px;
   filter: blur(70px);
@@ -523,14 +583,14 @@ input:is(.bg-white), select:is(.bg-white), textarea:is(.bg-white) {
   --color-slate-400: #7a8da6;
   --color-teal-200: #0f766e;
 }
-:root:not(.dark) .aqua-sidebar .bg-teal-300 { background: linear-gradient(135deg, #2dd4bf, #0ea5e9); color: #ffffff; }
+:root:not(.dark) .aqua-sidebar .bg-teal-300 { background: #0a7d74; color: #ffffff; }
 :root:not(.dark) .aqua-sidebar .bg-teal-300\/15 { background-color: rgb(20 184 166 / 0.14); }
 :root:not(.dark) .aqua-sidebar .text-teal-200 { color: #0d9488; }
 /* Active page in the sidebar: turquoise-to-sky pill (both themes). */
 .aqua-sidebar a[aria-current="page"] {
   color: #ffffff;
-  background: linear-gradient(120deg, #14b8a6, #0ea5e9);
-  box-shadow: 0 10px 24px -12px rgb(14 165 233 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.35);
+  background: #0a7d74;
+  box-shadow: 0 8px 18px -12px rgb(10 125 116 / 0.9), inset 0 1px 0 rgb(255 255 255 / 0.18);
 }
 .aqua-sidebar a[aria-current="page"] svg { color: #ffffff; }
 .aqua-sidebar a[aria-current="page"] > span:first-child { display: none; }
@@ -541,7 +601,7 @@ input:is(.bg-white), select:is(.bg-white), textarea:is(.bg-white) {
 /* Stat tiles: each carries its own soft colour glow in the corner. */
 .aqua-stats > * { position: relative; overflow: hidden; isolation: isolate; }
 .aqua-stats > *::before {
-  content: "";
+  content: none;
   position: absolute;
   z-index: -1;
   width: 11rem;
@@ -563,15 +623,44 @@ input:is(.bg-white), select:is(.bg-white), textarea:is(.bg-white) {
 .dark .aqua-stats > *:nth-child(4n + 4) { --stat-glow: rgb(251 191 36 / 0.18); }
 
 /* Hero waves sway gently. */
-.aqua-hero svg path:nth-child(1) { animation: aqua-sway 9s ease-in-out infinite alternate; }
-.aqua-hero svg path:nth-child(2) { animation: aqua-sway 12s ease-in-out infinite alternate-reverse; }
+/* Hero waves stay still: constant motion distracts from the figures. */
+
+/* Borewell gauge (depth-gauge.tsx): soil strata above, water below the water table. */
+.aqua-gauge {
+  border: 1px solid var(--line);
+  background: repeating-linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--strata) 38%, var(--surface)) 0 5px,
+    color-mix(in oklab, var(--strata) 58%, var(--surface)) 5px 6px
+  );
+}
+.aqua-gauge-fill {
+  background: linear-gradient(180deg, var(--depth-2), var(--depth-4));
+  transform-origin: bottom;
+  animation: aqua-gauge-rise 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes aqua-gauge-rise {
+  from { transform: scaleY(0); }
+}
+
+/* Status chips always pair an icon with a word, never colour alone. */
+.aqua-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
 @keyframes aqua-sway { from { transform: translateX(-3%); } to { transform: translateX(3%); } }
 :root:not(.dark) .aqua-hero {
   background:
-    radial-gradient(34rem 18rem at 100% 0%, rgb(45 212 191 / 0.55), transparent 70%),
-    radial-gradient(30rem 16rem at 0% 100%, rgb(56 189 248 / 0.45), transparent 70%),
-    linear-gradient(130deg, #0b3a5c 0%, #0e5a6e 48%, #0b7f86 100%);
-  box-shadow: 0 30px 60px -30px rgb(14 116 144 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.18);
+    radial-gradient(30rem 16rem at 100% 0%, rgb(52 198 183 / 0.22), transparent 70%),
+    linear-gradient(130deg, #0b2a30 0%, #0b4a48 55%, #0a6a63 100%);
+  box-shadow: 0 24px 48px -30px rgb(11 42 48 / 0.7), inset 0 1px 0 rgb(255 255 255 / 0.12);
 }
 
 /* Header: the glass bar firms up and gains depth once content scrolls beneath it. */
@@ -612,7 +701,7 @@ html {
   background: rgb(11 31 58 / 0.42) !important;
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   font-size: 15px !important;
   font-weight: 600;
   border-radius: inherit;
@@ -633,15 +722,14 @@ html {
 .dark .maplibregl-ctrl-attrib a { color: #cbd5e1; }
 .dark .aqua-sidebar {
   background:
-    radial-gradient(18rem 14rem at 0% 0%, rgb(20 184 166 / 0.18), transparent 70%),
-    linear-gradient(180deg, #05080b, #000000);
+    radial-gradient(18rem 14rem at 0% 0%, rgb(52 198 183 / 0.1), transparent 70%),
+    linear-gradient(180deg, #0a181b, #061114);
   border-inline-end: 1px solid rgb(255 255 255 / 0.06);
 }
 .dark .aqua-hero {
   background:
-    radial-gradient(30rem 16rem at 100% 0%, rgb(20 184 166 / 0.38), transparent 70%),
-    radial-gradient(26rem 14rem at 0% 100%, rgb(30 64 175 / 0.35), transparent 70%),
-    linear-gradient(135deg, #04121f, #021a1a);
+    radial-gradient(30rem 16rem at 100% 0%, rgb(52 198 183 / 0.16), transparent 70%),
+    linear-gradient(135deg, #0a2226, #072a28);
   border: 1px solid rgb(255 255 255 / 0.08);
 }
 .dark ::selection { background: rgb(45 212 191 / 0.35); }
@@ -669,7 +757,7 @@ html[dir="rtl"] .maplibregl-popup-content {
   direction: rtl;
 }
 .recharts-cartesian-grid line { stroke: var(--chart-grid); }
-.recharts-cartesian-axis-tick text { fill: var(--chart-tick); }
+.recharts-cartesian-axis-tick text { fill: var(--chart-tick); font-family: var(--font-data), ui-monospace, monospace; font-size: 11px; }
 .recharts-default-tooltip {
   border-radius: 16px !important;
   border: 1px solid transparent !important;
@@ -709,7 +797,7 @@ html[dir="rtl"] .maplibregl-popup-content {
 .aqua-row:hover td { background-color: rgb(20 184 166 / 0.07); }
 .aqua-row[data-selected] td { background-color: rgb(20 184 166 / 0.12); }
 .aqua-row:hover td:first-child,
-.aqua-row[data-selected] td:first-child { box-shadow: inset 3px 0 0 #14b8a6; }
+.aqua-row[data-selected] td:first-child { box-shadow: inset 3px 0 0 var(--indus); }
 .dark .aqua-row:hover td { background-color: rgb(45 212 191 / 0.08); }
 .dark .aqua-row[data-selected] td { background-color: rgb(45 212 191 / 0.14); }
 
@@ -719,7 +807,11 @@ html[dir="rtl"] .maplibregl-popup-content {
   }
   .aqua-stagger > *,
   .aqua-grow,
-  .aqua-orbs span {
+  .aqua-orbs span,
+  .aqua-gauge-fill,
+  .aqua-tooltip,
+  .aqua-popover,
+  .animate-ping {
     animation: none;
   }
   button:not(:disabled):active,

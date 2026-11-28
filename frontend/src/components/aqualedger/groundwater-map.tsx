@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, CircleDot, Layers3, LocateFixed, MapPin, Maximize2, Minus, Plus, User, Waves, X } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, CircleAlert, CircleDot, Layers3, LocateFixed, MapPin, Maximize2, Minus, Plus, User, Waves, X } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { PageIntro, Panel, useAquaRole } from "@/components/aqualedger/app-shell";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
@@ -103,7 +103,7 @@ const wellCircleColor = ["case", ["==", ["get", "trend"], null], "#94a3b8", ["st
 
 // District colour ramps for the Mouza Census 2020 & external Tier 1 district layers: [lower bound, colour, legend label].
 const censusScales: Record<CensusMode, { property: keyof CensusDistrict; title: string; steps: [number, string, string][] }> = {
-  depth: { property: "medianDepthFt", title: "Median water table depth", steps: [[0, "#fef9c3", "< 50 ft · 15 m"], [50, "#fde047", "50–100 ft · 15–30 m"], [100, "#fb923c", "100–200 ft · 30–61 m"], [200, "#ef4444", "200–400 ft · 61–122 m"], [400, "#991b1b", "400+ ft · 122+ m"]] },
+  depth: { property: "medianDepthFt", title: "Median water table depth", steps: [[0, "#8adbe2", "< 50 ft · 15 m"], [50, "#3aa7be", "50–100 ft · 15–30 m"], [100, "#1f6aa0", "100–200 ft · 30–61 m"], [200, "#283a86", "200–400 ft · 61–122 m"], [400, "#2a2563", "400+ ft · 122+ m"]] },
   brackish: { property: "brackishPct", title: "Mouzas with brackish groundwater", steps: [[0, "#ede9fe", "< 5%"], [5, "#c4b5fd", "5–15%"], [15, "#a78bfa", "15–30%"], [30, "#7c3aed", "30–50%"], [50, "#4c1d95", "50%+"]] },
   stress: { property: "stressScore", title: "Composite water stress (0–100)", steps: [[0, "#dcfce7", "< 25 (Low)"], [25, "#fef08a", "25–45 (Moderate)"], [45, "#fb923c", "45–65 (High)"], [65, "#ef4444", "65–80 (Very high)"], [80, "#991b1b", "80+ (Extreme)"]] },
   grace: { property: "graceTrend", title: "Satellite storage trend (2002–26)", steps: [[-Infinity, "#991b1b", "Loss > 1.5 cm/yr"], [-1.5, "#f87171", "Loss 0.5–1.5 cm/yr"], [-0.5, "#cbd5e1", "Stable (±0.5 cm/yr)"], [0.2, "#60a5fa", "Gain 0.2–0.8 cm/yr"], [0.8, "#1d4ed8", "Gain > 0.8 cm/yr"]] },
@@ -1056,29 +1056,29 @@ export function GroundwaterMap() {
         )}
       />
       {/* Compact single-row stat strip so the Map fits immediately above the fold */}
-      <div className="glass flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-2.5 text-xs">
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+      <div className="glass flex flex-row flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-2.5 text-xs">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-6">
           <div>
             <span className="text-slate-500">{tr(lang, "Reports", "رپورٹس")}: </span>
-            <strong className="tabular text-slate-900 dark:text-white">
+            <strong className="font-data text-slate-900 dark:text-white">
               {loading && !reports.length ? "…" : visibleReports.reduce((sum, report) => sum + (report.aggregateCount ?? 1), 0)}
             </strong>
           </div>
           <div>
             <span className="text-slate-500">{tr(lang, "Regions", "علاقے")}: </span>
-            <strong className="tabular text-slate-900 dark:text-white">
+            <strong className="font-data text-slate-900 dark:text-white">
               {loading && !reports.length ? "…" : `${regionsWithData} / ${regionsGeoJson.features.length}`}
             </strong>
           </div>
           <div>
             <span className="text-slate-500">{tr(lang, "Critical", "تشویشناک")}: </span>
-            <strong className="tabular text-red-600 dark:text-red-400">
+            <strong className="font-data text-red-600 dark:text-red-400">
               {loading && !reports.length ? "…" : visibleReports.filter((report) => riskScore(report) >= 1.5).length}
             </strong>
           </div>
           <div>
             <span className="text-slate-500">{tr(lang, "Wells", "کنویں")}: </span>
-            <strong className="tabular text-sky-700 dark:text-sky-400">
+            <strong className="font-data text-sky-700 dark:text-sky-400">
               {wellCount ? wellCount.toLocaleString() : "…"}
             </strong>
             {censusRankings.mouzas > 0 && (
@@ -1090,7 +1090,7 @@ export function GroundwaterMap() {
           type="button"
           onClick={showMyLocation}
           disabled={locating}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60"
+          className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:opacity-60 sm:min-h-0"
         >
           <LocateFixed size={14} />
           {locating ? tr(lang, "Locating…", "مقام تلاش ہو رہا ہے…") : tr(lang, "My Location", "میرا مقام")}
@@ -1098,6 +1098,7 @@ export function GroundwaterMap() {
       </div>
 
       <Panel
+        compactOnPhone
         title={tr(lang, "Pakistan Groundwater Heatmap & Regional Status", "پاکستان گراؤنڈ واٹر ہیٹ میپ اور علاقائی صورتحال")}
         description={tr(
           lang,
@@ -1105,8 +1106,11 @@ export function GroundwaterMap() {
           "اضلاع کو پانی کی گہرائی، کھارے پن یا کمیونٹی رپورٹس کی صورتحال کے لحاظ سے دیکھیں۔"
         )}
       >
-        {/* Quick City Jump */}
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-col">
+        {/* Map controls: below the map on phones (map first), above it from lg up. */}
+        <div className="order-2 mt-3 lg:order-none lg:mt-0">
+        {/* Quick City Jump: one scrollable row on phones */}
+        <div className="-mx-1 mb-3 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
           <button
             type="button"
             aria-pressed={activeCity === "All Pakistan"}
@@ -1116,7 +1120,7 @@ export function GroundwaterMap() {
               setHoverWell(null);
               resetView();
             }}
-            className={`rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${
+            className={`inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-semibold transition sm:min-h-0 ${
               activeCity === "All Pakistan"
                 ? "border-teal-600 bg-teal-600 text-white shadow-xs"
                 : "border-slate-200 bg-white text-slate-600 hover:border-teal-300 hover:text-teal-800"
@@ -1141,7 +1145,7 @@ export function GroundwaterMap() {
                     userMovedMapRef.current = true;
                     mapRef.current?.flyTo({ center: city.position, zoom: 9.2 });
                   }}
-                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
+                  className={`inline-flex min-h-10 shrink-0 items-center whitespace-nowrap rounded-lg border px-3 py-1.5 text-xs font-medium transition sm:min-h-0 ${
                     isActive
                       ? "border-teal-600 bg-teal-600 text-white shadow-xs"
                       : "border-slate-200 bg-white text-slate-600 hover:border-teal-300 hover:text-teal-800"
@@ -1155,12 +1159,12 @@ export function GroundwaterMap() {
 
         {/* Area shading + layer toggles */}
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500">
               <Layers3 size={15} />
               {tr(lang, "Shade by", "رنگ کی بنیاد")}
             </span>
-            <div className="inline-flex flex-wrap rounded-xl border border-slate-200 bg-slate-50 p-1" role="group" aria-label="Area shading">
+            <div className="inline-flex max-w-full overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1 [scrollbar-width:none] sm:flex-wrap [&::-webkit-scrollbar]:hidden" role="group" aria-label="Area shading">
               {shadeModes.map(([mode, label]) => (
                 <button
                   key={mode}
@@ -1170,7 +1174,7 @@ export function GroundwaterMap() {
                     setShadeMode(mode);
                     setCensusBins([]);
                   }}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  className={`inline-flex min-h-9 shrink-0 items-center whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold transition sm:min-h-0 ${
                     shadeMode === mode ? "bg-white text-teal-700 shadow-sm" : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
@@ -1226,14 +1230,14 @@ export function GroundwaterMap() {
             <button
               aria-label="Zoom in"
               onClick={() => mapRef.current?.zoomIn()}
-              className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+              className="hidden rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 sm:inline-flex"
             >
               <Plus size={17} />
             </button>
             <button
               aria-label="Zoom out"
               onClick={() => mapRef.current?.zoomOut()}
-              className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+              className="hidden rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 sm:inline-flex"
             >
               <Minus size={17} />
             </button>
@@ -1241,7 +1245,7 @@ export function GroundwaterMap() {
               aria-label="Reset Pakistan view"
               title="Show all of Pakistan"
               onClick={resetView}
-              className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 sm:min-h-0 sm:min-w-0"
             >
               <Maximize2 size={17} />
             </button>
@@ -1249,13 +1253,13 @@ export function GroundwaterMap() {
         </div>
 
         {/* Risk Filter Pills */}
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+        <div className="-mx-1 mb-3 flex items-center gap-2 overflow-x-auto px-1 pb-1 text-xs [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
           {(
             [
-              { id: "all", label: tr(lang, "All levels", "تمام سطحیں"), dot: "bg-slate-400", style: "bg-slate-100 text-slate-700" },
-              { id: "high", label: tr(lang, "Critical", "تشویشناک"), dot: "bg-red-500", style: "bg-red-50 text-red-700" },
-              { id: "moderate", label: tr(lang, "Moderate", "درمیانہ"), dot: "bg-amber-500", style: "bg-amber-50 text-amber-800" },
-              { id: "normal", label: tr(lang, "Normal", "معمول"), dot: "bg-teal-600", style: "bg-teal-50 text-teal-700" },
+              { id: "all", label: tr(lang, "All levels", "تمام سطحیں"), Icon: Layers3, tone: "text-slate-500", style: "bg-slate-100 text-slate-800" },
+              { id: "high", label: tr(lang, "Critical", "تشویشناک"), Icon: AlertTriangle, tone: "text-red-600", style: "bg-red-50 text-red-700" },
+              { id: "moderate", label: tr(lang, "Moderate", "درمیانہ"), Icon: CircleAlert, tone: "text-amber-600", style: "bg-amber-50 text-amber-800" },
+              { id: "normal", label: tr(lang, "Normal", "معمول"), Icon: CheckCircle2, tone: "text-teal-600", style: "bg-teal-50 text-teal-700" },
             ] as const
           ).map((item) => (
             <button
@@ -1263,13 +1267,13 @@ export function GroundwaterMap() {
               type="button"
               onClick={() => setRiskFilter(item.id)}
               aria-pressed={riskFilter === item.id}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-semibold transition ${
+              className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 font-semibold transition sm:min-h-0 ${
                 riskFilter === item.id
-                  ? `${item.style} ring-2 ring-slate-400/50`
-                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  ? `${item.style} border-current/30 ring-2 ring-current/25`
+                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
               }`}
             >
-              <span className={`h-2 w-2 rounded-full ${item.dot}`} />
+              <item.Icon size={13} className={riskFilter === item.id ? "" : item.tone} aria-hidden="true" />
               {item.label}
             </button>
           ))}
@@ -1287,12 +1291,13 @@ export function GroundwaterMap() {
           )}
         </div>
 
+        </div>
         {loadError && (
-          <p role="alert" className="mb-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
+          <p role="alert" className="order-1 mb-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-800 lg:order-none">
             {loadError}
           </p>
         )}
-        <div className="@container relative">
+        <div className="@container relative order-1 lg:order-none">
           <div
             ref={mapContainer}
             className="h-[60svh] min-h-[360px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[68vh] sm:min-h-110"
@@ -1415,11 +1420,11 @@ export function GroundwaterMap() {
           )}
 
           {!hoverWell && hoverDistrict && activeScale && !legendOpen && (
-            <div className="pointer-events-none absolute right-3 top-3 z-30 w-72 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur dark:border-white/15 dark:bg-[#0b1320]/95 @min-[820px]:left-3! @min-[820px]:right-auto!">
+            <div className="pointer-events-none absolute right-3 top-3 z-30 w-72 rounded-2xl border border-white/60 bg-white/95 p-3.5 shadow-lg backdrop-blur dark:border-white/15 dark:bg-[#0c1b1f]/95 @min-[820px]:left-3! @min-[820px]:right-auto!">
               <p className="text-sm font-semibold text-slate-900">{hoverDistrict.name}</p>
               <p className="text-[11px] text-slate-500">{hoverDistrict.province}{hoverDistrict.censusDistricts && hoverDistrict.censusDistricts !== hoverDistrict.name ? ` · includes ${hoverDistrict.censusDistricts}` : ""}</p>
               <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-orange-50 p-2 dark:bg-orange-500/10"><dt className="text-orange-700/80 dark:text-orange-300">Median depth</dt><dd className="tabular mt-0.5 whitespace-nowrap text-sm font-semibold text-orange-800 dark:text-orange-200">{hoverDistrict.medianDepthFt != null ? <>{hoverDistrict.medianDepthFt} ft <span className="text-[11px] font-medium text-orange-700/80 dark:text-orange-300/80">({asMetres(hoverDistrict.medianDepthFt)})</span></> : "—"}</dd></div>
+                <div className="rounded-lg bg-sky-50 p-2 dark:bg-sky-500/10"><dt className="text-sky-800 dark:text-sky-300">Median depth</dt><dd className="font-data mt-0.5 whitespace-nowrap text-sm font-semibold text-[#1f6aa0] dark:text-sky-200">{hoverDistrict.medianDepthFt != null ? <>{hoverDistrict.medianDepthFt} ft <span className="text-[11px] font-medium opacity-80">({asMetres(hoverDistrict.medianDepthFt)})</span></> : "—"}</dd></div>
                 <div className="rounded-lg bg-violet-50 p-2 dark:bg-violet-500/10"><dt className="text-violet-700/80 dark:text-purple-300">Brackish / Stress</dt><dd className="tabular mt-0.5 whitespace-nowrap text-sm font-semibold text-violet-800 dark:text-purple-200">{hoverDistrict.brackishPct != null ? `${hoverDistrict.brackishPct}%` : "—"}{hoverDistrict.stressScore != null ? ` · ${Math.round(hoverDistrict.stressScore)}/100` : ""}</dd></div>
                 <div className="rounded-lg bg-sky-50 p-2 dark:bg-sky-500/10"><dt className="text-sky-700/80 dark:text-sky-300">GRACE 2002–26</dt><dd className="tabular mt-0.5 whitespace-nowrap text-xs font-semibold text-sky-900 dark:text-sky-200">{hoverDistrict.graceTrend != null ? `${hoverDistrict.graceTrend > 0 ? "+" : ""}${hoverDistrict.graceTrend} cm/yr` : "—"}</dd></div>
                 <div className="rounded-lg bg-rose-50 p-2 dark:bg-rose-500/10"><dt className="text-rose-700/80 dark:text-rose-300">Arsenic / E. coli</dt><dd className="tabular mt-0.5 whitespace-nowrap text-xs font-semibold text-rose-900 dark:text-rose-200">{hoverDistrict.arsenicPct != null ? `${hoverDistrict.arsenicPct}% As` : hoverDistrict.ecoliPct != null ? `${hoverDistrict.ecoliPct}% E.coli` : "No survey"}</dd></div>
@@ -1429,6 +1434,7 @@ export function GroundwaterMap() {
           )}
         </div>
 
+        </div>
         {mapError && (
           <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
             {mapError}
@@ -1446,9 +1452,9 @@ export function GroundwaterMap() {
             <button onClick={clearMyLocation} aria-label="Clear my location" className="ml-auto shrink-0 rounded-lg border border-slate-200 p-1.5 text-slate-500 hover:bg-slate-50"><X size={15} /></button>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-orange-200/70 bg-orange-50 p-4 dark:border-teal-500/30 dark:bg-[#0b1320]"><p className="text-xs font-medium text-orange-800 dark:text-teal-300">Median water table depth</p><p className="tabular mt-1 text-2xl font-semibold text-orange-900 dark:text-white">{myLocation.district?.medianDepthFt != null ? depthFt(myLocation.district.medianDepthFt) : "—"}</p><p className="mt-1 text-[11px] text-orange-800/80 dark:text-slate-400">{myLocation.district ? `Across ${myLocation.district.mouzas?.toLocaleString()} mouzas in the district` : "No census data here"}</p></div>
-            <div className="rounded-xl border border-violet-200/70 bg-violet-50 p-4 dark:border-purple-400/30 dark:bg-[#0b1320]"><p className="text-xs font-medium text-violet-800 dark:text-purple-300">Brackish groundwater</p><p className="tabular mt-1 text-2xl font-semibold text-violet-900 dark:text-white">{myLocation.district?.brackishPct != null ? `${myLocation.district.brackishPct}%` : "—"}</p><p className="mt-1 text-[11px] text-violet-800/80 dark:text-purple-200">of mouzas report salty underground water</p></div>
-            <button type="button" disabled={!myLocation.nearestWell} onClick={() => { if (!myLocation.nearestWell) return; setSelectedWell(myLocation.nearestWell.well); mapRef.current?.flyTo({ center: [myLocation.nearestWell.well.lon, myLocation.nearestWell.well.lat], zoom: 12 }); }} className="rounded-xl border border-sky-200/70 bg-sky-50 p-4 text-left transition hover:bg-sky-100 disabled:hover:bg-sky-50 dark:border-sky-400/30 dark:bg-[#0b1320] dark:hover:bg-[#111c2d] dark:disabled:hover:bg-[#0b1320]"><p className="text-xs font-medium text-sky-800 dark:text-sky-300">Nearest observation well</p><p className="tabular mt-1 text-2xl font-semibold text-sky-900 dark:text-white">{myLocation.nearestWell ? `${myLocation.nearestWell.km < 10 ? myLocation.nearestWell.km.toFixed(1) : Math.round(myLocation.nearestWell.km)} km` : "—"}</p><p className="mt-1 text-[11px] text-sky-800/80 dark:text-white/80">{myLocation.nearestWell ? `${myLocation.nearestWell.well.id} · ${wellTrendText(myLocation.nearestWell.well.trend).toLowerCase()} · open history` : "No monitoring wells loaded"}</p></button>
+            <div className="rounded-xl border border-orange-200/70 bg-orange-50 p-4 dark:border-teal-500/30 dark:bg-[#0c1b1f]"><p className="text-xs font-medium text-orange-800 dark:text-teal-300">Median water table depth</p><p className="tabular mt-1 text-2xl font-semibold text-orange-900 dark:text-white">{myLocation.district?.medianDepthFt != null ? depthFt(myLocation.district.medianDepthFt) : "—"}</p><p className="mt-1 text-[11px] text-orange-800/80 dark:text-slate-400">{myLocation.district ? `Across ${myLocation.district.mouzas?.toLocaleString()} mouzas in the district` : "No census data here"}</p></div>
+            <div className="rounded-xl border border-violet-200/70 bg-violet-50 p-4 dark:border-purple-400/30 dark:bg-[#0c1b1f]"><p className="text-xs font-medium text-violet-800 dark:text-purple-300">Brackish groundwater</p><p className="tabular mt-1 text-2xl font-semibold text-violet-900 dark:text-white">{myLocation.district?.brackishPct != null ? `${myLocation.district.brackishPct}%` : "—"}</p><p className="mt-1 text-[11px] text-violet-800/80 dark:text-purple-200">of mouzas report salty underground water</p></div>
+            <button type="button" disabled={!myLocation.nearestWell} onClick={() => { if (!myLocation.nearestWell) return; setSelectedWell(myLocation.nearestWell.well); mapRef.current?.flyTo({ center: [myLocation.nearestWell.well.lon, myLocation.nearestWell.well.lat], zoom: 12 }); }} className="rounded-xl border border-sky-200/70 bg-sky-50 p-4 text-left transition hover:bg-sky-100 disabled:hover:bg-sky-50 dark:border-sky-400/30 dark:bg-[#0c1b1f] dark:hover:bg-[#111c2d] dark:disabled:hover:bg-[#0b1320]"><p className="text-xs font-medium text-sky-800 dark:text-sky-300">Nearest observation well</p><p className="tabular mt-1 text-2xl font-semibold text-sky-900 dark:text-white">{myLocation.nearestWell ? `${myLocation.nearestWell.km < 10 ? myLocation.nearestWell.km.toFixed(1) : Math.round(myLocation.nearestWell.km)} km` : "—"}</p><p className="mt-1 text-[11px] text-sky-800/80 dark:text-white/80">{myLocation.nearestWell ? `${myLocation.nearestWell.well.id} · ${wellTrendText(myLocation.nearestWell.well.trend).toLowerCase()} · open history` : "No monitoring wells loaded"}</p></button>
           </div>
           <Link href="/forecast" className="mt-4 inline-block text-xs font-semibold text-teal-700 hover:underline">Open the depth forecast for your area →</Link>
         </Panel>
@@ -1561,7 +1567,7 @@ export function GroundwaterMap() {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-red-300 hover:bg-red-50/40 dark:border-white/10 dark:bg-[#0b1320] dark:hover:bg-[#111c2d]"
+                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-red-300 hover:bg-red-50/40 dark:border-white/10 dark:bg-[#0c1b1f] dark:hover:bg-[#111c2d]"
                   >
                     <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-100 text-xs font-bold text-red-700">{index + 1}</span>
                     <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-white">{district.name}</span><span className="block text-xs text-slate-500 dark:text-slate-400">{district.province} · {district.mouzas} {tr(lang, "mouzas", "مواضعات")}</span></span>
@@ -1589,7 +1595,7 @@ export function GroundwaterMap() {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-violet-300 hover:bg-violet-50/40 dark:border-white/10 dark:bg-[#0b1320] dark:hover:bg-[#111c2d]"
+                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-violet-300 hover:bg-violet-50/40 dark:border-white/10 dark:bg-[#0c1b1f] dark:hover:bg-[#111c2d]"
                   >
                     <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-xs font-bold text-violet-700">{index + 1}</span>
                     <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-white">{district.name}</span><span className="block text-xs text-slate-500 dark:text-slate-400">{district.province} · {district.mouzas} {tr(lang, "mouzas", "مواضعات")}</span></span>
@@ -1617,7 +1623,7 @@ export function GroundwaterMap() {
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }
                     }}
-                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-amber-300 hover:bg-amber-50/40 dark:border-white/10 dark:bg-[#0b1320] dark:hover:bg-[#111c2d]"
+                    className="flex w-full items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 text-left transition hover:border-amber-300 hover:bg-amber-50/40 dark:border-white/10 dark:bg-[#0c1b1f] dark:hover:bg-[#111c2d]"
                   >
                     <span className="tabular flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-xs font-bold text-amber-800">{index + 1}</span>
                     <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-800 dark:text-white">{district.name}</span><span className="block text-xs text-slate-500 dark:text-slate-400">{district.province}{district.graceTrend != null ? ` · ${district.graceTrend} cm/yr` : ""}</span></span>

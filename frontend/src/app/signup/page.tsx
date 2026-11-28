@@ -1,5 +1,6 @@
 "use client";
 
+import { StepIndicator } from "@/components/aqualedger/step-indicator";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -132,6 +133,10 @@ export default function SignUpPage() {
         title={otpSent ? tr(lang, "Verify your email with OTP", "OTP سے اپنے ای میل کی تصدیق کریں") : tr(lang, "Register with Email, Password & OTP", "ای میل، پاس ورڈ اور OTP کے ساتھ رجسٹر کریں")}
         description={tr(lang, "Email OTP is required only once when creating a new account. Community accounts cannot access administrator review tools.", "نیا اکاؤنٹ بناتے وقت ای میل OTP صرف ایک بار درکار ہوتا ہے۔")}
       >
+        <StepIndicator
+          current={otpSent ? 1 : 0}
+          steps={[tr(lang, "Your details", "آپ کی تفصیل"), tr(lang, "Verify email", "ای میل کی تصدیق"), tr(lang, "Done", "مکمل")]}
+        />
         {otpSent ? (
           <form onSubmit={(event) => void verifyOtp(event)} className="max-w-lg space-y-4">
             {message && (

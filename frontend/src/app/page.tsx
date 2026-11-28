@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, AlertTriangle, Droplets, Gauge, MapPin, ShieldCheck, Waves, Sparkles, TrendingUp } from "lucide-react";
+import { Activity, AlertTriangle, ChevronRight, Droplets, Gauge, MapPin, ShieldCheck, Waves, Sparkles, TrendingUp } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Link from "next/link";
 import { Panel, useAquaRole } from "@/components/aqualedger/app-shell";
@@ -12,6 +12,7 @@ import { SourceTypeDepthPanel, TopAreasDepthPanel } from "@/components/aqualedge
 import waterLevelByYear from "@/data/punjab-water-level-by-year.json";
 import { getProvinceDrivers, GRACE_PROVINCE_SERIES } from "@/lib/district-intelligence";
 import { StatValue } from "@/components/aqualedger/animated-number";
+import { DepthGauge } from "@/components/aqualedger/depth-gauge";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import { translateAreaUr, translateDepthUnitsUr } from "@/lib/urdu-translations";
 import { depthM } from "@/lib/units";
@@ -99,7 +100,8 @@ export default function Home() {
     },
     { depthWeightedSum: 0, depthWeightedCount: 0 }
   );
-  const avgDepthStr = depthWeightedCount ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(depthWeightedSum / depthWeightedCount)) : "—";
+  const avgDepthM = depthWeightedCount ? depthWeightedSum / depthWeightedCount : null;
+  const avgDepthStr = avgDepthM !== null ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(avgDepthM)) : "—";
   const areaSummariesByKey = new Map(areaRiskSummaries.map((summary) => [summary.areaKey.toLocaleLowerCase(), summary]));
   const areaConditions = useMemo(() => computeAreaConditions(publicTrends), [publicTrends]);
   const areaConditionsByKey = useMemo(
@@ -121,6 +123,10 @@ export default function Home() {
     return { area: summary?.areaKey ?? reports[0].areaKey ?? areaFor(reports[0].address), reports, avgDepth: areaAvgDepth, category, color };
   });
   const highCount = areaRisks.filter((area) => area.category === "High concern").length;
+  const attentionAreas = areaRisks
+    .filter((area) => area.category === "High concern")
+    .sort((a, b) => (b.avgDepth ?? -1) - (a.avgDepth ?? -1))
+    .slice(0, 4);
   const moderateCount = areaRisks.filter((area) => area.category === "Moderate concern").length;
   const normalCount = areaRisks.filter((area) => area.category === "Normal").length;
   const isInitialLoading = loading && communityReports.length === 0;
@@ -156,14 +162,21 @@ export default function Home() {
   const sources = recentReports.map((report) => ({ id: report.id, name: report.sourceType ?? "Water source", location: report.address, level: report.depth ? formatDepthMetersAndFeet(report.depth) : "—", status: report.status, color: "text-teal-700 bg-teal-50" }));
 
   return <>
-    <section className="aqua-hero relative overflow-hidden rounded-3xl p-6 text-white shadow-lg sm:p-8">
+    <section className="aqua-hero relative overflow-hidden rounded-3xl p-5 text-white shadow-lg sm:p-8">
       <svg aria-hidden="true" viewBox="0 0 1200 120" preserveAspectRatio="none" className="absolute inset-x-0 bottom-0 h-16 w-full text-white/[0.06]"><path fill="currentColor" d="M0 60 C 200 10 400 110 600 60 S 1000 10 1200 60 V120 H0Z"/><path fill="currentColor" d="M0 80 C 250 40 450 120 700 80 S 1050 40 1200 85 V120 H0Z"/></svg>
-      <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-        <div className="max-w-2xl"><p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-teal-100"><MapPin size={13}/>{tr(lang, "Pakistan · community groundwater network", "پاکستان · کمیونٹی گراؤنڈ واٹر نیٹ ورک")}</p><h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">{isAdmin ? tr(lang, "Welcome back, Admin", "خوش آمدید، ایڈمن") : tr(lang, "Groundwater Overview", "زمینی پانی کا جائزہ")}</h1><p className="mt-3 text-sm leading-6 text-slate-200/90 sm:text-base">{tr(lang, "Live groundwater depth trends from community readings and long-term monitoring wells across Pakistan.", "پاکستان بھر سے کمیونٹی ریڈنگز اور طویل مدتی مشاہداتی کنوؤں سے زمینی پانی کی گہرائی کے لائیو رجحانات۔")}</p></div>
-        <div className="flex flex-wrap gap-3"><Link href="/reports?new=1" className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-500"><Droplets size={16}/>+ {tr(lang, "Log Water Reading", "ریڈنگ درج کریں")}</Link><Link href="/map" className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"><MapPin size={16}/>{tr(lang, "Explore Map", "نقشہ دیکھیں")}</Link><Link href="/forecast" className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"><TrendingUp size={16}/>{tr(lang, "AI Forecast", "AI پیشگوئی")}</Link></div>
+      <div className="relative flex flex-col justify-between gap-4 sm:gap-6 lg:flex-row lg:items-end">
+        <div className="max-w-2xl"><p className="hidden items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-teal-100 sm:inline-flex"><MapPin size={13}/>{tr(lang, "Pakistan · community groundwater network", "پاکستان · کمیونٹی گراؤنڈ واٹر نیٹ ورک")}</p><h1 className="text-[26px] font-semibold leading-tight tracking-tight sm:mt-4 sm:text-4xl">{isAdmin ? tr(lang, "Welcome back, Admin", "خوش آمدید، ایڈمن") : tr(lang, "Groundwater Overview", "زمینی پانی کا جائزہ")}</h1><p className="mt-2 text-sm leading-6 text-slate-200/90 sm:mt-3 sm:text-base">{tr(lang, "Live groundwater depth trends from community readings and long-term monitoring wells across Pakistan.", "پاکستان بھر سے کمیونٹی ریڈنگز اور طویل مدتی مشاہداتی کنوؤں سے زمینی پانی کی گہرائی کے لائیو رجحانات۔")}</p></div>
+        <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3"><Link href="/reports?new=1" className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl sm:justify-start bg-white px-4 py-2.5 text-sm font-semibold text-[#0b2a30] shadow-sm transition hover:bg-teal-50"><Droplets size={16}/>+ {tr(lang, "Log Water Reading", "ریڈنگ درج کریں")}</Link><Link href="/map" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"><MapPin size={16}/>{tr(lang, "Explore Map", "نقشہ دیکھیں")}</Link><Link href="/forecast" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"><TrendingUp size={16}/>{tr(lang, "AI Forecast", "AI پیشگوئی")}</Link></div>
       </div>
     </section>
-    <div className="aqua-stats grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">{dashboardStats.map((stat) => { const card = <div className="glass glass-lift group h-full rounded-3xl p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><p className="text-[13px] font-medium leading-5 text-slate-500 sm:text-sm">{stat.title}</p><div className={`rounded-2xl p-2.5 ring-1 transition duration-300 group-hover:scale-110 ${stat.tone}`}><stat.icon size={19}/></div></div><p className="tabular font-display mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-[32px]">{isInitialLoading ? <span className="inline-block h-7 w-20 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-700/70" /> : <StatValue value={stat.value} />}</p><p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400"><span className="h-1.5 w-1.5 min-h-[6px] min-w-[6px] flex-none rounded-full bg-emerald-500"/>{stat.note}</p></div>; return "href" in stat && stat.href ? <Link key={stat.id} href={stat.href} className="block">{card}</Link> : <div key={stat.id}>{card}</div>; })}</div>
+    <div className="aqua-stats grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">{dashboardStats.map((stat) => { const card = <div className="glass glass-lift group h-full rounded-3xl p-4 sm:p-5"><div className="flex items-start justify-between gap-3"><p className="text-[13px] font-medium leading-5 text-slate-500 sm:text-sm">{stat.title}</p>{stat.id === "avg-depth" && !isInitialLoading && avgDepthM !== null ? <DepthGauge depthM={avgDepthM} size="md" className="mr-1" /> : <div className={`rounded-2xl p-2.5 ring-1 transition duration-300 group-hover:scale-110 ${stat.tone}`}><stat.icon size={19}/></div>}</div><p className="tabular font-display mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-[32px]">{isInitialLoading ? <span className="inline-block h-7 w-20 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-200" /> : <StatValue value={stat.value} />}</p><p className="mt-1.5 flex items-center gap-1.5 text-xs text-slate-400"><span className="h-1.5 w-1.5 min-h-[6px] min-w-[6px] flex-none rounded-full bg-emerald-500"/>{stat.note}</p></div>; return "href" in stat && stat.href ? <Link key={stat.id} href={stat.href} className="block">{card}</Link> : <div key={stat.id}>{card}</div>; })}</div>
+    {!isInitialLoading && attentionAreas.length > 0 && <section aria-labelledby="attention-title" className="glass rounded-3xl p-4 sm:p-5">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div><h2 id="attention-title" className="flex items-center gap-2 text-base font-semibold text-slate-900 sm:text-lg"><AlertTriangle size={17} className="text-red-600" aria-hidden="true"/>{tr(lang, "Needs attention", "توجہ طلب علاقے")}</h2><p className="mt-0.5 text-xs text-slate-500 sm:text-sm">{tr(lang, `${highCount} critical areas, deepest water table first`, `${highCount} تشویشناک علاقے، سب سے گہرا پانی پہلے`)}</p></div>
+        <Link href="/map?severity=critical" className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-sm font-semibold text-teal-700 hover:underline">{tr(lang, "View on map", "نقشے پر دیکھیں")}<ChevronRight size={15} aria-hidden="true" className="rtl:rotate-180"/></Link>
+      </div>
+      <ul className="grid gap-2 md:grid-cols-2">{attentionAreas.map((area) => <li key={area.area}><Link href={`/forecast?area=${encodeURIComponent(area.area)}`} className="group flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition hover:border-teal-600/40 hover:bg-teal-50"><DepthGauge depthM={area.avgDepth} /><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-slate-900">{area.area}</span><span className="font-data mt-0.5 block whitespace-nowrap text-[13px] text-slate-600">{area.avgDepth !== null ? formatDepthMetersAndFeet(area.avgDepth) : "—"}</span></span><span className="aqua-chip bg-red-50 text-red-700"><AlertTriangle size={12} aria-hidden="true"/>{tr(lang, "Critical", "تشویشناک")}</span></Link></li>)}</ul>
+    </section>}
     <Panel title={tr(lang, "Groundwater Depth Trends", "زمینی پانی کی گہرائی کے رجحانات")} description={tr(lang, "Reported source depth below ground, grouped by sample day, month or year", "دن، مہینے یا سال کے حساب سے زمین کے نیچے پانی کی اوسط گہرائی")}><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div className="glass relative inline-flex rounded-2xl p-1" aria-label="Trend time interval">{(["day", "month", "year"] as const).map((interval) => <button key={interval} type="button" aria-pressed={trendInterval === interval} onClick={() => setTrendInterval(interval)} className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold capitalize transition duration-300 ${trendInterval === interval ? "bg-teal-600 text-white shadow-[0_6px_16px_-6px_rgb(20_184_166/0.8)]" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}>{interval === "day" ? tr(lang, "Days", "دن") : interval === "month" ? tr(lang, "Months", "مہینے") : tr(lang, "Years", "سال")}</button>)}</div><span className="rounded-full bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">{isInitialLoading ? tr(lang, "Loading…", "لوڈ ہو رہا ہے…") : tr(lang, `${trendData.reduce((sum, item) => sum + item.readings, 0)} readings · ${trendData.length} ${trendInterval === "day" ? "days" : trendInterval === "month" ? "months" : "years"}`, `${trendData.reduce((sum, item) => sum + item.readings, 0)} ریڈنگز · ${trendData.length} ${trendInterval === "day" ? "دن" : trendInterval === "month" ? "مہینے" : "سال"}`)}</span></div>{isInitialLoading ? <div className="h-80 animate-pulse rounded-2xl bg-slate-100" /> : trendData.length ? <><div className="h-80 w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={trendData} margin={{ top: 18, right: 16, left: 4, bottom: 20 }}><defs><linearGradient id="depthFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#14b8a6" stopOpacity={0.28}/><stop offset="100%" stopColor="#14b8a6" stopOpacity={0}/></linearGradient></defs><CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false}/><XAxis dataKey="ts" type="number" scale="time" domain={["dataMin", "dataMax"]} height={28} minTickGap={48} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} tickFormatter={(ts) => { const d = new Date(Number(ts)); if (Number.isNaN(d.getTime())) return String(ts); if (trendInterval === "year") return String(d.getFullYear()); if (trendInterval === "month") return d.toLocaleDateString("en-US", { month: "short", year: "numeric" }); return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }}/><YAxis width={82} tickFormatter={(v) => formatAxisDepthMetersAndFeet(Number(v))} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }}/><Tooltip separator=": " cursor={{ stroke: "#94a3b8", strokeDasharray: "4 4" }} formatter={(value, _name, item) => [`${formatDepthMetersAndFeet(Number(value))} average depth · ${item.payload.readings} reading${item.payload.readings === 1 ? "" : "s"}`, tr(lang, "Source depth", "ذریعہ کی گہرائی")]} labelFormatter={(_label, payload) => { const p = payload?.[0]?.payload?.period; return `${trendInterval === "day" ? tr(lang, "Day", "دن") : trendInterval === "month" ? tr(lang, "Month", "مہینہ") : tr(lang, "Year", "سال")}: ${p ?? ""}`; }}/><Area key={trendInterval} type="monotone" dataKey="averageDepth" name={tr(lang, "Average depth", "اوسط گہرائی")} stroke="#14b8a6" strokeWidth={2.5} fill="url(#depthFill)" dot={false} activeDot={{ r: 6, fill: "#14b8a6", stroke: "white", strokeWidth: 2 }} animationDuration={1400} animationEasing="ease-out"/></AreaChart></ResponsiveContainer></div><p className={`mt-3 rounded-lg p-3 text-xs leading-5 ${trendData.length < 2 ? "bg-amber-50 text-amber-800" : "text-slate-400"}`}>{trendData.length < 2 ? tr(lang, `Only ${trendData.length} ${trendInterval} with readings so far. A trend line needs at least 2 different periods.`, `اب تک صرف ${trendData.length} مدت کی ریڈنگز ہیں۔ رجحان کی لائن کے لیے کم از کم 2 مختلف ادوار درکار ہیں۔`) : tr(lang, "Hover over the line to inspect a reading. Each point is the period average; different locations and source types may not be directly comparable.", "ریڈنگ دیکھنے کے لیے لائن پر ہوور کریں۔ ہر نقطہ اس مدت کی اوسط کو ظاہر کرتا ہے۔")}</p></> : <div className="flex h-80 items-center justify-center rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500">{tr(lang, "No reports with both a source depth and sample date to show in this view.", "اس ویو میں دکھانے کے لیے گہرائی اور تاریخ والی کوئی رپورٹ موجود نہیں۔")}</div>}</Panel>
     <div className="grid gap-6 xl:grid-cols-5">
       <div className="xl:col-span-3">
@@ -208,15 +221,15 @@ export default function Home() {
           description={tr(lang, "Monthly terrestrial water storage anomaly (cm) up to August 2026, with multi-factor AI projection incorporating rainfall, irrigation demand, motor-pump dependency, water stress, and monsoon cycles.", "اگست 2026 تک سیٹلائٹ ریکارڈ اور بارش، آبپاشی، موٹر پمپ طلب، آبی دباؤ اور مون سون کی بنیاد پر 15 سالہ پیشگوئی۔")}
         >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="glass inline-flex flex-wrap rounded-2xl p-1" role="group" aria-label="Province selector">
+            <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+              <div className="glass inline-flex max-w-full flex-nowrap overflow-x-auto rounded-2xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Province selector">
                 {graceProvinces.map((prov) => (
                   <button
                     key={prov}
                     type="button"
                     aria-pressed={graceProvince === prov}
                     onClick={() => setGraceProvince(prov)}
-                    className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${graceProvince === prov ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}
+                    className={`shrink-0 whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 ${graceProvince === prov ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}
                   >
                     {lang === "ur" ? translateAreaUr(lang, prov) : prov === "Khyber Pakhtunkhwa" ? "KP" : prov}
                   </button>
@@ -229,7 +242,7 @@ export default function Home() {
                     type="button"
                     aria-pressed={graceHorizon === h}
                     onClick={() => setGraceHorizon(h)}
-                    className={`rounded-xl px-2.5 py-1.5 text-xs font-semibold transition ${graceHorizon === h ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}
+                    className={`font-data whitespace-nowrap rounded-xl px-2.5 py-1.5 text-xs font-semibold transition ${graceHorizon === h ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}
                   >
                     +{h / 12} yr
                   </button>
@@ -252,13 +265,13 @@ export default function Home() {
 
           {forecast && (
             <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0b1320]">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0c1b1f]">
                 <p className="text-[11px] text-slate-500">Latest ({forecast.latestMonth})</p>
                 <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
                   {forecast.latestCm >= 0 ? `+${forecast.latestCm}` : forecast.latestCm} cm
                 </p>
               </div>
-              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-500/30 dark:bg-[#0b1320]">
+              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-500/30 dark:bg-[#0c1b1f]">
                 <p className="text-[11px] text-blue-700 dark:text-blue-300">
                   Projected +{graceHorizon / 12} yr ({forecast.projectedMonth})
                 </p>
@@ -269,7 +282,7 @@ export default function Home() {
                   </span>
                 </p>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0b1320]">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0c1b1f]">
                 <p className="text-[11px] text-slate-500">Projected Trend Rate</p>
                 <p className={`mt-1 text-lg font-bold ${forecast.slopePerYearCm < -0.2 ? "text-red-700 dark:text-red-400" : forecast.slopePerYearCm > 0.2 ? "text-sky-700 dark:text-sky-300" : "text-teal-700"}`}>
                   {forecast.slopePerYearCm >= 0 ? `+${forecast.slopePerYearCm}` : forecast.slopePerYearCm} cm/yr

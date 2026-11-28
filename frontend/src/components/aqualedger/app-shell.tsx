@@ -399,7 +399,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <header className="aqua-header sticky top-0 z-30 bg-[#e8f3f6] px-2 pb-1.5 pt-[max(0px,env(safe-area-inset-top))] dark:bg-black sm:px-4 lg:px-6 lg:pt-2">
            <div
             data-scrolled={scrolled || undefined}
-            className="aqua-header-bar glass-strong flex h-13 items-center justify-between gap-1.5 rounded-[20px] bg-white pl-2.5 pr-2 shadow-sm dark:bg-[#0b1016] sm:h-16 sm:gap-3 sm:rounded-[22px] sm:pl-3 sm:pr-3"
+            className="aqua-header-bar glass-strong flex h-13 items-center justify-between gap-1.5 rounded-[20px] bg-white pl-2.5 pr-2 shadow-sm dark:bg-[#0c1b1f] sm:h-16 sm:gap-3 sm:rounded-[22px] sm:pl-3 sm:pr-3"
            >
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <Link
@@ -540,7 +540,7 @@ export function PageIntro({
           </p>
         )}
         <h1 className="text-[28px] text-slate-900 sm:text-4xl">{title}</h1>
-        <p className="mt-2.5 max-w-2xl text-sm leading-6 text-slate-500 sm:text-[15px]">{description}</p>
+        <p className="mt-2.5 line-clamp-2 max-w-2xl text-sm leading-6 text-slate-500 sm:line-clamp-none sm:text-[15px]">{description}</p>
       </div>
       {action}
     </div>
@@ -552,17 +552,20 @@ export function Panel({
   description,
   children,
   className = "",
+  compactOnPhone = false,
 }: {
   title: string;
   description?: string;
   children: React.ReactNode;
   className?: string;
+  /** Phones: tighter padding and no description, so the panel's content (a map, a chart) shows sooner. */
+  compactOnPhone?: boolean;
 }) {
   return (
-    <section className={`glass rounded-3xl p-5 sm:p-6 ${className}`}>
-      <div className="mb-5">
+    <section className={`glass rounded-3xl ${compactOnPhone ? "p-3 sm:p-6" : "p-5 sm:p-6"} ${className}`}>
+      <div className={compactOnPhone ? "mb-3 px-1 sm:mb-5 sm:px-0" : "mb-5"}>
         <h3 className="text-[17px] font-bold text-slate-900">{title}</h3>
-        {description && <p className="mt-1.5 max-w-3xl text-[13px] leading-5 text-slate-500">{description}</p>}
+        {description && <p className={`mt-1.5 max-w-3xl text-[13px] leading-5 text-slate-500 ${compactOnPhone ? "hidden sm:block" : ""}`}>{description}</p>}
       </div>
       {children}
     </section>

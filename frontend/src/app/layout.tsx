@@ -1,21 +1,25 @@
 
 import type { Metadata, Viewport } from "next";
 import { AppShell } from "@/components/aqualedger/app-shell";
-import { Geist, Geist_Mono, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
+import { Bricolage_Grotesque, IBM_Plex_Mono, Instrument_Sans, Noto_Sans_Arabic } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// "Borewell gauge" type system: a characterful display face for headings,
+// a calm grotesk for reading text, and a mono face for depth figures.
+const body = Instrument_Sans({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const data = IBM_Plex_Mono({
+  variable: "--font-data",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
-const display = Plus_Jakarta_Sans({
+const display = Bricolage_Grotesque({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["500", "600", "700", "800"],
@@ -33,8 +37,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#eaf2f5" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#f4f8f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#061114" },
   ],
 };
 
@@ -59,7 +63,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       dir="ltr"
-      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} ${notoUrdu.variable} h-full antialiased`}
+      className={`${body.variable} ${data.variable} ${display.variable} ${notoUrdu.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

@@ -280,7 +280,8 @@ export function formatSignedDepthDelta(deltaM: number, decimals = 1): string {
 
 export function formatAxisDepthMetersAndFeet(value: number): string {
   if (!Number.isFinite(value)) return "";
-  return `${value}m / ${Math.round(metersToFeet(value))}ft`;
+  // Non-breaking spaces: Recharts wraps axis ticks at normal spaces, which split "60m / 197ft" onto two lines.
+  return `${value}m / ${Math.round(metersToFeet(value))}ft`;
 }
 
 export const PREDEFINED_PAKISTAN_AREAS = CANONICAL_AREA_MAP.map(

@@ -7,7 +7,18 @@ import { useEffect, useRef, useState } from "react";
  * counts up with the same decimals, the unit stays put, and non-numbers render as-is.
  */
 export function StatValue({ value }: { value: string }) {
-  // Do not animate compound slash values like "8.5 m / 28.0 ft" or "8 / 36" to avoid 0.0 / 28.0 desync.
+  // Metres + feet ("8.5 m / 28.0 ft"): metres lead, feet sit smaller beside them so the stat stays on one line.
+  // Also matches the Urdu units from translateDepthUnitsUr ("8.5 میٹر / 28.0 فٹ").
+  const dual = /^(.+?\s(?:m|میٹر))\s*\/\s*(.+\s(?:ft|فٹ))$/.exec(value);
+  if (dual) {
+    return (
+      <span className="whitespace-nowrap">
+        {dual[1]}
+        <span className="ml-1.5 text-sm font-semibold tracking-normal text-slate-400 sm:text-base">{dual[2]}</span>
+      </span>
+    );
+  }
+  // Do not animate other slash values like "8 / 36" to avoid desync between the two numbers.
   if (value.includes("/")) return <>{value}</>;
   const match = /^\s*(-?[\d,]*\.?\d+)(.*)$/.exec(value);
   if (!match) return <>{value}</>;
