@@ -57,7 +57,7 @@ export function ChatbotLauncher() {
           aria-hidden={!open}
           inert={!open}
           // Phone: full screen above everything. Tablet / desktop: a panel above the button.
-          className={`fixed inset-0 z-50 pt-[env(safe-area-inset-top)] transition duration-200 sm:inset-auto sm:bottom-24 sm:right-6 sm:h-[min(680px,calc(100dvh-8rem))] sm:w-[400px] sm:pt-0 lg:bottom-28 lg:right-8 ${
+          className={`fixed inset-0 z-50 pt-[env(safe-area-inset-top)] transition duration-200 sm:inset-auto sm:bottom-24 sm:end-6 sm:h-[min(680px,calc(100dvh-8rem))] sm:w-[400px] sm:pt-0 lg:bottom-28 lg:end-8 ${
             open ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
           }`}
         >
@@ -74,15 +74,15 @@ export function ChatbotLauncher() {
         aria-label={open ? tr(lang, "Close chat", "چیٹ بند کریں") : label}
         aria-expanded={open}
         // Mobile: just above the bottom tab bar (and the iPhone home bar); hidden while the chat covers the screen.
-        className={`group fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-50 items-center transition duration-300 ease-out sm:right-6 lg:bottom-6 lg:right-8 ${
+        className={`group fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] end-4 z-50 items-center transition duration-300 ease-out sm:end-6 lg:bottom-6 lg:end-8 ${
           open ? "hidden sm:flex" : "flex"
-        } ${tucked && !open ? "pointer-events-none translate-x-24 opacity-0" : "translate-x-0 opacity-100"}`}
+        } ${tucked && !open ? `pointer-events-none opacity-0 ${lang === "ur" ? "-translate-x-24" : "translate-x-24"}` : "translate-x-0 opacity-100"}`}
       >
         {!open && (
           <span
             role="tooltip"
-            className={`pointer-events-none mr-3 hidden translate-x-2 whitespace-nowrap rounded-full bg-slate-900 px-3.5 py-1.5 text-sm font-semibold text-white opacity-0 shadow-lg transition duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 md:block ${
-              lang === "ur" ? "urdu-text" : ""
+            className={`pointer-events-none me-3 hidden whitespace-nowrap rounded-full bg-slate-900 px-3.5 py-1.5 text-sm font-semibold text-white opacity-0 shadow-lg transition duration-200 group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100 md:block ${
+              lang === "ur" ? "urdu-text -translate-x-2" : "translate-x-2"
             }`}
           >
             {label}
