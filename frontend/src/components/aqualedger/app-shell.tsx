@@ -300,19 +300,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
       )}
-
-      {role.isAdmin && (
-        <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-white">
-          <div className="mb-3 flex items-center gap-2 text-teal-300">
-            <ShieldCheck size={18} />
-            <span className="text-xs font-semibold">AquaLedger AI</span>
-          </div>
-          <p className="text-sm font-semibold">{tr(lang, "Groundwater insights", "زیرِ زمین پانی کے حقائق")}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-300">
-            {tr(lang, "Turn monitoring data into actionable intelligence.", "مانیٹرنگ ڈیٹا کو قابلِ عمل بصیرت میں بدلیں۔")}
-          </p>
-        </div>
-      )}
     </>
   );
 

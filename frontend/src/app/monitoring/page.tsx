@@ -7,9 +7,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Clock,
-  MapPin,
   ShieldAlert,
-  TrendingDown,
   Waves,
 } from "lucide-react";
 import { AdminOnly, PageIntro, Panel } from "@/components/aqualedger/app-shell";
@@ -31,7 +29,6 @@ import {
 } from "@/lib/depth-analytics";
 import {
   translateAreaUr,
-  translateConditionUr,
   translateDepthUnitsUr,
   translateSourceTypeUr,
   translateStatusUr,
@@ -54,7 +51,6 @@ function MonitoringDashboard() {
   const [publicTrends, setPublicTrends] = useState<PublicAreaSourceTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [attentionFilter, setAttentionFilter] = useState<"critical" | "all_flagged">("critical");
 
   useEffect(() => {
     const refresh = () => {
@@ -139,10 +135,6 @@ function MonitoringDashboard() {
     () => attentionAreas.filter((a) => a.conditionLabel === "Moderate"),
     [attentionAreas]
   );
-  const visibleAttention =
-    attentionFilter === "critical"
-      ? criticalAreas
-      : attentionAreas.filter((a) => a.conditionLabel !== "Normal");
 
   const pendingReviewCount = useMemo(
     () => reports.filter((r) => r.status === "under_review").length,
@@ -278,130 +270,6 @@ function MonitoringDashboard() {
           </p>
         </div>
       </div>
-
-      {/* Need Attention Grid (Admin-only, moved from Overview) */}
-      <Panel
-        title={tr(lang, "Need Attention · Critical Areas", "توجہ طلب · تشویشناک علاقے")}
-        description={tr(
-          lang,
-          "Districts with critical groundwater depth (≥18 m), rapid decline, or high-concern readings requiring administrative action.",
-          "18 میٹر یا اس سے زیادہ گہرائی، تیز کمی یا شدید خطرے والی رپورٹس کے حامل علاقے جن پر فوری توجہ درکار ہے۔"
-        )}
-      >
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-            <button
-              type="button"
-              onClick={() => setAttentionFilter("critical")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                attentionFilter === "critical"
-                  ? "bg-red-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              {tr(lang, `Critical (${criticalAreas.length})`, `تشویشناک (${criticalAreas.length})`)}
-            </button>
-            <button
-              type="button"
-              onClick={() => setAttentionFilter("all_flagged")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                attentionFilter === "all_flagged"
-                  ? "bg-amber-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              {tr(
-                lang,
-                `Critical + Moderate (${criticalAreas.length + moderateAreas.length})`,
-                `تشویشناک + درمیانہ (${criticalAreas.length + moderateAreas.length})`
-              )}
-            </button>
-          </div>
-          <Link
-            href="/map?severity=critical"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:underline"
-          >
-            <MapPin size={14} />
-            {tr(lang, "View critical areas on map →", "نقشے پر تشویشناک علاقے دیکھیں ←")}
-          </Link>
-        </div>
-
-        {isInitialLoading ? (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 animate-pulse rounded-2xl bg-slate-100" />
-            ))}
-          </div>
-        ) : visibleAttention.length === 0 ? (
-          <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">
-            {tr(lang, "No areas currently match this attention filter.", "فی الحال اس فلٹر میں کوئی تشویشناک علاقہ نہیں۔")}
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {visibleAttention.map((area) => {
-              const isCritical = area.conditionLabel === "Critical";
-              return (
-                <Link
-                  key={area.areaKey}
-                  href={`/forecast?area=${encodeURIComponent(area.areaKey)}`}
-                  className={`group flex flex-col justify-between rounded-2xl border p-4 transition hover:shadow-md ${
-                    isCritical
-                      ? "border-red-200 bg-red-50/50 hover:border-red-300"
-                      : "border-amber-200 bg-amber-50/50 hover:border-amber-300"
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className="font-bold text-slate-900">
-                        {translateAreaUr(lang, area.areaKey)}
-                      </h4>
-                      <span
-                        className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                          isCritical
-                            ? "bg-red-100 text-red-700"
-                            : "bg-amber-100 text-amber-800"
-                        }`}
-                      >
-                        <TrendingDown size={12} />
-                        {translateConditionUr(lang, area.conditionLabel)}
-                      </span>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <p className="text-slate-500">{tr(lang, "Avg Depth", "اوسط گہرائی")}</p>
-                        <p className="mt-0.5 font-bold text-slate-900">
-                          {area.averageDepthM !== null
-                            ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(area.averageDepthM))
-                            : "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500">{tr(lang, "6-Mo Forecast", "6 ماہ کی پیشگوئی")}</p>
-                        <p className="mt-0.5 font-bold text-blue-700">
-                          {area.projectedDepthM !== null
-                            ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(area.projectedDepthM))
-                            : "—"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between border-t border-slate-200/60 pt-2.5 text-[11px] text-slate-600">
-                    <span>
-                      {area.totalReports} {tr(lang, "reports", "رپورٹس")}
-                      {area.slopePerYearM !== null
-                        ? ` · ${area.slopePerYearM > 0 ? "+" : ""}${area.slopePerYearM.toFixed(2)} ${tr(lang, "m/yr", "میٹر/سال")}`
-                        : ""}
-                    </span>
-                    <span className="font-semibold text-teal-700 group-hover:underline">
-                      {tr(lang, "Inspect →", "تفصیل ←")}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </Panel>
 
       {/* Recent Reported Sources & Pakistan Coverage (moved from Overview) */}
       <div className="grid gap-6 xl:grid-cols-3">
