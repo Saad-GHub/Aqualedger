@@ -13,6 +13,7 @@ import waterLevelByYear from "@/data/punjab-water-level-by-year.json";
 import { GRACE_PROVINCE_SERIES } from "@/lib/district-intelligence";
 import { StatValue } from "@/components/aqualedger/animated-number";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
+import { translateAreaUr, translateDepthUnitsUr } from "@/lib/urdu-translations";
 import { depthM } from "@/lib/units";
 
 const wellSummary = waterLevelByYear.summary;
@@ -97,7 +98,7 @@ export default function Home() {
     },
     { depthWeightedSum: 0, depthWeightedCount: 0 }
   );
-  const avgDepthStr = depthWeightedCount ? formatDepthMetersAndFeet(depthWeightedSum / depthWeightedCount) : "—";
+  const avgDepthStr = depthWeightedCount ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(depthWeightedSum / depthWeightedCount)) : "—";
   const areaSummariesByKey = new Map(areaRiskSummaries.map((summary) => [summary.areaKey.toLocaleLowerCase(), summary]));
   const areaConditions = useMemo(() => computeAreaConditions(publicTrends), [publicTrends]);
   const areaConditionsByKey = useMemo(
@@ -212,7 +213,7 @@ export default function Home() {
                   onClick={() => setGraceProvince(prov)}
                   className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${graceProvince === prov ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900 dark:text-white/80 dark:hover:text-white"}`}
                 >
-                  {prov === "Khyber Pakhtunkhwa" ? "KP" : prov}
+                  {lang === "ur" ? translateAreaUr(lang, prov) : prov === "Khyber Pakhtunkhwa" ? "KP" : prov}
                 </button>
               ))}
             </div>
@@ -241,7 +242,7 @@ export default function Home() {
                 <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                 <XAxis dataKey="month" minTickGap={48} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
                 <YAxis width={54} tickFormatter={(v) => `${v} cm`} tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
-                <Tooltip formatter={(value) => [`${Number(value) >= 0 ? "+" : ""}${Number(value).toFixed(2)} cm`, "Water storage anomaly"]} labelFormatter={(label) => `Month: ${label}`} />
+                <Tooltip formatter={(value) => [`${Number(value) >= 0 ? "+" : ""}${Number(value).toFixed(2)} ${tr(lang, "cm", "سینٹی میٹر")}`, tr(lang, "Water storage anomaly", "پانی کے ذخیرے میں تبدیلی")]} labelFormatter={(label) => `${tr(lang, "Month", "مہینہ")}: ${label}`} />
                 <Area type="monotone" dataKey="cm" stroke="#0d9488" strokeWidth={2} fill="url(#graceFill)" dot={false} activeDot={{ r: 5, fill: "#0d9488", stroke: "white", strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
