@@ -16,6 +16,26 @@ export function ChatbotLauncher() {
   const lang = useLanguage();
   const [open, setOpen] = useState(false);
   const [opened, setOpened] = useState(false);
+  // Tucked away while the user scrolls down so it never sits on top of what they are reading.
+  const [tucked, setTucked] = useState(false);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let idle = 0;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y > lastY + 4) setTucked(true);
+      else if (y < lastY - 4) setTucked(false);
+      lastY = y;
+      window.clearTimeout(idle);
+      idle = window.setTimeout(() => setTucked(false), 900);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(idle);
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -54,9 +74,9 @@ export function ChatbotLauncher() {
         aria-label={open ? tr(lang, "Close chat", "چیٹ بند کریں") : label}
         aria-expanded={open}
         // Mobile: just above the bottom tab bar (and the iPhone home bar); hidden while the chat covers the screen.
-        className={`group fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-50 items-center sm:right-6 lg:bottom-6 lg:right-8 ${
+        className={`group fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-50 items-center transition duration-300 ease-out sm:right-6 lg:bottom-6 lg:right-8 ${
           open ? "hidden sm:flex" : "flex"
-        }`}
+        } ${tucked && !open ? "pointer-events-none translate-x-24 opacity-0" : "translate-x-0 opacity-100"}`}
       >
         {!open && (
           <span
@@ -68,9 +88,8 @@ export function ChatbotLauncher() {
             {label}
           </span>
         )}
-        <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 via-cyan-500 to-sky-600 text-white shadow-[0_12px_30px_-8px_rgb(13_148_136/0.7)] ring-4 ring-white/70 transition duration-200 group-hover:scale-110 group-active:scale-95">
-          {!open && <span className="absolute inset-0 animate-ping rounded-full bg-teal-400/30 [animation-duration:2.5s]" aria-hidden="true" />}
-          {open ? <X size={26} strokeWidth={2.2} className="relative" /> : <MessageCircle size={26} strokeWidth={2.2} className="relative" />}
+        <span className="relative flex h-12 w-12 items-center justify-center rounded-full sm:h-14 sm:w-14 bg-[#0a7d74] text-white shadow-[0_12px_28px_-10px_rgb(10_125_116/0.75)] ring-[3px] ring-white/70 transition sm:ring-4 duration-200 group-hover:scale-110 group-active:scale-95">
+          {open ? <X size={26} strokeWidth={2.2} className="relative" /> : <MessageCircle size={24} strokeWidth={2.2} className="relative" />}
           {!open && <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 rounded-full bg-emerald-400 ring-2 ring-white" aria-hidden="true" />}
         </span>
       </button>

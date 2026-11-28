@@ -1,5 +1,6 @@
 "use client";
 
+import { SignedOutCard } from "@/components/aqualedger/signed-out-card";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -179,38 +180,20 @@ export default function MySourcesPage() {
             "اپنے ذاتی پانی کے ذرائع، گہرائی کی تاریخ، AI پیشگوئی اور حفاظتی تدابیر دیکھنے کے لیے سائن ان کریں۔"
           )}
         />
-        <Panel
-          title={tr(lang, "Sign in to access your personal water data", "اپنے ذاتی پانی کے ڈیٹا تک رسائی کے لیے سائن ان کریں")}
-          description={tr(lang, "Each user sees only their own submitted sources and readings here.", "ہر صارف یہاں صرف اپنے جمع کردہ ذرائع اور ریڈنگز دیکھ سکتا ہے۔")}
-        >
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/login?role=user"
-              className="inline-flex items-center gap-2 rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800"
-            >
-              <UserCheck size={16} />
-              {tr(lang, "Sign in", "سائن ان کریں")}
-            </Link>
-            <Link
-              href="/my-sources?demo=1"
-              className="rounded-xl border border-teal-300 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-800 hover:bg-teal-100"
-            >
-              {tr(lang, "Continue as Demo Farmer →", "ڈیمو کسان کے طور پر جاری رکھیں ←")}
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              {tr(lang, "Create account", "اکاؤنٹ بنائیں")}
-            </Link>
-            <Link
-              href="/forecast"
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              {tr(lang, "View Universal Area Forecast", "عالمی علاقائی پیشگوئی دیکھیں")}
-            </Link>
-          </div>
-        </Panel>
+        <SignedOutCard
+          icon={UserCheck}
+          preview="sources"
+          previewLabel={tr(lang, "Preview", "جھلک")}
+          lockLabel={tr(lang, "Sign in to see your own wells", "اپنے کنویں دیکھنے کے لیے سائن ان کریں")}
+          title={tr(lang, "Your wells, your forecast", "آپ کے کنویں، آپ کی پیشگوئی")}
+          body={tr(lang, "Sign in to see only the sources you have logged, their depth history and an AI forecast for each one. Each user sees only their own readings.", "سائن ان کر کے صرف اپنے درج کردہ ذرائع، ان کی گہرائی کی تاریخ اور ہر ایک کی AI پیشگوئی دیکھیں۔ ہر صارف صرف اپنی ریڈنگز دیکھتا ہے۔")}
+          primary={{ href: "/login?role=user", label: tr(lang, "Sign in", "سائن ان کریں") }}
+          secondary={{ href: "/my-sources?demo=1", label: tr(lang, "Try the demo farmer", "ڈیمو کسان آزمائیں") }}
+          links={[
+            { href: "/signup", label: tr(lang, "Create an account", "اکاؤنٹ بنائیں") },
+            { href: "/forecast", label: tr(lang, "See area forecasts", "علاقائی پیشگوئی دیکھیں") },
+          ]}
+        />
       </>
     );
   }

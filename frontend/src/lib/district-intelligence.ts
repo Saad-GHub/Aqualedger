@@ -93,3 +93,32 @@ export function findDistrictIntelligence(areaOrAddress?: string | null): Distric
   }
   return null;
 }
+
+export type ProvinceForecastDrivers = {
+  province: string;
+  rainVsNormalPct: number | null;
+  aqueductStressScore: number | null;
+  droughtRiskScore: number | null;
+  pctIrrigatedGroundwater: number | null;
+  censusMotorPumpPct: number | null;
+  tubewellsTotal: number;
+};
+
+/** Aggregate real climate, extraction, and water-stress drivers per province for the 15-year GRACE forecast. */
+export function getProvinceDrivers(province: string): ProvinceForecastDrivers {
+  const all = Object.values(DISTRICTS);
+  const rows = province === "Pakistan" ? all : all.filter((r) => r.province === province);
+  const meanOf = (pick: (r: DistrictIntelligence) => number | null) => {
+    const vals = rows.map(pick).filter((v): v is number => v !== null && Number.isFinite(v));
+    return vals.length ? Number((vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(2)) : null;
+  };
+  return {
+    province,
+    rainVsNormalPct: meanOf((r) => r.rainVsNormalPct),
+    aqueductStressScore: meanOf((r) => r.aqueductStressScore),
+    droughtRiskScore: meanOf((r) => r.aqueductDroughtScore),
+    pctIrrigatedGroundwater: meanOf((r) => r.pctIrrigatedGroundwater),
+    censusMotorPumpPct: meanOf((r) => r.censusMotorPumpPct),
+    tubewellsTotal: rows.reduce((s, r) => s + (r.tubewellsTotal ?? 0), 0),
+  };
+}

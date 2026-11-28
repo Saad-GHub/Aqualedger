@@ -20,6 +20,10 @@ import {
   Sparkles,
   TrendingDown,
   TrendingUp,
+  CircleAlert,
+  LineChart as LineChartIcon,
+  ListChecks,
+  Table2,
 } from "lucide-react";
 import {
   Area,
@@ -38,6 +42,7 @@ import {
 import { DepthBarTooltip, DepthTrendTooltip } from "@/components/aqualedger/chart-tooltip";
 import { asFeet, depthM, metresToFeet, rateM } from "@/lib/units";
 import { Panel } from "@/components/aqualedger/app-shell";
+import { StatValue } from "@/components/aqualedger/animated-number";
 import { tr, translatePrecaution, useLanguage } from "@/components/aqualedger/language-toggle";
 import {
   translateAreaUr,
@@ -141,7 +146,7 @@ function WellCrossSectionInfographic({
           </p>
           <p className="text-xs text-slate-500">{sourceLabel}</p>
         </div>
-        <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm dark:bg-[#0f172a] dark:text-white/90">
+        <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm dark:bg-[#0c1b1f] dark:text-white/90">
           {tr(lang, "Scale", "پیمانہ")}: 0 – {maxDepth} m · {asFeet(maxDepth)}
         </span>
       </div>
@@ -221,15 +226,15 @@ function WellCrossSectionInfographic({
         )}
       </div>
       <div className="mt-2.5 grid grid-cols-3 gap-1.5 text-center text-[11px]">
-        <div className="rounded-lg border border-slate-200/70 bg-white px-2 py-1.5 dark:border-white/10 dark:bg-[#0f172a]">
+        <div className="rounded-lg border border-slate-200/70 bg-white px-2 py-1.5 dark:border-white/10 dark:bg-[#0c1b1f]">
           <span className="block text-[10px] text-slate-500 dark:text-white/70">{tr(lang, "Area Avg", "علاقائی اوسط")}</span>
           <strong className="text-slate-900 dark:text-white">{areaAverageM !== null ? depthM(areaAverageM) : "—"}</strong>
         </div>
-        <div className="rounded-lg border border-teal-200/70 bg-white px-2 py-1.5 dark:border-teal-500/30 dark:bg-[#0f172a]">
+        <div className="rounded-lg border border-teal-200/70 bg-white px-2 py-1.5 dark:border-teal-500/30 dark:bg-[#0c1b1f]">
           <span className="block text-[10px] text-teal-700 dark:text-teal-300">{tr(lang, "Current", "موجودہ")}</span>
           <strong className="text-teal-800 dark:text-white">{currentDepthM !== null ? depthM(currentDepthM) : "—"}</strong>
         </div>
-        <div className="rounded-lg border border-blue-200/70 bg-white px-2 py-1.5 dark:border-blue-500/30 dark:bg-[#0f172a]">
+        <div className="rounded-lg border border-blue-200/70 bg-white px-2 py-1.5 dark:border-blue-500/30 dark:bg-[#0c1b1f]">
           <span className="block text-[10px] text-blue-700 dark:text-sky-300">+{formatHorizonLabel(horizonMonths)}</span>
           <strong className="text-blue-700 dark:text-white">{projectedDepthM !== null ? depthM(projectedDepthM) : "—"}</strong>
         </div>
@@ -394,7 +399,7 @@ export function SourceTypeDepthSummary({ trends }: { trends: PublicAreaSourceTre
   const maxDepth = Math.max(1, ...sourceBars.map((s) => s.averageDepthM));
 
   return (
-    <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
+    <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-200">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
         Average Depth by Source Type
       </p>
@@ -402,14 +407,14 @@ export function SourceTypeDepthSummary({ trends }: { trends: PublicAreaSourceTre
         {sourceBars.map((item) => (
           <div key={item.sourceType} className="text-xs">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <span className="font-medium text-slate-700 dark:text-slate-200">
+              <span className="font-medium text-slate-700 dark:text-slate-700">
                 {item.sourceType} <span className="text-slate-400">({item.reports})</span>
               </span>
-              <span className="font-semibold text-slate-900 dark:text-slate-100">
+              <span className="font-semibold text-slate-900 dark:text-slate-700">
                 {formatDepthMetersAndFeet(item.averageDepthM)}
               </span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-100">
               <div
                 className="h-full rounded-full bg-sky-500"
                 style={{ width: `${Math.min(100, (item.averageDepthM / maxDepth) * 100)}%` }}
@@ -711,7 +716,7 @@ export function FarmerDepthWorkspace({
   return (
     <div className="space-y-6">
       {/* Controls & Selection */}
-      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-cyan-50/60 p-5 shadow-sm dark:border-indigo-500/30 dark:bg-none dark:bg-[#0b1320]">
+      <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/70 via-white to-cyan-50/60 p-5 shadow-sm dark:border-indigo-500/30 dark:bg-none dark:bg-[#0c1b1f]">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-semibold text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-200">
@@ -872,8 +877,8 @@ export function FarmerDepthWorkspace({
         </div>
 
         {districtIntel && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/90 px-4 py-3 text-xs dark:border-white/15 dark:bg-[#0f172a]">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600 dark:text-slate-300">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/90 px-4 py-3 text-xs dark:border-white/15 dark:bg-[#0c1b1f]">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-600 dark:text-slate-700">
               <strong className="text-slate-900 dark:text-white">{translateAreaUr(lang, districtIntel.district)} {tr(lang, "Baseline:", "بنیادی ڈیٹا:")}</strong>
               {districtIntel.stressScore !== null && (
                 <span>{tr(lang, "Stress", "آبی دباؤ")} <strong>{Math.round(districtIntel.stressScore)}/100</strong></span>
@@ -1141,6 +1146,20 @@ export function UniversalAreaDepthForecast({
   const [areaSearch, setAreaSearch] = useState("");
   const [areaSort, setAreaSort] = useState<"alpha" | "deepest" | "falling" | "critical">("alpha");
   const [showHowAiWorks, setShowHowAiWorks] = useState(false);
+  // The page is split into three views (Forecast · Sources & actions · All areas) instead of one long scroll.
+  const [section, setSection] = useState<"forecast" | "actions" | "areas">("forecast");
+  useEffect(() => {
+    const fromHash = window.location.hash.replace("#", "");
+    if (fromHash === "actions" || fromHash === "areas" || fromHash === "forecast") queueMicrotask(() => setSection(fromHash));
+  }, []);
+  const openSection = (next: "forecast" | "actions" | "areas") => {
+    setSection(next);
+    try {
+      history.replaceState(null, "", next === "forecast" ? window.location.pathname + window.location.search : `#${next}`);
+    } catch {
+      // ignore
+    }
+  };
   const [areaAlertSaved, setAreaAlertSaved] = useState(false);
 
   useEffect(() => {
@@ -1305,7 +1324,7 @@ export function UniversalAreaDepthForecast({
       {/* 1. Top Control Bar */}
       <div className="glass-strong rounded-2xl p-3.5 shadow-sm sm:p-4">
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,220px)_auto] lg:items-end">
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+          <label className="text-xs font-semibold text-slate-600 dark:text-slate-700">
             {tr(lang, "Select Area", "علاقہ منتخب کریں")} ({areaSummaries.length})
             <select
               value={activeArea}
@@ -1314,7 +1333,7 @@ export function UniversalAreaDepthForecast({
                 setSelectedSourceType("All sources");
                 setAreaAlertSaved(false);
               }}
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 dark:border-white/20 dark:bg-[#0f172a] dark:text-white"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 dark:border-white/20 dark:bg-[#0c1b1f] dark:text-white"
               disabled={!areaSummaries.length}
             >
               {loading && !areaSummaries.length && <option value="">{tr(lang, "Loading areas…", "علاقے لوڈ ہو رہے ہیں…")}</option>}
@@ -1327,12 +1346,12 @@ export function UniversalAreaDepthForecast({
             </select>
           </label>
 
-          <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+          <label className="text-xs font-semibold text-slate-600 dark:text-slate-700">
             {tr(lang, "Source Type", "ذریعہ کی قسم")}
             <select
               value={selectedSourceType}
               onChange={(e) => setSelectedSourceType(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 dark:border-white/20 dark:bg-[#0f172a] dark:text-white"
+              className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 dark:border-white/20 dark:bg-[#0c1b1f] dark:text-white"
             >
               <option value="All sources">{tr(lang, "All sources", "تمام ذرائع")}</option>
               {activeBenchmark.bySource.map((s) => (
@@ -1342,10 +1361,10 @@ export function UniversalAreaDepthForecast({
           </label>
 
           <div>
-            <p className="mb-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+            <p className="mb-1 text-xs font-semibold text-slate-600 dark:text-slate-700">
               {tr(lang, "Forecast Horizon", "پیشگوئی کی مدت")}
             </p>
-            <div className="inline-flex flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-white/20 dark:bg-[#0f172a]" role="group" aria-label="Forecast horizon">
+            <div className="flex w-full gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-white/20 dark:bg-[#0c1b1f] lg:inline-flex lg:w-auto" role="group" aria-label="Forecast horizon">
               {([
                 [3, "3M"],
                 [6, "6M"],
@@ -1359,7 +1378,7 @@ export function UniversalAreaDepthForecast({
                   type="button"
                   aria-pressed={horizon === months}
                   onClick={() => setHorizon(months)}
-                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
+                  className={`font-data min-h-9 flex-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition lg:flex-none ${
                     horizon === months
                       ? "bg-teal-600 text-white shadow-xs"
                       : "text-slate-700 hover:bg-white hover:text-slate-900 dark:text-white/85 dark:hover:bg-white/10 dark:hover:text-white"
@@ -1373,8 +1392,34 @@ export function UniversalAreaDepthForecast({
         </div>
       </div>
 
+      {/* Section tabs */}
+      <div role="tablist" aria-label={tr(lang, "Forecast sections", "پیشگوئی کے حصے")} className="glass flex gap-1 overflow-x-auto rounded-2xl p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {([
+          ["forecast", LineChartIcon, tr(lang, "Forecast", "پیشگوئی"), tr(lang, "Forecast", "پیشگوئی")],
+          ["actions", ListChecks, tr(lang, "Sources & actions", "ذرائع اور اقدامات"), tr(lang, "Actions", "اقدامات")],
+          ["areas", Table2, tr(lang, `All areas (${areaSummaries.length})`, `تمام علاقے (${areaSummaries.length})`), tr(lang, `Areas (${areaSummaries.length})`, `علاقے (${areaSummaries.length})`)],
+        ] as const).map(([id, Icon, label, shortLabel]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            id={`tab-${id}`}
+            aria-selected={section === id}
+            aria-controls={`panel-${id}`}
+            onClick={() => openSection(id)}
+            className={`inline-flex min-h-10 min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-2 text-[13px] font-semibold transition sm:gap-2 sm:px-3.5 sm:text-sm ${
+              section === id ? "bg-teal-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            }`}
+          >
+            <Icon size={16} aria-hidden="true" className="shrink-0" />
+            <span className="sm:hidden">{shortLabel}</span>
+            <span className="hidden sm:inline">{label}</span>
+          </button>
+        ))}
+      </div>
+
       {/* 2. Main Hero Grid (35% Cross-Section + Confidence | 65% AI Trend Chart + KPIs) */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,35%)_minmax(0,65%)]">
+      {section === "forecast" && <div id="panel-forecast" role="tabpanel" aria-labelledby="tab-forecast" className="grid gap-6 xl:grid-cols-[minmax(0,35%)_minmax(0,65%)]">
         <div className="space-y-4">
           <WellCrossSectionInfographic
             currentDepthM={currentDepthM ?? null}
@@ -1443,7 +1488,7 @@ export function UniversalAreaDepthForecast({
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
               <p className="text-xs text-slate-500">{tr(lang, "Area Average Depth", "علاقائی اوسط گہرائی")}</p>
               <p className="mt-1 text-lg font-bold text-slate-900">
-                {currentDepthM !== null && currentDepthM !== undefined ? formatDepthMetersAndFeet(currentDepthM) : "—"}
+                {currentDepthM !== null && currentDepthM !== undefined ? <StatValue value={formatDepthMetersAndFeet(currentDepthM)} /> : "—"}
               </p>
               <p className="mt-0.5 text-[11px] text-slate-500">
                 {filteredReportCount} {tr(lang, filteredReportCount === 1 ? "report" : "reports", "رپورٹس")} · {selectedSourceType}
@@ -1453,7 +1498,7 @@ export function UniversalAreaDepthForecast({
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5">
               <p className="text-xs text-slate-500">{tr(lang, "AI Projected", "AI متوقع گہرائی")} ({formatHorizonLabel(horizon)})</p>
               <p className="mt-1 text-lg font-bold text-blue-700">
-                {projection ? formatDepthMetersAndFeet(projection.projectedDepth) : tr(lang, "Need 2+ months", "2+ ماہ درکار")}
+                {projection ? <StatValue value={formatDepthMetersAndFeet(projection.projectedDepth)} /> : tr(lang, "Need 2+ months", "2+ ماہ درکار")}
               </p>
               <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500">
                 {projection ? (
@@ -1524,10 +1569,10 @@ export function UniversalAreaDepthForecast({
             </div>
           )}
         </Panel>
-      </div>
+      </div>}
 
       {/* 3. Source Breakdown & Actionable Precautions (2 Columns) */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {section === "actions" && <div id="panel-actions" role="tabpanel" aria-labelledby="tab-actions" className="grid gap-6 lg:grid-cols-2">
         <Panel
           title={`${tr(lang, "Source-Type Breakdown", "ذرائع کی اقسام کا تجزیہ")} · ${activeArea || tr(lang, "Area", "علاقہ")}`}
           description={tr(lang, "Average groundwater depth by source type across all community reports in this area.", "اس علاقے کی تمام کمیونٹی رپورٹس میں ذریعہ کے لحاظ سے اوسط گہرائی۔")}
@@ -1631,12 +1676,13 @@ export function UniversalAreaDepthForecast({
             })}
           </div>
         </Panel>
-      </div>
+      </div>}
 
       {/* 4. All Areas Directory / Comparison Table (At Bottom) */}
+      {section === "areas" && <div id="panel-areas" role="tabpanel" aria-labelledby="tab-areas">
       <Panel
         title={tr(lang, "All Areas Trend & Criticality Overview", "تمام علاقوں کے رجحانات اور خطرے کی فہرست")}
-        description={tr(lang, "Search or sort all monitored areas across Pakistan. Click any area to load it in the spotlight above.", "پاکستان بھر کے نگرانی شدہ علاقے تلاش یا ترتیب دیں۔ اوپر دیکھنے کے لیے کسی بھی علاقے پر کلک کریں۔")}
+        description={tr(lang, "Search or sort all monitored areas across Pakistan. Click any area to open its forecast.", "پاکستان بھر کے نگرانی شدہ علاقے تلاش یا ترتیب دیں۔ کسی علاقے کی پیشگوئی دیکھنے کے لیے اس پر کلک کریں۔")}
       >
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <label className="flex min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
@@ -1652,7 +1698,7 @@ export function UniversalAreaDepthForecast({
             aria-label="Sort areas"
             value={areaSort}
             onChange={(e) => setAreaSort(e.target.value as typeof areaSort)}
-            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 dark:border-white/20 dark:bg-[#0f172a] dark:text-white"
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 dark:border-white/20 dark:bg-[#0c1b1f] dark:text-white"
           >
             <option value="alpha">{tr(lang, "Sort: A – Z", "ترتیب: A – Z")}</option>
             <option value="deepest">{tr(lang, "Sort: Deepest first", "ترتیب: سب سے گہرا پہلے")}</option>
@@ -1689,40 +1735,42 @@ export function UniversalAreaDepthForecast({
                     onClick={() => {
                       setSelectedAreaKey(item.areaKey);
                       setSelectedSourceType("All sources");
+                      openSection("forecast");
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                     className={`w-full rounded-2xl border p-4 text-start transition ${
                       selected
                         ? "border-teal-500 bg-teal-50/40 ring-1 ring-teal-500 dark:bg-teal-950/35"
-                        : "border-slate-200 bg-white hover:border-teal-300 dark:border-slate-700 dark:bg-slate-900/85 dark:hover:border-teal-500"
+                        : "border-slate-200 bg-white hover:border-teal-300 dark:border-slate-200 dark:bg-[#0c1b1f] dark:hover:border-teal-500"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-slate-900 dark:text-slate-100">{translateAreaUr(lang, item.areaKey)}</p>
-                        <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-200">
+                        <p className="font-semibold text-slate-900 dark:text-slate-700">{translateAreaUr(lang, item.areaKey)}</p>
+                        <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-700">
                           {item.benchmark.totalReports} {tr(lang, "reports", "رپورٹس")}
                         </p>
                       </div>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}>
+                      <span className={`aqua-chip shrink-0 ${pillClass}`}>
+                        {item.condition.conditionTone === "red" ? <AlertTriangle size={12} aria-hidden="true" /> : item.condition.conditionTone === "amber" ? <CircleAlert size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
                         {translateConditionUr(lang, item.condition.conditionLabel)}
                       </span>
                     </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-2.5 text-xs dark:border-slate-800">
+                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-2.5 text-xs dark:border-slate-200">
                       <div>
-                        <p className="font-medium text-slate-600 dark:text-slate-200">{tr(lang, "Area Avg Depth", "علاقائی اوسط گہرائی")}</p>
+                        <p className="font-medium text-slate-600 dark:text-slate-700">{tr(lang, "Area Avg Depth", "علاقائی اوسط گہرائی")}</p>
                         <p className="mt-0.5 font-semibold text-slate-900 dark:text-white">
                           {item.latestDepth !== null ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.latestDepth)) : "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="font-medium text-slate-600 dark:text-slate-200">+{formatHorizonLabel(horizon)} {tr(lang, "Forecast", "پیشگوئی")}</p>
+                        <p className="font-medium text-slate-600 dark:text-slate-700">+{formatHorizonLabel(horizon)} {tr(lang, "Forecast", "پیشگوئی")}</p>
                         <p className="mt-0.5 font-semibold text-blue-700 dark:text-sky-300">
                           {item.projection ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.projection.projectedDepth)) : tr(lang, "Need 2+ mo", "2+ ماہ درکار")}
                         </p>
                       </div>
                     </div>
-                    <p className="mt-2 text-[11px] font-medium text-slate-600 dark:text-slate-200">
+                    <p className="mt-2 text-[11px] font-medium text-slate-600 dark:text-slate-700">
                       {tr(lang, "Trend rate:", "رجحان کی شرح:")}{" "}
                       {item.projection
                         ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2))}/${tr(lang, "yr", "سال")}`
@@ -1736,7 +1784,7 @@ export function UniversalAreaDepthForecast({
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-160 text-start text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 text-xs text-slate-400">
+                  <tr className="border-b border-slate-200 text-xs text-slate-500">
                     <th className="px-3 pb-3 font-medium">{tr(lang, "Area / Location", "علاقہ / مقام")}</th>
                     <th className="px-3 pb-3 font-medium">{tr(lang, "Total Reports", "کل رپورٹس")}</th>
                     <th className="px-3 pb-3 font-medium">{tr(lang, "Area Avg Depth", "علاقائی اوسط گہرائی")}</th>
@@ -1760,26 +1808,28 @@ export function UniversalAreaDepthForecast({
                         onClick={() => {
                           setSelectedAreaKey(item.areaKey);
                           setSelectedSourceType("All sources");
+                          openSection("forecast");
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
                         data-selected={selected || undefined}
                         className="aqua-row cursor-pointer border-b border-slate-200/60 last:border-0"
                       >
                         <td className="px-3 py-3.5 font-semibold text-slate-800">{translateAreaUr(lang, item.areaKey)}</td>
-                        <td className="px-3 py-3.5 text-slate-600">{item.benchmark.totalReports}</td>
-                        <td className="px-3 py-3.5 font-semibold text-slate-800">
+                        <td className="font-data px-3 py-3.5 text-slate-600">{item.benchmark.totalReports}</td>
+                        <td className="font-data whitespace-nowrap px-3 py-3.5 font-semibold text-slate-800">
                           {item.latestDepth !== null ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.latestDepth)) : "—"}
                         </td>
-                        <td className="px-3 py-3.5 font-semibold text-blue-700">
+                        <td className="font-data whitespace-nowrap px-3 py-3.5 font-semibold text-blue-700">
                           {item.projection ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.projection.projectedDepth)) : tr(lang, "Need 2+ mo", "2+ ماہ درکار")}
                         </td>
-                        <td className="px-3 py-3.5 text-xs text-slate-500">
+                        <td className="font-data whitespace-nowrap px-3 py-3.5 text-xs text-slate-500">
                           {item.projection
                             ? `${item.projection.slopePerMonth > 0 ? "+" : ""}${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.projection.slopePerMonth * 12, 2))}/${tr(lang, "yr", "سال")}`
                             : "—"}
                         </td>
                         <td className="px-3 py-3.5">
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${pillClass}`}>
+                          <span className={`aqua-chip ${pillClass}`}>
+                            {item.condition.conditionTone === "red" ? <AlertTriangle size={12} aria-hidden="true" /> : item.condition.conditionTone === "amber" ? <CircleAlert size={12} aria-hidden="true" /> : <CheckCircle2 size={12} aria-hidden="true" />}
                             {translateConditionUr(lang, item.condition.conditionLabel)}
                           </span>
                         </td>
@@ -1792,6 +1842,7 @@ export function UniversalAreaDepthForecast({
           </>
         )}
       </Panel>
+      </div>}
     </div>
   );
 }
