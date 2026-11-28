@@ -1,12 +1,11 @@
 "use client";
 
-import { Activity, AlertTriangle, Droplets, Gauge, MapPin, ShieldCheck, Waves, Sparkles, TrendingUp } from "lucide-react";
+import { Activity, AlertTriangle, Droplets, Gauge, MapPin, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import Link from "next/link";
 import { Panel, useAquaRole } from "@/components/aqualedger/app-shell";
 import { useEffect, useMemo, useState } from "react";
 import { readCommunityWaterAreaRisks, readCommunityWaterReports, readPublicAreaSourceTrends, subscribeToCommunityWaterReports, type CommunityWaterAreaRisk, type CommunityWaterReport, type PublicAreaSourceTrend } from "@/lib/community-water-reports";
-import { buildReportCodes } from "@/lib/report-display-codes";
 import { computeAreaConditions, forecastGraceStorage, formatAxisDepthMetersAndFeet, formatDepthMetersAndFeet, meanDepth } from "@/lib/depth-analytics";
 import { SourceTypeDepthPanel, TopAreasDepthPanel } from "@/components/aqualedger/depth-infographics";
 import waterLevelByYear from "@/data/punjab-water-level-by-year.json";
@@ -40,7 +39,6 @@ export default function Home() {
   const [graceProvince, setGraceProvince] = useState<string>("Pakistan");
   const [graceHorizon, setGraceHorizon] = useState<12 | 36 | 60>(36);
   const [loading, setLoading] = useState(true);
-  const reportCodes = useMemo(() => buildReportCodes(communityReports), [communityReports]);
   useEffect(() => {
     if (!authReady) return;
     if (!isAdmin) {
@@ -130,7 +128,6 @@ export default function Home() {
     { id: "avg-depth", title: tr(lang, "Average Depth", "اوسط گہرائی"), value: isInitialLoading ? "" : avgDepthStr, icon: Activity, note: tr(lang, "Mean depth below ground", "زمین کے نیچے اوسط سطح"), tone: "bg-violet-50 text-violet-600 ring-violet-100" },
     { id: "critical", title: tr(lang, "Critical Areas", "تشویشناک علاقے"), value: isInitialLoading ? "" : `${highCount} / ${areaRisks.length}`, icon: AlertTriangle, note: isInitialLoading ? tr(lang, "Loading districts…", "اضلاع لوڈ ہو رہے ہیں…") : tr(lang, `${moderateCount} moderate · Click to view map`, `${moderateCount} درمیانے · نقشہ دیکھنے کے لیے کلک کریں`), tone: "bg-red-50 text-red-600 ring-red-100", href: "/map?severity=critical" },
   ];
-  const recentReports = communityReports.slice(0, 4);
   const trendGroups = communityReports.reduce<Record<string, { total: number; count: number }>>((groups, report) => {
     const depth = numeric(report.depth);
     const date = report.sampleDate ?? "";
@@ -153,7 +150,6 @@ export default function Home() {
         readings: values.count,
       };
     });
-  const sources = recentReports.map((report) => ({ id: report.id, name: report.sourceType ?? "Water source", location: report.address, level: report.depth ? formatDepthMetersAndFeet(report.depth) : "—", status: report.status, color: "text-teal-700 bg-teal-50" }));
 
   return <>
     <section className="aqua-hero relative overflow-hidden rounded-3xl p-6 text-white shadow-lg sm:p-8">
@@ -313,8 +309,6 @@ export default function Home() {
         </Panel>
       );
     })()}
-    {isAdmin && <Panel title="Latest Community Water Reports" description="Reports loaded from the AquaLedger database."><div className="mb-4 flex justify-end"><Link href="/reports" className="text-sm font-semibold text-teal-700 hover:text-teal-800">Open all reports →</Link></div>{reportLoadError ? <p className="rounded-xl bg-amber-50 p-5 text-sm text-amber-800">{reportLoadError} <Link href="/login" className="font-semibold underline">Admin sign in</Link></p> : recentReports.length ? <div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left text-sm"><thead><tr className="border-b border-slate-100 text-xs text-slate-400"><th className="pb-3 font-medium">Report</th><th className="pb-3 font-medium">Address</th><th className="pb-3 font-medium">Source / depth</th><th className="pb-3 font-medium">Sample date</th></tr></thead><tbody>{recentReports.map((report) => <tr key={report.id} className="border-b border-slate-50 last:border-0"><td className="py-4"><Link href="/reports" className="font-semibold text-teal-700 hover:underline">{reportCodes.get(report.id) ?? report.id}</Link><span className="block text-xs text-slate-400">{report.reporterName}</span></td><td className="py-4 text-slate-600">{report.address}</td><td className="py-4 text-slate-600">{report.sourceType ?? "—"}{report.depth ? ` · ${formatDepthMetersAndFeet(report.depth)}` : ""}</td><td className="py-4 text-slate-500">{report.sampleDate ?? "—"}</td></tr>)}</tbody></table></div> : <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">No community water reports have been submitted yet. <Link href="/reports" className="font-semibold text-teal-700 hover:underline">Submit the first report.</Link></p>}</Panel>}
-    {isAdmin && <div className="grid gap-6 xl:grid-cols-3"><Panel title="Recent Reported Sources" description="Source details from submitted Supabase reports" className="xl:col-span-2"><div className="mb-4 flex justify-end"><Link href="/sources" className="text-sm font-semibold text-teal-700 hover:text-teal-800">View all sources →</Link></div>{sources.length ? <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-left text-sm"><thead><tr className="border-b border-slate-100 text-xs text-slate-400"><th className="pb-3 font-medium">Source</th><th className="pb-3 font-medium">Location</th><th className="pb-3 font-medium">Depth</th><th className="pb-3 font-medium">Status</th></tr></thead><tbody>{sources.map((source) => <tr key={source.id} className="border-b border-slate-50 last:border-0"><td className="py-4 font-semibold text-slate-700">{source.name}</td><td className="py-4 text-slate-500">{source.location}</td><td className="py-4 font-medium">{source.level}</td><td className="py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${source.color}`}>{source.status.replaceAll("_", " ")}</span></td></tr>)}</tbody></table></div> : <p className="rounded-xl bg-slate-50 p-5 text-sm text-slate-500">No reported sources yet. <Link href="/reports" className="font-semibold text-teal-700 hover:underline">Submit a water report.</Link></p>}</Panel><Panel title="Pakistan Coverage"><Link href="/map" className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-teal-200 bg-teal-50/70 p-5 text-center transition hover:bg-teal-100/70"><Waves size={38} className="text-teal-600"/><p className="mt-3 font-semibold text-slate-700">Open Groundwater Map</p><p className="mt-1 text-xs leading-5 text-slate-500">Browse reported source locations.</p></Link><div className="mt-4 flex items-center justify-between text-xs text-slate-500"><span>Map interface</span><span className="font-semibold text-teal-700">{communityReports.length} submissions</span></div></Panel></div>}
   </>;
 }
 
