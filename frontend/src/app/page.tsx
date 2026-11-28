@@ -264,11 +264,11 @@ export default function Home() {
                   {forecast.latestCm >= 0 ? `+${forecast.latestCm}` : forecast.latestCm} cm
                 </p>
               </div>
-              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-500/30 dark:bg-[#0c1b1f]">
-                <p className="text-[11px] text-blue-700 dark:text-blue-300">
+              <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 dark:border-sky-400/30 dark:bg-[#0c1b1f]">
+                <p className="text-[11px] text-blue-700 dark:text-sky-300">
                   Projected +{graceHorizon / 12} yr ({forecast.projectedMonth})
                 </p>
-                <p className="mt-1 text-lg font-bold text-blue-800 dark:text-blue-200">
+                <p className="mt-1 text-lg font-bold text-blue-800 dark:text-sky-200">
                   {forecast.projectedCm >= 0 ? `+${forecast.projectedCm}` : forecast.projectedCm} cm{" "}
                   <span className="text-xs font-semibold opacity-80">
                     ({forecast.projectedChangeCm >= 0 ? "+" : ""}{forecast.projectedChangeCm} cm)
