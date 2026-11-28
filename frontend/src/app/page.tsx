@@ -10,7 +10,7 @@ import { buildReportCodes } from "@/lib/report-display-codes";
 import { computeAreaConditions, forecastGraceStorage, formatAxisDepthMetersAndFeet, formatDepthMetersAndFeet, meanDepth } from "@/lib/depth-analytics";
 import { SourceTypeDepthPanel, TopAreasDepthPanel } from "@/components/aqualedger/depth-infographics";
 import waterLevelByYear from "@/data/punjab-water-level-by-year.json";
-import { GRACE_PROVINCE_SERIES } from "@/lib/district-intelligence";
+import { getProvinceDrivers, GRACE_PROVINCE_SERIES } from "@/lib/district-intelligence";
 import { StatValue } from "@/components/aqualedger/animated-number";
 import { DepthGauge } from "@/components/aqualedger/depth-gauge";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
@@ -39,7 +39,7 @@ export default function Home() {
   const [areaRiskSetupError, setAreaRiskSetupError] = useState("");
   const [trendInterval, setTrendInterval] = useState<"day" | "month" | "year">("month");
   const [graceProvince, setGraceProvince] = useState<string>("Pakistan");
-  const [graceHorizon, setGraceHorizon] = useState<12 | 36 | 60>(36);
+  const [graceHorizon, setGraceHorizon] = useState<12 | 60 | 120 | 180>(180);
   const [loading, setLoading] = useState(true);
   const reportCodes = useMemo(() => buildReportCodes(communityReports), [communityReports]);
   useEffect(() => {
@@ -206,7 +206,8 @@ export default function Home() {
       const graceProvinces = ["Pakistan", "Punjab", "Sindh", "Khyber Pakhtunkhwa", "Balochistan"];
       const rawSeries = GRACE_PROVINCE_SERIES[graceProvince] ?? [];
       const points = rawSeries.map(([month, cm]) => ({ month, cm }));
-      const forecast = forecastGraceStorage(points, graceHorizon);
+      const drivers = getProvinceDrivers(graceProvince);
+      const forecast = forecastGraceStorage(points, graceHorizon, drivers);
       const latest = points.at(-1);
       const earlySlice = points.filter((d) => d.month >= "2003-01" && d.month <= "2005-12");
       const recentSlice = points.filter((d) => d.month >= "2023-01" && d.month <= "2025-12");
@@ -216,8 +217,8 @@ export default function Home() {
       const chartData = forecast?.chart ?? points.map((p) => ({ month: p.month, actual: p.cm, projected: null, lower: p.cm, upper: p.cm, band: 0 }));
       return (
         <Panel
-          title={tr(lang, "Satellite Water Storage Trend & Forecast (GRACE 2002–2031)", "سیٹلائٹ پانی ذخیرہ رجحان اور پیشگوئی (GRACE)")}
-          description={tr(lang, "Monthly terrestrial water storage anomaly (cm) from GFZ GRACE/GRACE-FO up to August 2026, with blended trend + seasonal projection for upcoming years.", "GFZ GRACE سیٹلائٹس سے اگست 2026 تک کا ریکارڈ اور آنے والے سالوں کی پیشگوئی۔")}
+          title={tr(lang, "Satellite Water Storage Trend & 15-Year Forecast (GRACE 2002–2041)", "سیٹلائٹ پانی ذخیرہ رجحان اور 15 سالہ پیشگوئی (GRACE 2002–2041)")}
+          description={tr(lang, "Monthly terrestrial water storage anomaly (cm) up to August 2026, with multi-factor AI projection incorporating rainfall, irrigation demand, motor-pump dependency, water stress, and monsoon cycles.", "اگست 2026 تک سیٹلائٹ ریکارڈ اور بارش، آبپاشی، موٹر پمپ طلب، آبی دباؤ اور مون سون کی بنیاد پر 15 سالہ پیشگوئی۔")}
         >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
@@ -235,7 +236,7 @@ export default function Home() {
                 ))}
               </div>
               <div className="glass inline-flex rounded-2xl p-1" role="group" aria-label="Forecast horizon">
-                {([12, 36, 60] as const).map((h) => (
+                {([12, 60, 120, 180] as const).map((h) => (
                   <button
                     key={h}
                     type="button"
@@ -263,7 +264,7 @@ export default function Home() {
           </div>
 
           {forecast && (
-            <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0c1b1f]">
                 <p className="text-[11px] text-slate-500">Latest ({forecast.latestMonth})</p>
                 <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
@@ -271,21 +272,20 @@ export default function Home() {
                 </p>
               </div>
               <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-500/30 dark:bg-[#0c1b1f]">
-                <p className="text-[11px] text-blue-700 dark:text-blue-300">Projected ({forecast.projectedMonth})</p>
+                <p className="text-[11px] text-blue-700 dark:text-blue-300">
+                  Projected +{graceHorizon / 12} yr ({forecast.projectedMonth})
+                </p>
                 <p className="mt-1 text-lg font-bold text-blue-800 dark:text-blue-200">
-                  {forecast.projectedCm >= 0 ? `+${forecast.projectedCm}` : forecast.projectedCm} cm
+                  {forecast.projectedCm >= 0 ? `+${forecast.projectedCm}` : forecast.projectedCm} cm{" "}
+                  <span className="text-xs font-semibold opacity-80">
+                    ({forecast.projectedChangeCm >= 0 ? "+" : ""}{forecast.projectedChangeCm} cm)
+                  </span>
                 </p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0c1b1f]">
-                <p className="text-[11px] text-slate-500">Trend Rate</p>
+                <p className="text-[11px] text-slate-500">Projected Trend Rate</p>
                 <p className={`mt-1 text-lg font-bold ${forecast.slopePerYearCm < -0.2 ? "text-red-700 dark:text-red-400" : forecast.slopePerYearCm > 0.2 ? "text-sky-700 dark:text-sky-300" : "text-teal-700"}`}>
                   {forecast.slopePerYearCm >= 0 ? `+${forecast.slopePerYearCm}` : forecast.slopePerYearCm} cm/yr
-                </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 dark:border-white/10 dark:bg-[#0c1b1f]">
-                <p className="text-[11px] text-slate-500">Model Fit</p>
-                <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">
-                  R² {forecast.rSquared.toFixed(2)} <span className="text-xs font-medium text-slate-500">({forecast.confidence})</span>
                 </p>
               </div>
             </div>
@@ -306,7 +306,7 @@ export default function Home() {
                           name === "actual"
                             ? tr(lang, "Observed (GRACE)", "مشاہدہ شدہ (GRACE)")
                             : name === "projected"
-                              ? tr(lang, "Predicted", "پیشگوئی")
+                              ? tr(lang, "AI Predicted", "AI پیشگوئی")
                               : String(name),
                         ]
                   }
@@ -316,13 +316,40 @@ export default function Home() {
                 <Area dataKey="lower" stackId="grace-ci" stroke="none" fill="transparent" isAnimationActive={false} />
                 <Area dataKey="band" stackId="grace-ci" stroke="none" fill="#bfdbfe" fillOpacity={0.45} isAnimationActive={false} />
                 <Line type="monotone" dataKey="actual" name="actual" stroke="#0d9488" strokeWidth={2} dot={false} connectNulls />
-                <Line type="monotone" dataKey="projected" name="projected" stroke="#2563eb" strokeWidth={2.5} strokeDasharray="6 4" dot={false} connectNulls />
+                <Line type="monotone" dataKey="projected" name="projected" stroke="#2563eb" strokeWidth={2} strokeDasharray="6 4" dot={false} connectNulls />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <p className="mt-2 text-[11px] leading-5 text-slate-400">
-            {tr(lang, "Solid teal line: observed GRACE satellite storage (2002–2026). Dashed blue line & shaded band: blended trend + seasonal projection with 95% uncertainty interval.", "ٹھوس سبز لائن: 2002–2026 سیٹلائٹ ریکارڈ۔ نیلی ڈیشڈ لائن: آنے والے سالوں کی پیشگوئی۔")}
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-600 dark:text-slate-700">
+            <span className="font-semibold text-slate-800 dark:text-white">
+              {tr(lang, "Forecast factors:", "پیشگوئی کے عوامل:")}
+            </span>
+            {drivers.rainVsNormalPct !== null && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
+                Rainfall: {drivers.rainVsNormalPct >= 0 ? "+" : ""}{drivers.rainVsNormalPct}% vs normal
+              </span>
+            )}
+            {drivers.pctIrrigatedGroundwater !== null && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
+                GW irrigation: {drivers.pctIrrigatedGroundwater}%
+              </span>
+            )}
+            {drivers.censusMotorPumpPct !== null && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
+                Motor pumps: {drivers.censusMotorPumpPct}%
+              </span>
+            )}
+            {drivers.aqueductStressScore !== null && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
+                WRI Stress: {drivers.aqueductStressScore}/5
+              </span>
+            )}
+            {drivers.tubewellsTotal > 0 && (
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
+                Tube wells: {drivers.tubewellsTotal.toLocaleString()}
+              </span>
+            )}
+          </div>
         </Panel>
       );
     })()}

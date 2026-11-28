@@ -732,6 +732,14 @@ export type GraceForecastPoint = {
   band: number | null;
 };
 
+export type GraceForecastDrivers = {
+  rainVsNormalPct?: number | null;
+  aqueductStressScore?: number | null;
+  droughtRiskScore?: number | null;
+  pctIrrigatedGroundwater?: number | null;
+  censusMotorPumpPct?: number | null;
+};
+
 export type GraceStorageForecast = {
   chart: GraceForecastPoint[];
   slopePerYearCm: number;
@@ -740,18 +748,17 @@ export type GraceStorageForecast = {
   projectedMonth: string;
   projectedCm: number;
   projectedChangeCm: number;
-  rSquared: number;
-  confidence: "Low" | "Moderate" | "Higher";
 };
 
 /**
- * Forecast GRACE satellite terrestrial water storage anomaly (cm) using the same
- * blended OLS trend + seasonal residual profile + 1.96*sigma leverage bands as depth forecasting,
- * without positive-only depth clamping since anomalies can be negative or positive.
+ * Multi-factor 15-year forecast for GRACE satellite terrestrial water storage anomaly (cm):
+ * blends long-term, recent-half, and 3-year momentum with rainfall anomaly, groundwater irrigation,
+ * household motor-pump dependency, WRI water/drought stress, and the empirical monsoon seasonal cycle.
  */
 export function forecastGraceStorage(
   points: { month: string; cm: number }[],
-  horizonMonths = 36
+  horizonMonths = 180,
+  drivers?: GraceForecastDrivers
 ): GraceStorageForecast | null {
   if (points.length < 12) return null;
   const x0 = monthIndex(points[0].month);
@@ -767,23 +774,51 @@ export function forecastGraceStorage(
   const intercept = meanY - slopePerMonth * meanX;
   const residuals = ys.map((y, i) => y - (intercept + slopePerMonth * xs[i]));
   const residualSum = residuals.reduce((s, r) => s + r ** 2, 0);
-  const totalSum = ys.reduce((s, y) => s + (y - meanY) ** 2, 0);
-  const rSquared = totalSum === 0 ? 1 : Math.max(0, Math.min(1, 1 - residualSum / totalSum));
+
+  const segSlope = (seg: { month: string; cm: number }[]) => {
+    if (seg.length < 3) return slopePerMonth;
+    const sx0 = monthIndex(seg[0].month);
+    const sxs = seg.map((p) => monthIndex(p.month) - sx0);
+    const sys = seg.map((p) => p.cm);
+    const smx = sxs.reduce((s, v) => s + v, 0) / sxs.length;
+    const smy = sys.reduce((s, v) => s + v, 0) / sys.length;
+    const ssxx = sxs.reduce((s, v) => s + (v - smx) ** 2, 0);
+    return ssxx > 0 ? sxs.reduce((s, v, idx) => s + (v - smx) * (sys[idx] - smy), 0) / ssxx : slopePerMonth;
+  };
 
   const midIdx = Math.floor(n / 2);
-  const seg = points.slice(Math.max(0, midIdx - 1));
-  const sx0 = monthIndex(seg[0].month);
-  const sxs = seg.map((p) => monthIndex(p.month) - sx0);
-  const sys = seg.map((p) => p.cm);
-  const smx = sxs.reduce((s, v) => s + v, 0) / sxs.length;
-  const smy = sys.reduce((s, v) => s + v, 0) / sys.length;
-  const ssxx = sxs.reduce((s, v) => s + (v - smx) ** 2, 0);
-  const secondHalfSlope =
-    ssxx > 0 ? sxs.reduce((s, v, idx) => s + (v - smx) * (sys[idx] - smy), 0) / ssxx : slopePerMonth;
+  const secondHalfSlope = segSlope(points.slice(Math.max(0, midIdx - 1)));
+  const recent36Slope = segSlope(points.slice(-Math.min(36, n)));
+  const baseSlope = 0.45 * slopePerMonth + 0.35 * secondHalfSlope + 0.2 * recent36Slope;
 
-  const effectiveSlope = 0.55 * slopePerMonth + 0.45 * secondHalfSlope;
+  // Multi-factor driver adjustment (climate recharge vs extraction pressure)
+  let driverDelta = 0;
+  if (drivers) {
+    if (drivers.pctIrrigatedGroundwater != null) {
+      driverDelta += ((drivers.pctIrrigatedGroundwater - 30) / 100) * -0.025;
+    }
+    if (drivers.aqueductStressScore != null) {
+      driverDelta += (drivers.aqueductStressScore - 2.5) * -0.015;
+    }
+    if (drivers.censusMotorPumpPct != null) {
+      driverDelta += ((drivers.censusMotorPumpPct - 40) / 100) * -0.015;
+    }
+    if (drivers.rainVsNormalPct != null) {
+      driverDelta += (drivers.rainVsNormalPct / 100) * 0.04;
+    }
+    if (drivers.droughtRiskScore != null) {
+      driverDelta += (drivers.droughtRiskScore - 2) * -0.01;
+    }
+  }
+  const boundedDriverDelta = Math.max(-0.08, Math.min(0.06, driverDelta));
 
-  // Empirical seasonal anomaly per calendar month (monsoon vs dry season)
+  const latestIndex = monthIndex(points[n - 1].month);
+  const latestCm = points[n - 1].cm;
+  // Post-flood equilibrium adjustment so temporary flood surpluses gradually normalize over 15 years
+  const floodReversion = latestCm > 3 ? -0.004 * (latestCm - 3) : 0;
+  const effectiveSlope = baseSlope + boundedDriverDelta + floodReversion;
+
+  // Full empirical seasonal anomaly per calendar month (monsoon peaks & pre-monsoon troughs)
   const monthBuckets = new Map<number, number[]>();
   points.forEach((p, idx) => {
     const cal = monthIndex(p.month) % 12;
@@ -797,8 +832,6 @@ export function forecastGraceStorage(
     return arr.reduce((s, v) => s + v, 0) / arr.length;
   };
 
-  const latestIndex = monthIndex(points[n - 1].month);
-  const latestCm = points[n - 1].cm;
   const baseSeason = seasonalMean(latestIndex);
   const residualScale = Math.sqrt(residualSum / Math.max(1, n - 2));
   const lastX = xs[n - 1];
@@ -816,12 +849,14 @@ export function forecastGraceStorage(
     projected: latestCm,
   };
 
+  let cumulativeTrend = 0;
   let lastProjected = latestCm;
   for (let i = 1; i <= horizonMonths; i++) {
-    const seasonalDelta = (seasonalMean(latestIndex + i) - baseSeason) * 0.5;
-    const projected = Number((latestCm + effectiveSlope * i + seasonalDelta).toFixed(2));
+    cumulativeTrend += effectiveSlope * Math.pow(0.9965, i - 1);
+    const seasonalDelta = seasonalMean(latestIndex + i) - baseSeason;
+    const projected = Number((latestCm + cumulativeTrend + seasonalDelta).toFixed(2));
     const x = lastX + i;
-    const leverage = Math.min(3.0, Math.sqrt(1 + 1 / n + (x - meanX) ** 2 / sxx));
+    const leverage = Math.min(2.4, Math.sqrt(1 + 1 / n + (x - meanX) ** 2 / sxx));
     const uncertainty = 1.96 * residualScale * leverage;
     const lower = Number((projected - uncertainty).toFixed(2));
     const upper = Number((projected + uncertainty).toFixed(2));
@@ -836,19 +871,16 @@ export function forecastGraceStorage(
     });
   }
 
-  const confidence: "Low" | "Moderate" | "Higher" =
-    rSquared >= 0.45 ? "Higher" : rSquared >= 0.2 ? "Moderate" : "Low";
+  const netSlopePerYear = ((lastProjected - latestCm) / Math.max(1, horizonMonths)) * 12;
 
   return {
     chart,
-    slopePerYearCm: Number((effectiveSlope * 12).toFixed(2)),
+    slopePerYearCm: Number(netSlopePerYear.toFixed(2)),
     latestMonth: points[n - 1].month,
     latestCm,
     projectedMonth: chart[chart.length - 1].month,
     projectedCm: lastProjected,
     projectedChangeCm: Number((lastProjected - latestCm).toFixed(2)),
-    rSquared: Number(rSquared.toFixed(2)),
-    confidence,
   };
 }
 
