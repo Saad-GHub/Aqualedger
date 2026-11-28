@@ -307,36 +307,44 @@ export default function Home() {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-600 dark:text-slate-300">
-            <span className="font-semibold text-slate-800 dark:text-white">
-              {tr(lang, "Forecast factors:", "پیشگوئی کے عوامل:")}
-            </span>
-            {drivers.rainVsNormalPct !== null && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
-                Rainfall: {drivers.rainVsNormalPct >= 0 ? "+" : ""}{drivers.rainVsNormalPct}% vs normal
-              </span>
-            )}
-            {drivers.pctIrrigatedGroundwater !== null && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
-                GW irrigation: {drivers.pctIrrigatedGroundwater}%
-              </span>
-            )}
-            {drivers.censusMotorPumpPct !== null && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
-                Motor pumps: {drivers.censusMotorPumpPct}%
-              </span>
-            )}
-            {drivers.aqueductStressScore !== null && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
-                WRI Stress: {drivers.aqueductStressScore}/5
-              </span>
-            )}
-            {drivers.tubewellsTotal > 0 && (
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 dark:bg-white/10">
-                Tube wells: {drivers.tubewellsTotal.toLocaleString()}
-              </span>
-            )}
-          </div>
+          <ul className="mt-3 space-y-1 rounded-xl bg-slate-50/80 p-3 text-[11.5px] leading-5 text-slate-500 dark:bg-white/5 dark:text-slate-400">
+            <li>
+              • <strong className="text-slate-700 dark:text-slate-200">{tr(lang, "Lines:", "لائنز:")}</strong>{" "}
+              {tr(
+                lang,
+                "Solid teal = observed satellite storage (2002–2026); dashed blue & shaded band = 15-year projection with seasonal monsoon/dry cycles.",
+                "ٹھوس سبز = مشاہدہ شدہ سیٹلائٹ ڈیٹا (2002–2026)؛ نیلی ڈیشڈ لائن = 15 سالہ پیشگوئی۔"
+              )}
+            </li>
+            <li>
+              • <strong className="text-sky-700 dark:text-sky-300">{tr(lang, "Positive (+ cm):", "مثبت (+ cm):")}</strong>{" "}
+              {tr(
+                lang,
+                "Water storage above historical baseline (surplus from heavy rain or flood recharge).",
+                "تاریخی اوسط سے زیادہ پانی (بارش یا سیلابی ریچارج کی وجہ سے اضافہ)۔"
+              )}
+            </li>
+            <li>
+              • <strong className="text-red-700 dark:text-red-400">{tr(lang, "Negative (− cm):", "منفی (− cm):")}</strong>{" "}
+              {tr(
+                lang,
+                "Water storage below baseline (depletion — pumping exceeds natural recharge).",
+                "تاریخی اوسط سے کم پانی (کمی — قدرتی ریچارج سے زیادہ پانی نکالا جا رہا ہے)۔"
+              )}
+            </li>
+            <li>
+              • <strong className="text-slate-700 dark:text-slate-200">{tr(lang, "Factors:", "عوامل:")}</strong>{" "}
+              {[
+                drivers.rainVsNormalPct !== null ? `Rainfall ${drivers.rainVsNormalPct >= 0 ? "+" : ""}${drivers.rainVsNormalPct}%` : null,
+                drivers.pctIrrigatedGroundwater !== null ? `GW irrigation ${drivers.pctIrrigatedGroundwater}%` : null,
+                drivers.censusMotorPumpPct !== null ? `Motor pumps ${drivers.censusMotorPumpPct}%` : null,
+                drivers.aqueductStressScore !== null ? `WRI stress ${drivers.aqueductStressScore}/5` : null,
+                drivers.tubewellsTotal > 0 ? `${drivers.tubewellsTotal.toLocaleString()} tube wells` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </li>
+          </ul>
         </Panel>
       );
     })()}
