@@ -405,7 +405,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 href="/"
                 aria-label="AquaLedger home"
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-gradient-to-br from-teal-400 to-sky-500 text-white shadow-[0_6px_16px_-6px_rgb(14_165_233/0.8),inset_0_1px_0_rgb(255_255_255/0.35)] sm:h-11 sm:w-11 sm:rounded-[14px]"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] bg-teal-500 text-white shadow-[0_4px_14px_-4px_rgb(20_184_166/0.8),inset_0_1px_0_rgb(255_255_255/0.25)] sm:h-11 sm:w-11 sm:rounded-[14px]"
               >
                 <PageIcon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.2} />
               </Link>
