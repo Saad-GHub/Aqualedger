@@ -213,7 +213,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const sidebar = (
     <>
-      <Link href="/" onClick={() => setMenuOpen(false)} className="mb-9 flex items-center gap-2.5 px-1">
+      <Link href="/" onClick={() => setMenuOpen(false)} className="mb-5 flex items-center gap-2.5 px-1">
         <img
           src="/aqualedger-logo.png"
           alt="AquaLedger logo"
@@ -277,27 +277,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
       ) : (
-        <div className="mt-auto rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-teal-300/15 text-teal-200">
-            <TrendingUp size={18} />
+        <div className="mt-auto pt-5">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+            <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-lg bg-teal-300/15 text-teal-200">
+              <TrendingUp size={18} />
+            </div>
+            <p className="text-sm font-semibold text-white">
+              {tr(lang, "Track your well depth", "اپنے کنویں کی گہرائی ٹریک کریں")}
+            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-300">
+              {tr(
+                lang,
+                "Log readings every 3 months to get AI depth predictions, area averages, and water precautions.",
+                "ہر 3 ماہ بعد ریڈنگ درج کریں اور AI پیشگوئی، علاقائی اوسط اور حفاظتی مشورے حاصل کریں۔"
+              )}
+            </p>
+            <Link
+              href="/reports?new=1"
+              onClick={() => setMenuOpen(false)}
+              className="mt-3.5 flex items-center justify-center rounded-lg bg-teal-300 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-teal-200"
+            >
+              {tr(lang, "Submit reading", "ریڈنگ جمع کروائیں")}
+            </Link>
           </div>
-          <p className="text-sm font-semibold text-white">
-            {tr(lang, "Track your well depth", "اپنے کنویں کی گہرائی ٹریک کریں")}
-          </p>
-          <p className="mt-1 text-xs leading-5 text-slate-300">
-            {tr(
-              lang,
-              "Log readings every 3 months to get AI depth predictions, area averages, and water precautions.",
-              "ہر 3 ماہ بعد ریڈنگ درج کریں اور AI پیشگوئی، علاقائی اوسط اور حفاظتی مشورے حاصل کریں۔"
-            )}
-          </p>
-          <Link
-            href="/reports?new=1"
-            onClick={() => setMenuOpen(false)}
-            className="mt-4 flex items-center justify-center rounded-lg bg-teal-300 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-teal-200"
-          >
-            {tr(lang, "Submit reading", "ریڈنگ جمع کروائیں")}
-          </Link>
         </div>
       )}
     </>
@@ -356,7 +358,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span />
           <span />
         </div>
-        <aside className="aqua-sidebar z-30 hidden w-64 shrink-0 flex-col px-4 py-6 lg:fixed lg:inset-y-0 lg:flex">
+        <aside className="aqua-sidebar z-30 hidden w-64 shrink-0 flex-col overflow-y-auto px-4 py-5 lg:fixed lg:inset-y-0 lg:flex">
           {sidebar}
         </aside>
 
