@@ -63,16 +63,19 @@ export function SignedOutCard({
         )}
       </div>
       {preview && (
-        <div className="relative hidden min-h-64 border-t border-slate-200 bg-slate-50 p-6 sm:block lg:border-l lg:border-t-0" aria-hidden="true">
-          <span className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 shadow-sm dark:bg-[#0c1b1f]/90">{previewLabel}</span>
-          <div className="pointer-events-none select-none blur-[3px] saturate-75">
+        <div className="relative hidden min-h-64 border-t border-slate-200 bg-slate-50 p-6 sm:block lg:border-l lg:border-t-0">
+          <span className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500 shadow-sm dark:bg-[#0c1b1f]/90" aria-hidden="true">{previewLabel}</span>
+          <div className="pointer-events-none select-none blur-[3px] saturate-75" aria-hidden="true">
             {preview === "sources" ? <SourcesPreview /> : <ReadingPreview />}
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-md dark:bg-[#0c1b1f]">
-              <Lock size={15} className="text-teal-700" />
+            <Link
+              href={primary.href}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-md transition hover:scale-105 hover:border-teal-500 hover:text-teal-700 dark:border-white/15 dark:bg-[#0c1b1f] dark:hover:text-teal-300"
+            >
+              <Lock size={15} className="text-teal-700 dark:text-teal-300" />
               {lockLabel}
-            </span>
+            </Link>
           </div>
         </div>
       )}
