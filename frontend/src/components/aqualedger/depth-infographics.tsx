@@ -430,6 +430,7 @@ export function AreaDepthInfographicStrip({
   /** Optional card shown beside the source-type chart (e.g. the risk overview). */
   aside?: React.ReactNode;
 }) {
+  const lang = useLanguage();
   const areaBars = useMemo(() => {
     const groups = new Map<
       string,
