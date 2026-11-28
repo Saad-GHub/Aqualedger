@@ -1005,14 +1005,16 @@ export function evaluateSourceCondition(params: {
     riskLevel === "High concern" || flags.some((flag) => flag.kind === "health");
   const hasQualityWatch =
     riskLevel === "Moderate concern" || flags.length > 0;
+  const isDeepCritical = currentDepthM !== null && currentDepthM >= 18;
+  const isDeepModerate = currentDepthM !== null && currentDepthM >= 10;
 
   let conditionLabel: SourceConditionEvaluation["conditionLabel"] = "Normal";
   let conditionTone: SourceConditionEvaluation["conditionTone"] = "teal";
 
-  if (isFastDecline || (isMuchDeeperThanArea && isModerateDecline) || hasHealthRisk) {
+  if (isFastDecline || (isMuchDeeperThanArea && isModerateDecline) || hasHealthRisk || isDeepCritical) {
     conditionLabel = "Critical";
     conditionTone = "red";
-  } else if (isModerateDecline || isDeeperThanArea || hasQualityWatch) {
+  } else if (isModerateDecline || isDeeperThanArea || hasQualityWatch || isDeepModerate) {
     conditionLabel = "Moderate";
     conditionTone = "amber";
   }

@@ -1,7 +1,7 @@
 
 import type { Metadata, Viewport } from "next";
 import { AppShell } from "@/components/aqualedger/app-shell";
-import { Geist, Geist_Mono, Noto_Nastaliq_Urdu, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Sans_Arabic, Plus_Jakarta_Sans } from "next/font/google";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -25,13 +25,6 @@ const notoUrdu = Noto_Sans_Arabic({
   variable: "--font-urdu",
   subsets: ["arabic"],
   weight: ["400", "500", "600", "700"],
-});
-
-// Nastaliq is the script Urdu readers know from books and newspapers; Naskh-style Arabic fonts read as foreign.
-const nastaliq = Noto_Nastaliq_Urdu({
-  variable: "--font-nastaliq",
-  subsets: ["arabic"],
-  weight: ["400", "600", "700"],
   display: "swap",
 });
 
@@ -59,13 +52,14 @@ export const metadata: Metadata = {
 };
 
 // Applies the saved (or system) theme and language before first paint so the page never flashes.
-const themeScript = `try{var t=localStorage.getItem("aqua-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.classList.toggle("dark",t==="dark");var l=localStorage.getItem("aqua-lang");document.documentElement.lang=l==="ur"?"ur":"en"}catch(e){}`;
+const themeScript = `try{var t=localStorage.getItem("aqua-theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.classList.toggle("dark",t==="dark");var l=localStorage.getItem("aqua-lang");var isUr=l==="ur";document.documentElement.lang=isUr?"ur":"en";document.documentElement.dir=isUr?"rtl":"ltr"}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} ${notoUrdu.variable} ${nastaliq.variable} h-full antialiased`}
+      dir="ltr"
+      className={`${geistSans.variable} ${geistMono.variable} ${display.variable} ${notoUrdu.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>

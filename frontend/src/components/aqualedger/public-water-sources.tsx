@@ -24,6 +24,12 @@ import {
 import { PageIntro, Panel } from "@/components/aqualedger/app-shell";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import {
+  translateAreaUr,
+  translateConditionUr,
+  translateDepthUnitsUr,
+  translateSourceTypeUr,
+} from "@/lib/urdu-translations";
+import {
   readPublicAreaSourceTrends,
   type PublicAreaSourceTrend,
 } from "@/lib/community-water-reports";
@@ -136,8 +142,8 @@ export function PublicWaterSources() {
         title={tr(lang, "Water Sources & Smart Recommendations", "پانی کے ذرائع اور ذہین سفارشات")}
         description={tr(
           lang,
-          "Select any area to see its exact source counts (boreholes, tube wells, hand pumps) and automatic recommendations for Household vs Farmer / Irrigation use.",
-          "کسی بھی علاقے کو منتخب کر کے بورویل، ٹیوب ویل، ہینڈ پمپ کی تعداد اور گھریلو بمقابلہ زرعی استعمال کے لیے خودکار مشورے دیکھیں۔"
+          "Select any area to see its exact source counts (boreholes, tube wells, community wells) and automatic recommendations for Household vs Farmer / Irrigation use.",
+          "کسی بھی علاقے کو منتخب کر کے بورویل، ٹیوب ویل، کمیونٹی کنویں کی تعداد اور گھریلو بمقابلہ زرعی استعمال کے لیے خودکار مشورے دیکھیں۔"
         )}
       />
 
@@ -170,7 +176,7 @@ export function PublicWaterSources() {
         </p>
       ) : activeIntel && activeArea ? (
         <Panel
-          title={`${tr(lang, "Area Spotlight", "علاقے کی تفصیل")}: ${activeArea}`}
+          title={`${tr(lang, "Area Spotlight", "علاقے کی تفصیل")}: ${translateAreaUr(lang, activeArea)}`}
           description={tr(lang, "Select an area below to inspect its exact water source counts and see which source is most beneficial for residents vs farmers.", "نیچے علاقہ منتخب کریں اور جانیں کہ رہائشیوں اور کسانوں کے لیے کون سا ذریعہ سب سے بہتر ہے۔")}
         >
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -183,14 +189,14 @@ export function PublicWaterSources() {
               >
                 {areaNames.map((name) => (
                   <option key={name} value={name}>
-                    {name}
+                    {translateAreaUr(lang, name)}
                   </option>
                 ))}
               </select>
             </label>
             <span className="inline-flex items-center gap-2 self-end rounded-full bg-teal-50 px-3 py-2 text-xs font-semibold text-teal-800 sm:mb-0.5">
               <Sparkles size={14} />
-              {activeIntel.totalReports} {tr(lang, `total source reports in ${activeArea}`, `کل رپورٹس (${activeArea})`)}
+              {activeIntel.totalReports} {tr(lang, `total source reports in ${activeArea}`, `کل رپورٹس (${translateAreaUr(lang, activeArea)})`)}
             </span>
           </div>
 
@@ -204,11 +210,11 @@ export function PublicWaterSources() {
                     {tr(lang, "Best for Household / Domestic", "گھریلو استعمال کے لیے بہترین")}
                   </span>
                   <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-teal-800 shadow-sm">
-                    {activeIntel.householdBest.riskLabel}
+                    {translateConditionUr(lang, activeIntel.householdBest.riskLabel)}
                   </span>
                 </div>
                 <p className="mt-3 text-xl font-bold text-slate-900">
-                  {activeIntel.householdBest.sourceType}
+                  {translateSourceTypeUr(lang, activeIntel.householdBest.sourceType)}
                 </p>
                 <p className="mt-1.5 text-sm leading-6 text-slate-700">
                   {activeIntel.householdBest.reason}
@@ -230,12 +236,12 @@ export function PublicWaterSources() {
                   </span>
                   <span className="shrink-0 whitespace-nowrap rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-blue-800 shadow-sm">
                     {activeIntel.irrigationBest.averageDepthM !== null
-                      ? `${formatDepthMetersAndFeet(activeIntel.irrigationBest.averageDepthM)} avg`
-                      : "Tracked"}
+                      ? `${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(activeIntel.irrigationBest.averageDepthM))} ${tr(lang, "avg", "اوسط")}`
+                      : tr(lang, "Tracked", "ٹریک شدہ")}
                   </span>
                 </div>
                 <p className="mt-3 text-xl font-bold text-slate-900">
-                  {activeIntel.irrigationBest.sourceType}
+                  {translateSourceTypeUr(lang, activeIntel.irrigationBest.sourceType)}
                 </p>
                 <p className="mt-1.5 text-sm leading-6 text-slate-700">
                   {activeIntel.irrigationBest.reason}
@@ -339,10 +345,10 @@ export function PublicWaterSources() {
                   <div className="flex items-center justify-between gap-2">
                     <span className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-800">
                       <Droplets size={15} className="text-teal-600" />
-                      {item.sourceType}
+                      {translateSourceTypeUr(lang, item.sourceType)}
                     </span>
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge}`}>
-                      {item.riskLabel}
+                      {translateConditionUr(lang, item.riskLabel)}
                     </span>
                   </div>
                   <p className="mt-2 text-2xl font-bold text-slate-900">
@@ -352,10 +358,10 @@ export function PublicWaterSources() {
                     </span>
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    Avg depth:{" "}
+                    {tr(lang, "Avg depth:", "اوسط گہرائی:")}{" "}
                     <strong>
                       {item.averageDepthM !== null
-                        ? formatDepthMetersAndFeet(item.averageDepthM)
+                        ? translateDepthUnitsUr(lang, formatDepthMetersAndFeet(item.averageDepthM))
                         : "—"}
                     </strong>
                   </p>
@@ -509,7 +515,7 @@ export function PublicWaterSources() {
                         : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-teal-300 hover:bg-teal-50"
                     }`}
                   >
-                    {area}
+                    {translateAreaUr(lang, area)}
                   </button>
                 );
               })}
@@ -540,9 +546,9 @@ export function PublicWaterSources() {
                     }`}
                   >
                   <div className="flex w-full items-center justify-between gap-2">
-                    <p className="font-bold text-slate-900">{area}</p>
+                    <p className="font-bold text-slate-900">{translateAreaUr(lang, area)}</p>
                     <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                      {intel.totalReports} reports
+                      {intel.totalReports} {tr(lang, "reports", "رپورٹس")}
                     </span>
                   </div>
                   <div className="mt-2.5 flex flex-wrap gap-1.5">
@@ -551,21 +557,21 @@ export function PublicWaterSources() {
                         key={s.sourceType}
                         className="rounded-full bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-700"
                       >
-                        {s.sourceType}: <strong>{s.reportCount}</strong>
+                        {translateSourceTypeUr(lang, s.sourceType)}: <strong>{s.reportCount}</strong>
                       </span>
                     ))}
                   </div>
                   <div className="mt-3 w-full space-y-1 border-t border-slate-100 pt-2.5 text-xs text-slate-600">
                     {intel.householdBest && (
                       <p>
-                        <strong className="text-teal-800">Household:</strong>{" "}
-                        {intel.householdBest.sourceType}
+                        <strong className="text-teal-800">{tr(lang, "Household:", "گھریلو:")}</strong>{" "}
+                        {translateSourceTypeUr(lang, intel.householdBest.sourceType)}
                       </p>
                     )}
                     {intel.irrigationBest && (
                       <p>
-                        <strong className="text-blue-800">Farmer:</strong>{" "}
-                        {intel.irrigationBest.sourceType}
+                        <strong className="text-blue-800">{tr(lang, "Farmer:", "کسان:")}</strong>{" "}
+                        {translateSourceTypeUr(lang, intel.irrigationBest.sourceType)}
                       </p>
                     )}
                   </div>
@@ -577,7 +583,7 @@ export function PublicWaterSources() {
         ) : (
           <div className="flex items-center gap-2 rounded-xl bg-slate-50 p-5 text-sm text-slate-500">
             <AlertTriangle size={16} className="text-amber-500" />
-            <span>No area source summaries match your search yet.</span>
+            <span>{tr(lang, "No area source summaries match your search yet.", "آپ کی تلاش سے کوئی علاقائی خلاصہ نہیں ملا۔")}</span>
           </div>
         );
         })()}
