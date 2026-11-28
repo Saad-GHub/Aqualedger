@@ -408,6 +408,7 @@ export function WhatsAppTester({ variant = "page", onClose }: ChatProps = {}) {
           </button>
           <input
             dir="auto"
+            aria-label={ui("placeholder")}
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder={ui("placeholder")}

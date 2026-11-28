@@ -13,7 +13,8 @@ type LoginRole = "user" | "admin" | null;
 export default function LoginPage() {
   const router = useRouter();
   const lang = useLanguage();
-  const [selectedRole, setSelectedRole] = useState<LoginRole>(null);
+  // Farmers are the default audience; the single administrator switches with a small link.
+  const [selectedRole, setSelectedRole] = useState<LoginRole>("user");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -237,19 +238,21 @@ export default function LoginPage() {
             : tr(lang, "Sign in with your email and password. Email OTP verification is only required once when creating a new account.", "اپنے ای میل اور پاس ورڈ سے سائن ان کریں۔ ای میل OTP تصدیق صرف نیا اکاؤنٹ بناتے وقت درکار ہوتی ہے۔")
         }
         action={
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedRole(null);
-              setError("");
-              setInfo("");
-              setEmailNeedsConfirmation(false);
-            }}
-            className="inline-flex items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-          >
-            <ArrowLeft size={16} />
-            {tr(lang, "Switch role", "کردار تبدیل کریں")}
-          </button>
+          isAdminMode ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedRole("user");
+                setError("");
+                setInfo("");
+                setEmailNeedsConfirmation(false);
+              }}
+              className="inline-flex min-h-10 items-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <ArrowLeft size={16} className="rtl:rotate-180" />
+              {tr(lang, "Farmer sign in", "کسان سائن ان")}
+            </button>
+          ) : undefined
         }
       />
 
@@ -289,7 +292,7 @@ export default function LoginPage() {
             )}
             <button
               disabled={busy}
-              className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60 sm:w-auto"
             >
               {busy ? tr(lang, "Signing in…", "سائن ان ہو رہا ہے…") : tr(lang, "Sign in as Admin", "ایڈمن کے طور پر سائن ان کریں")}
             </button>
@@ -314,7 +317,7 @@ export default function LoginPage() {
               />
             </label>
             <label className="block text-sm font-medium text-slate-700">
-              Password
+              {tr(lang, "Password", "پاس ورڈ")}
               <input
                 required
                 type="password"
@@ -339,28 +342,43 @@ export default function LoginPage() {
                     onClick={() => void handleResendConfirmation()}
                     className="mt-2 inline-flex items-center rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-teal-800 shadow-sm hover:bg-teal-50 disabled:opacity-60"
                   >
-                    {resending ? "Resending…" : "Resend verification email"}
+                    {resending ? tr(lang, "Resending…", "دوبارہ بھیجا جا رہا ہے…") : tr(lang, "Resend verification email", "تصدیقی ای میل دوبارہ بھیجیں")}
                   </button>
                 )}
               </div>
             )}
             <button
               disabled={busy}
-              className="rounded-xl bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-500 disabled:opacity-60 sm:w-auto"
             >
-              {busy ? "Signing in…" : "Sign in"}
+              {busy ? tr(lang, "Signing in…", "سائن ان ہو رہا ہے…") : tr(lang, "Sign in", "سائن ان کریں")}
             </button>
             <div className="flex flex-wrap justify-between gap-3 pt-1 text-sm">
-              <Link href="/reset-password" className="font-semibold text-teal-700 hover:underline">
-                Set / reset password
+              <Link href="/reset-password" className="inline-flex min-h-9 items-center font-semibold text-teal-700 hover:underline">
+                {tr(lang, "Forgot or set password", "پاس ورڈ بھول گئے / سیٹ کریں")}
               </Link>
-              <span className="text-slate-500">
-                New here?{" "}
+              <span className="inline-flex min-h-9 items-center gap-1 text-slate-500">
+                {tr(lang, "New here?", "نئے ہیں؟")}
                 <Link href="/signup" className="font-semibold text-teal-700 hover:underline">
-                  Create account (OTP verified)
+                  {tr(lang, "Create an account", "اکاؤنٹ بنائیں")}
                 </Link>
               </span>
             </div>
+            <p className="border-t border-slate-200 pt-4 text-xs text-slate-500">
+              {tr(lang, "AquaLedger administrator?", "AquaLedger ایڈمنسٹریٹر؟")}{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRole("admin");
+                  setError("");
+                  setInfo("");
+                  setEmailNeedsConfirmation(false);
+                }}
+                className="font-semibold text-slate-700 underline-offset-2 hover:underline"
+              >
+                {tr(lang, "Admin sign in", "ایڈمن سائن ان")}
+              </button>
+            </p>
           </form>
         </Panel>
       )}
