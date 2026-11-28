@@ -244,7 +244,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               aria-current={active ? "page" : undefined}
               className={navLinkClass(active)}
             >
-              {active && <span className="absolute inset-y-2 left-0 w-1 rounded-full bg-teal-300" />}
+              {active && <span className="absolute inset-y-2 start-0 w-1 rounded-full bg-teal-300" />}
               <Icon size={18} className={active ? "text-teal-300" : "text-slate-400 group-hover:text-slate-200"} />
               {lang === "ur" ? urLabel : label}
             </Link>
@@ -386,7 +386,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => setMenuOpen(false)}
                 aria-label="Close navigation"
-                className="absolute right-4 top-4 rounded-lg p-2 text-slate-300 hover:bg-white/10"
+                className="absolute end-4 top-4 rounded-lg p-2 text-slate-300 hover:bg-white/10"
               >
                 <X size={18} />
               </button>
@@ -394,7 +394,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <div className="relative z-10 min-w-0 flex-1 lg:ml-[17.5rem]">
+        <div className="relative z-10 min-w-0 flex-1 lg:ms-[17.5rem]">
           {/* Solid-backed flush sticky header so scrolled cards never bleed above or behind it. */}
           <header className="aqua-header sticky top-0 z-30 bg-[#e8f3f6] px-2 pb-1.5 pt-[max(0px,env(safe-area-inset-top))] dark:bg-black sm:px-4 lg:px-6 lg:pt-2">
            <div
@@ -409,7 +409,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 <PageIcon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.2} />
               </Link>
-              <div className="min-w-0 leading-tight">
+              <div className="min-w-0 leading-normal">
                 <p className="hidden truncate text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400 sm:block sm:text-[11px]">
                   AquaLedger ·{" "}
                   {role.isAdmin
@@ -488,7 +488,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   key={href}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-2 text-[clamp(9.5px,2.6vw,11.5px)] font-semibold leading-tight transition duration-200 sm:px-2 ${
+                  className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-2 text-[clamp(9.5px,2.6vw,11.5px)] font-semibold leading-snug transition duration-200 sm:px-2 ${
                     active ? "bg-teal-500 text-white shadow-[0_8px_18px_-8px_rgb(20_184_166/0.9)]" : "text-slate-500"
                   }`}
                 >
@@ -507,7 +507,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-2 text-[clamp(9.5px,2.6vw,11.5px)] font-semibold leading-tight text-slate-500 sm:px-2"
+              className="flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[20px] px-1 py-2 text-[clamp(9.5px,2.6vw,11.5px)] font-semibold leading-snug text-slate-500 sm:px-2"
             >
               <Menu size={18} className="shrink-0" />
               <span>{tr(lang, "More", "مزید")}</span>
