@@ -228,7 +228,7 @@ function MonitoringDashboard() {
           </p>
         </div>
 
-        <Link href="/reports" className="block">
+        <Link href="/data-management#pending-reviews" className="block">
           <div className="glass glass-lift h-full rounded-3xl p-4 sm:p-5">
             <div className="flex items-start justify-between gap-2">
               <p className="text-sm font-medium text-slate-500">
@@ -246,7 +246,7 @@ function MonitoringDashboard() {
               )}
             </p>
             <p className="mt-1 text-xs text-slate-400">
-              {tr(lang, "Open Community Reports →", "کمیونٹی رپورٹس کھولیں ←")}
+              {tr(lang, "Review pending in Data Management →", "ڈیٹا مینجمنٹ میں چیک کریں ←")}
             </p>
           </div>
         </Link>

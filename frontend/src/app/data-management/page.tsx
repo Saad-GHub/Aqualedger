@@ -5,19 +5,31 @@ import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
+  Clock,
   Database,
   Download,
   FileJson,
   MapPin,
   RefreshCw,
+  Trash2,
+  XCircle,
 } from "lucide-react";
 import { AdminOnly, PageIntro, Panel } from "@/components/aqualedger/app-shell";
 import { tr, useLanguage } from "@/components/aqualedger/language-toggle";
 import {
   deleteWaterReportsByIds,
+  notifyCommunityWaterReportsUpdated,
   readCommunityWaterReports,
+  updateCommunityReportStatus,
   type CommunityWaterReport,
+  type ReportReviewStatus,
 } from "@/lib/community-water-reports";
+import {
+  translateAreaUr,
+  translateConcernUr,
+  translateDepthUnitsUr,
+  translateSourceTypeUr,
+} from "@/lib/urdu-translations";
 import {
   detectAreaDepthAnomalies,
   formatDepthMetersAndFeet,
@@ -49,6 +61,8 @@ export default function DataManagementPage() {
   const [cleaning, setCleaning] = useState(false);
   const [cleanStatus, setCleanStatus] = useState("");
   const [selectedArea, setSelectedArea] = useState("All areas");
+  const [moderatingId, setModeratingId] = useState<string | null>(null);
+  const [reviewMessage, setReviewMessage] = useState("");
 
   const loadDataset = () => {
     setLoading(true);
@@ -83,6 +97,48 @@ export default function DataManagementPage() {
   }, []);
 
   const reportCodes = useMemo(() => buildReportCodes(reports), [reports]);
+  const pendingReports = useMemo(
+    () => reports.filter((report) => report.status === "under_review"),
+    [reports]
+  );
+
+  const handlePendingStatus = async (report: CommunityWaterReport, nextStatus: ReportReviewStatus) => {
+    const code = reportCodes.get(report.id) ?? report.id.slice(0, 8);
+    setModeratingId(report.id);
+    setReviewMessage("");
+    try {
+      await updateCommunityReportStatus(report.id, nextStatus);
+      setReports((current) =>
+        current.map((item) => (item.id === report.id ? { ...item, status: nextStatus } : item))
+      );
+      notifyCommunityWaterReportsUpdated();
+      setReviewMessage(
+        nextStatus === "verified"
+          ? `${code} approved and verified.`
+          : `${code} marked as ${nextStatus.replaceAll("_", " ")}.`
+      );
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not update report status.");
+    } finally {
+      setModeratingId(null);
+    }
+  };
+
+  const handlePendingDelete = async (report: CommunityWaterReport) => {
+    const code = reportCodes.get(report.id) ?? report.id.slice(0, 8);
+    setModeratingId(report.id);
+    setReviewMessage("");
+    try {
+      await deleteWaterReportsByIds([report.id]);
+      setReports((current) => current.filter((item) => item.id !== report.id));
+      notifyCommunityWaterReportsUpdated();
+      setReviewMessage(`Deleted pending report ${code}.`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Could not delete report.");
+    } finally {
+      setModeratingId(null);
+    }
+  };
   const predefinedSet = useMemo(() => new Set(PREDEFINED_PAKISTAN_AREAS), []);
 
   const audit = useMemo(() => {
@@ -239,6 +295,110 @@ export default function DataManagementPage() {
       {error && (
         <p className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>
       )}
+
+      <div id="pending-reviews" className="scroll-mt-24">
+        <Panel
+          title={tr(lang, `Pending Reviews (${pendingReports.length})`, `جائزے کے منتظر رپورٹس (${pendingReports.length})`)}
+          description={tr(
+            lang,
+            "Only reports awaiting admin approval appear here. Approve, reject, or remove submissions.",
+            "یہاں صرف وہ رپورٹس دکھائی جا رہی ہیں جن کی منظوری باقی ہے۔ منظور، مسترد یا حذف کریں۔"
+          )}
+        >
+          {reviewMessage && (
+            <p role="status" className="mb-4 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-xs font-semibold text-teal-800">
+              {reviewMessage}
+            </p>
+          )}
+          {loading && reports.length === 0 ? (
+            <div className="space-y-2.5 py-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 animate-pulse rounded-xl bg-slate-100" />
+              ))}
+            </div>
+          ) : pendingReports.length === 0 ? (
+            <div className="flex items-center gap-2 rounded-xl bg-teal-50 p-4 text-sm text-teal-800">
+              <CheckCircle2 size={18} />
+              <span>{tr(lang, "All caught up — no pending reports awaiting review.", "کوئی زیرِ التواء رپورٹ باقی نہیں۔")}</span>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] text-start text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 text-xs text-slate-400">
+                    <th className="pb-3 font-medium">{tr(lang, "Report", "رپورٹ")}</th>
+                    <th className="pb-3 font-medium">{tr(lang, "Area / Address", "علاقہ / پتہ")}</th>
+                    <th className="pb-3 font-medium">{tr(lang, "Source / Depth", "ذریعہ / گہرائی")}</th>
+                    <th className="pb-3 font-medium">{tr(lang, "Date", "تاریخ")}</th>
+                    <th className="pb-3 font-medium">{tr(lang, "Concern", "مسئلہ")}</th>
+                    <th className="pb-3 text-end font-medium">{tr(lang, "Action", "عمل")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingReports.map((report) => {
+                    const code = reportCodes.get(report.id) ?? report.id.slice(0, 8);
+                    return (
+                      <tr key={report.id} className="border-b border-slate-50 last:border-0">
+                        <td className="py-3.5 font-semibold text-teal-700">
+                          <span className="inline-flex items-center gap-1.5">
+                            <Clock size={13} className="text-sky-600" />
+                            {code}
+                          </span>
+                          {report.reporterName && (
+                            <span className="block text-xs font-normal text-slate-400">{report.reporterName}</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 text-slate-600">
+                          {translateAreaUr(lang, report.areaName || report.address)}
+                        </td>
+                        <td className="py-3.5 text-slate-700">
+                          {translateSourceTypeUr(lang, report.sourceType ?? "Water source")}
+                          {report.depth ? ` · ${translateDepthUnitsUr(lang, formatDepthMetersAndFeet(report.depth))}` : ""}
+                        </td>
+                        <td className="py-3.5 text-slate-500">{report.sampleDate ?? "—"}</td>
+                        <td className="py-3.5 text-slate-500">
+                          {report.concern ? translateConcernUr(lang, report.concern) : "—"}
+                        </td>
+                        <td className="py-3.5 text-end">
+                          <div className="inline-flex flex-wrap items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              disabled={moderatingId === report.id}
+                              onClick={() => void handlePendingStatus(report, "verified")}
+                              className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+                            >
+                              <CheckCircle2 size={13} />
+                              {tr(lang, "Approve", "منظور کریں")}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={moderatingId === report.id}
+                              onClick={() => void handlePendingStatus(report, "rejected")}
+                              className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+                            >
+                              <XCircle size={13} />
+                              {tr(lang, "Reject", "مسترد کریں")}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={moderatingId === report.id}
+                              onClick={() => void handlePendingDelete(report)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                            >
+                              <Trash2 size={13} />
+                              {tr(lang, "Delete", "حذف کریں")}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+      </div>
 
       <Panel
         title={tr(lang, "Export Cleaned Dataset", "صاف شدہ ڈیٹا سیٹ ڈاؤن لوڈ کریں")}
